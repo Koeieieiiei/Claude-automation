@@ -46,6 +46,7 @@ export async function POST(req: NextRequest) {
       }
       await updateOrder(order.id, { status: "paid" });
       await fulfillOrder({ id: order.id, firstName, lastName, email, amount: order.amount });
+      await updateOrder(order.id, { status: "delivered" });
       return NextResponse.json({
         url: `${config.baseUrl}/success?order=${order.id}&mock=1`,
       });
@@ -73,6 +74,16 @@ export async function POST(req: NextRequest) {
     });
 
     await updateOrder(order.id, { stripe_session_id: session.id });
+
+    // Stripe ระบุชนิด session.url เป็น string | null — ถ้า null อย่าส่งต่อให้หน้าเว็บ
+    // (ไม่งั้น browser จะพาลูกค้าไปหน้า /null ทั้งที่สร้าง order ค้างไว้แล้ว)
+    if (!session.url) {
+      console.error(`Stripe ไม่คืน URL หน้าชำระเงิน (session ${session.id}, order ${order.id})`);
+      return NextResponse.json(
+        { error: "สร้างหน้าชำระเงินไม่สำเร็จ กรุณาลองใหม่อีกครั้ง" },
+        { status: 500 }
+      );
+    }
 
     if (!ready.stripeWebhook) {
       console.warn(

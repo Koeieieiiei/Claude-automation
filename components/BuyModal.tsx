@@ -31,6 +31,8 @@ export default function BuyModal({ price, productName, onClose }: Props) {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "เกิดข้อผิดพลาด");
+      // กันเคส server ตอบ ok แต่ไม่มี url — อย่าพาผู้ใช้ไปหน้า "/null"
+      if (!data.url) throw new Error("ไม่ได้รับลิงก์หน้าชำระเงิน กรุณาลองใหม่อีกครั้ง");
       window.location.href = data.url;
     } catch (err) {
       setError(err instanceof Error ? err.message : "เกิดข้อผิดพลาด");

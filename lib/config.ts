@@ -20,13 +20,18 @@ const downloadSecret = env("DOWNLOAD_SECRET");
 export const config = {
   product: {
     name: env("NEXT_PUBLIC_PRODUCT_NAME", "ข้อสอบ Mock TPAT3 (Ebook)"),
-    price: Number(env("PRODUCT_PRICE", "199")),
+    // ใช้ env var "ตัวเดียวกัน" กับที่หน้าเว็บโชว์ (app/page.tsx) — แหล่งความจริงเดียว
+    // กันเคสโชว์ราคาหนึ่งแต่เก็บเงินอีกราคา เพราะตั้งค่าไว้คนละตัวแปร
+    price: Number(env("NEXT_PUBLIC_PRODUCT_PRICE", "199")),
   },
-  baseUrl: env("NEXT_PUBLIC_BASE_URL", "http://localhost:3000"),
+  // ถ้าไม่ได้ตั้ง NEXT_PUBLIC_BASE_URL บน Vercel ให้ใช้ URL ที่ Vercel แจกมา
+  // แทนที่จะ fallback เป็น localhost (ซึ่งจะกลายเป็นลิงก์เสียในอีเมลลูกค้า)
+  baseUrl:
+    env("NEXT_PUBLIC_BASE_URL") ||
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000"),
 
   stripe: {
     secretKey: env("STRIPE_SECRET_KEY"),
-    publishableKey: env("NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY"),
     webhookSecret: env("STRIPE_WEBHOOK_SECRET"),
     currency: env("STRIPE_CURRENCY", "thb"),
   },
@@ -68,5 +73,3 @@ export const ready = {
   resend: Boolean(config.resend.apiKey),
   sheets: Boolean(config.sheets.id && config.sheets.clientEmail && config.sheets.privateKey),
 };
-
-export const isMockMode = !ready.supabase;

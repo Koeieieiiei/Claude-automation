@@ -7,13 +7,20 @@ import { config, ready } from "./config";
  * - แท็บ "sales"  : บันทึกการซื้อขายที่สำเร็จ
  * ถ้ายังไม่ได้ตั้งค่า จะแค่ log (โหมดทดสอบ) ไม่เขียนจริง
  */
+// cache client ไว้ระดับ module — เดิมสร้าง JWT + auth handshake ใหม่ทุกครั้งที่เขียนแถว
+// (ทุกการเข้าชมเว็บเรียก /api/track) เหมือนที่ lib/stripe.ts และ lib/supabase.ts ทำ
+let cachedSheets: ReturnType<typeof google.sheets> | null = null;
+
 function getSheetsClient() {
-  const auth = new google.auth.JWT({
-    email: config.sheets.clientEmail,
-    key: config.sheets.privateKey,
-    scopes: ["https://www.googleapis.com/auth/spreadsheets"],
-  });
-  return google.sheets({ version: "v4", auth });
+  if (!cachedSheets) {
+    const auth = new google.auth.JWT({
+      email: config.sheets.clientEmail,
+      key: config.sheets.privateKey,
+      scopes: ["https://www.googleapis.com/auth/spreadsheets"],
+    });
+    cachedSheets = google.sheets({ version: "v4", auth });
+  }
+  return cachedSheets;
 }
 
 /**
@@ -22,7 +29,7 @@ function getSheetsClient() {
  * ผู้ซื้อและ referrer/user-agent จาก /api/track มาจาก input ที่ควบคุมไม่ได้ จึงต้อง neutralize
  * ด้วยการเติม ' นำหน้า (Sheets จะถือเป็นข้อความล้วน) ตัวเลขปล่อยผ่านตามเดิม
  */
-function sanitizeCell(v: string | number): string | number {
+export function sanitizeCell(v: string | number): string | number {
   if (typeof v !== "string") return v;
   return /^[=+\-@\t\r]/.test(v) ? `'${v}` : v;
 }

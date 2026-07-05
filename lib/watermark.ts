@@ -1,6 +1,6 @@
 import { readFile } from "fs/promises";
 import { join } from "path";
-import { existsSync } from "fs";
+import { existsSync, readFileSync } from "fs";
 import { PDFDocument, rgb, degrees, StandardFonts, PDFFont } from "pdf-lib";
 import fontkit from "@pdf-lib/fontkit";
 import { getSupabase } from "./supabase";
@@ -27,6 +27,17 @@ export const PRODUCTS: Record<ProductFile, { label: string; local: string; stora
 
 // cache ไฟล์ต้นฉบับไว้ระดับ module — ลดการโหลดซ้ำ (ดาวน์โหลด 2 ไฟล์/หลายครั้งบน instance เดียวกัน)
 const masterCache = new Map<ProductFile, Uint8Array>();
+
+// cache ไบต์ฟอนต์ไทยไว้ครั้งเดียว — เดิมอ่านไฟล์ TTF จากดิสก์ทุกครั้งที่ดาวน์โหลด
+// (undefined = ยังไม่โหลด, null = ไม่มีไฟล์ฟอนต์ ใช้ fallback)
+let thaiFontBytes: Buffer | null | undefined;
+
+function loadThaiFontBytes(): Buffer | null {
+  if (thaiFontBytes === undefined) {
+    thaiFontBytes = existsSync(THAI_FONT) ? readFileSync(THAI_FONT) : null;
+  }
+  return thaiFontBytes;
+}
 
 /**
  * ดึงไฟล์ PDF ต้นฉบับของไฟล์ที่ระบุ (questions หรือ answers):
@@ -76,8 +87,9 @@ export async function watermarkPdf(
   pdfDoc.registerFontkit(fontkit);
 
   let font: PDFFont;
-  if (existsSync(THAI_FONT)) {
-    font = await pdfDoc.embedFont(await readFile(THAI_FONT), { subset: true });
+  const fontBytes = loadThaiFontBytes();
+  if (fontBytes) {
+    font = await pdfDoc.embedFont(fontBytes, { subset: true });
   } else {
     // fallback: Helvetica รองรับเฉพาะอักษรละติน (ชื่อภาษาไทยอาจไม่แสดง)
     font = await pdfDoc.embedFont(StandardFonts.Helvetica);

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { config } from "@/lib/config";
 import { getStripe } from "@/lib/stripe";
-import { getOrder, updateOrder } from "@/lib/orders";
+import { getOrder, updateOrder, claimDelivery } from "@/lib/orders";
 import { fulfillOrder } from "@/lib/fulfillment";
 
 // Stripe ต้องการ raw body เพื่อตรวจลายเซ็น — ปิด body parser ด้วย runtime nodejs + อ่าน text เอง
@@ -55,19 +55,40 @@ async function handlePaid(session: Stripe.Checkout.Session) {
     return;
   }
 
-  // กันส่งซ้ำ: ถ้า order ถูกส่งของไปแล้วให้ข้าม (idempotency)
   const order = await getOrder(orderId);
-  if (order && order.status === "delivered") return;
 
-  await updateOrder(orderId, { status: "paid" });
+  // กันส่งซ้ำแบบ atomic: "จองสิทธิ์ส่งของ" (เปลี่ยนสถานะเป็น delivered ในคำสั่งเดียว)
+  // ก่อนเริ่มส่งจริง — webhook ที่มาซ้ำ/พร้อมกันจะ claim ไม่สำเร็จและถูกข้ามไป
+  const claim = await claimDelivery(orderId);
+  if (claim === "already-delivered") return;
+  if (claim === "not-found") {
+    // เกิดได้เมื่อยังไม่ได้ตั้ง Supabase (order อยู่ใน memory ของอีก instance)
+    // — ส่งของจาก metadata ให้ลูกค้าได้ แต่กันซ้ำไม่ได้ จึงเตือนไว้
+    console.warn(
+      `webhook: ไม่พบ order ${orderId} ในฐานข้อมูล — ส่งของจาก metadata (กันส่งซ้ำไม่ได้ ควรตั้งค่า Supabase)`
+    );
+  }
 
-  await fulfillOrder({
-    id: orderId,
-    firstName: meta.firstName ?? order?.first_name ?? "",
-    lastName: meta.lastName ?? order?.last_name ?? "",
-    email: meta.email ?? session.customer_email ?? order?.email ?? "",
-    amount: order?.amount ?? (session.amount_total ? session.amount_total / 100 : config.product.price),
-  });
+  try {
+    await fulfillOrder({
+      id: orderId,
+      firstName: meta.firstName ?? order?.first_name ?? "",
+      lastName: meta.lastName ?? order?.last_name ?? "",
+      email: meta.email ?? session.customer_email ?? order?.email ?? "",
+      // ใช้ != null (ไม่ใช่ truthy) — ยอด 0 บาท (เช่น คูปองลด 100%) ต้องบันทึกเป็น 0 จริง
+      amount:
+        order?.amount ??
+        (session.amount_total != null ? session.amount_total / 100 : config.product.price),
+    });
+  } catch (err) {
+    // ส่งของไม่สำเร็จ → คืนสถานะกลับเป็น paid เพื่อให้ Stripe retry รอบหน้า claim ได้ใหม่
+    if (claim === "claimed") {
+      await updateOrder(orderId, { status: "paid" }).catch((e) =>
+        console.error(`คืนสถานะ paid ไม่สำเร็จ (order ${orderId}):`, e)
+      );
+    }
+    throw err;
+  }
 
   console.log(`✅ ส่งของสำเร็จสำหรับ order ${orderId}`);
 }

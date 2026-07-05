@@ -1,0 +1,40 @@
+# dependencies
+/node_modules
+
+# local tools (Stripe CLI binary ฯลฯ)
+/tools
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug / logs
+npm-debug.log*
+*.log
+
+# env files (NEVER commit real secrets)
+.env
+.env.local
+.env*.local
+
+# secrets / credentials
+/secrets
+*.credentials.json
+google-service-account.json
+
+# ไฟล์ข้อสอบต้นฉบับ (สินค้า) — ห้าม commit ขึ้น repo
+/assets/master-questions.pdf
+/assets/master-answers.pdf
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+.vercel

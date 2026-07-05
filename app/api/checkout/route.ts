@@ -32,7 +32,18 @@ export async function POST(req: NextRequest) {
     const stripe = getStripe();
 
     // โหมดทดสอบ: ยังไม่ได้ตั้งค่า Stripe → ข้ามการจ่ายเงินจริง แล้วส่งของเลย
+    // ⚠️ อนุญาตเฉพาะตอน dev เท่านั้น — ถ้าเผลอ deploy ขึ้น production โดยลืมตั้ง
+    // STRIPE_SECRET_KEY ต้อง fail closed ไม่งั้นใครก็กดรับไฟล์ฟรีได้โดยไม่ต้องจ่ายเงิน
     if (!stripe) {
+      if (process.env.NODE_ENV === "production") {
+        console.error(
+          "STRIPE_SECRET_KEY ยังไม่ถูกตั้งค่าใน production — ปฏิเสธคำสั่งซื้อเพื่อกันการแจกไฟล์ฟรี"
+        );
+        return NextResponse.json(
+          { error: "ระบบชำระเงินยังไม่พร้อมใช้งาน กรุณาติดต่อผู้ขาย" },
+          { status: 503 }
+        );
+      }
       await updateOrder(order.id, { status: "paid" });
       await fulfillOrder({ id: order.id, firstName, lastName, email, amount: order.amount });
       return NextResponse.json({

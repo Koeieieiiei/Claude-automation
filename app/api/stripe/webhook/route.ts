@@ -28,13 +28,20 @@ export async function POST(req: NextRequest) {
   }
 
   // จ่ายเงินสำเร็จ (รวมกรณี PromptPay ที่ยืนยันแบบ async)
-  if (event.type === "checkout.session.completed") {
-    const session = event.data.object as Stripe.Checkout.Session;
-    if (session.payment_status === "paid") {
-      await handlePaid(session);
+  // ครอบ try/catch: ถ้า fulfillment ล้ม (เช่น ส่งอีเมล/สร้างโทเค็นไม่สำเร็จ) อย่าให้ throw
+  // หลุดออกไปดิบ ๆ — log ให้ชัดแล้วคืน 500 เพื่อให้ Stripe retry (idempotency กันส่งซ้ำ)
+  try {
+    if (event.type === "checkout.session.completed") {
+      const session = event.data.object as Stripe.Checkout.Session;
+      if (session.payment_status === "paid") {
+        await handlePaid(session);
+      }
+    } else if (event.type === "checkout.session.async_payment_succeeded") {
+      await handlePaid(event.data.object as Stripe.Checkout.Session);
     }
-  } else if (event.type === "checkout.session.async_payment_succeeded") {
-    await handlePaid(event.data.object as Stripe.Checkout.Session);
+  } catch (err) {
+    console.error(`จัดการ event ${event.type} (${event.id}) ไม่สำเร็จ:`, err);
+    return NextResponse.json({ error: "ประมวลผล event ไม่สำเร็จ" }, { status: 500 });
   }
 
   return NextResponse.json({ received: true });

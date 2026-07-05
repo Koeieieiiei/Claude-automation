@@ -27,13 +27,18 @@ function sign(data: string): string {
 }
 
 /**
- * fail closed: ใน production ถ้า DOWNLOAD_SECRET ไม่ปลอดภัย (ไม่ได้ตั้ง/สั้น/เป็น placeholder)
+ * fail closed: ถ้า DOWNLOAD_SECRET ไม่ปลอดภัย (ไม่ได้ตั้ง/สั้น/เป็น placeholder)
  * ให้หยุดทันที ดีกว่าปล่อยให้ใครก็ปลอมลิงก์ดาวน์โหลดไฟล์ฟรีได้
+ *
+ * อนุญาตให้ใช้ secret แบบ insecure ได้ "เฉพาะตอน dev" (NODE_ENV === "development") เท่านั้น
+ * ที่อื่นทั้งหมด — production, staging, self-host, container ที่ไม่ได้ตั้ง NODE_ENV —
+ * ถือว่ากำลังเสิร์ฟไฟล์จริง จึงต้องมี secret ที่ปลอดภัยเสมอ
  */
 function assertSecureSecret(): void {
-  if (process.env.NODE_ENV === "production" && config.download.insecure) {
+  const isDev = process.env.NODE_ENV === "development";
+  if (!isDev && config.download.insecure) {
     throw new Error(
-      "DOWNLOAD_SECRET ไม่ปลอดภัยหรือยังไม่ได้ตั้งค่าใน production — ตั้งเป็นค่าสุ่มยาว (openssl rand -hex 32) ใน Vercel Environment Variables"
+      "DOWNLOAD_SECRET ไม่ปลอดภัยหรือยังไม่ได้ตั้งค่า — ตั้งเป็นค่าสุ่มยาว (openssl rand -hex 32) ใน Environment Variables ก่อนใช้งานจริง"
     );
   }
 }

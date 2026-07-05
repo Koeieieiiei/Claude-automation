@@ -16,6 +16,17 @@ function getSheetsClient() {
   return google.sheets({ version: "v4", auth });
 }
 
+/**
+ * กัน formula/CSV injection: เซลล์ที่เป็นสตริงและขึ้นต้นด้วย = + - @ (หรือ tab/CR)
+ * อาจถูก Google Sheets ตีความเป็นสูตร (เช่น =IMPORTXML(...) ดูดข้อมูลออก) — ข้อมูลชื่อ
+ * ผู้ซื้อและ referrer/user-agent จาก /api/track มาจาก input ที่ควบคุมไม่ได้ จึงต้อง neutralize
+ * ด้วยการเติม ' นำหน้า (Sheets จะถือเป็นข้อความล้วน) ตัวเลขปล่อยผ่านตามเดิม
+ */
+function sanitizeCell(v: string | number): string | number {
+  if (typeof v !== "string") return v;
+  return /^[=+\-@\t\r]/.test(v) ? `'${v}` : v;
+}
+
 async function appendRow(tab: string, row: (string | number)[]): Promise<void> {
   if (!ready.sheets) {
     console.log(`📊 [MOCK SHEETS] (ยังไม่ได้ตั้งค่า) จะเพิ่มแถวในแท็บ "${tab}":`, row);
@@ -26,8 +37,9 @@ async function appendRow(tab: string, row: (string | number)[]): Promise<void> {
     await sheets.spreadsheets.values.append({
       spreadsheetId: config.sheets.id,
       range: `${tab}!A:Z`,
-      valueInputOption: "USER_ENTERED",
-      requestBody: { values: [row] },
+      // RAW = ไม่ตีความค่าเป็นสูตร (กัน injection ชั้นแรก) + sanitizeCell กันชั้นสอง
+      valueInputOption: "RAW",
+      requestBody: { values: [row.map(sanitizeCell)] },
     });
   } catch (err) {
     // สถิติไม่ควรทำให้ flow หลักล้ม — log ไว้เฉยๆ

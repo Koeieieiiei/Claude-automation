@@ -68,12 +68,20 @@ export default function Home() {
             <span className="font-display text-lg font-bold tracking-tight text-ink">TPAT3</span>
             <span className="font-label text-xs font-semibold tracking-[0.22em] text-maroon">ฉบับซ้อมสอบ</span>
           </div>
-          <button
-            onClick={buy}
-            className="border border-maroon bg-maroon px-5 py-1.5 text-sm font-semibold text-paper transition hover:bg-maroon-dark"
-          >
-            สั่งซื้อ
-          </button>
+          <div className="flex items-center gap-5">
+            <a
+              href="#try"
+              className="whitespace-nowrap border-b-2 border-dashed border-maroon/50 pb-px text-sm font-bold text-maroon transition hover:border-solid"
+            >
+              โหลดตัวอย่างฟรี
+            </a>
+            <button
+              onClick={buy}
+              className="border border-maroon bg-maroon px-5 py-1.5 text-sm font-semibold text-paper transition hover:bg-maroon-dark"
+            >
+              สั่งซื้อ
+            </button>
+          </div>
         </div>
       </header>
 
@@ -99,7 +107,7 @@ export default function Home() {
             <div className="mt-8 flex flex-wrap items-center gap-5">
               <button
                 onClick={buy}
-                className="group inline-flex items-center gap-3 bg-maroon px-7 py-4 text-base font-semibold text-white transition hover:bg-maroon-dark"
+                className="group inline-flex items-center gap-3 bg-maroon px-[42px] py-[23px] text-[19px] font-bold text-white transition hover:bg-maroon-dark"
               >
                 สั่งซื้อชุดข้อสอบ · ฿{PRICE.toLocaleString()}
                 <svg className="h-4 w-4 transition group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -108,6 +116,14 @@ export default function Home() {
               </button>
               <span className="font-label text-sm text-ink/55">ได้ไฟล์ทางอีเมลทันที</span>
             </div>
+
+            <a
+              href="#try"
+              className="mt-5 inline-flex w-fit items-center gap-2 border-b border-dashed border-maroon/45 pb-0.5 text-[0.95rem] font-semibold text-maroon transition hover:border-solid"
+            >
+              <DownloadIcon className="h-4 w-4" />
+              โหลดตัวอย่างฟรีก่อนตัดสินใจ
+            </a>
           </div>
 
           <div className="relative flex items-center justify-center">
@@ -133,12 +149,15 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ===== ในชุดนี้มีอะไร ===== */}
-      <section className="mx-auto max-w-6xl px-5 py-20">
-        <p className="eyebrow">ในชุดนี้</p>
+      {/* ===== ในชุดนี้มีอะไร + โหลดตัวอย่างฟรี ===== */}
+      <section id="try" className="mx-auto max-w-6xl scroll-mt-20 px-5 py-20">
+        <p className="eyebrow">ในชุดนี้ · มีตัวอย่างให้ลองฟรี</p>
         <h2 className="mt-3 max-w-xl font-display text-3xl font-bold leading-snug text-ink md:text-4xl">
           สองไฟล์ ที่ทำงานคนละหน้าที่
         </h2>
+        <p className="mt-3 max-w-xl text-ink/60">
+          แต่ละไฟล์โหลดตัวอย่างไปดูได้ฟรี — ไม่ต้องกรอกอะไร ไม่ต้องจ่ายก่อน
+        </p>
 
         <div className="mt-10 grid gap-5 md:grid-cols-2">
           <FileCard
@@ -147,6 +166,9 @@ export default function Home() {
             title="ไว้จับเวลา ซ้อมเสมือนจริง"
             desc="โจทย์ล้วนไม่มีเฉลยแทรก เปิดทำตอนจับเวลาเพื่อให้ชินกับรูปแบบและระดับความยากของสนามจริง"
             tone="steel"
+            sampleWord="โจทย์"
+            sampleHref="/samples/tpat3-sample-questions.pdf"
+            sampleLabel="โหลดตัวอย่างโจทย์ฟรี (PDF)"
           />
           <FileCard
             no="๒"
@@ -154,13 +176,20 @@ export default function Home() {
             title="พาคิดทุกข้อ ไม่ใช่แค่ข้อถูก"
             desc="อธิบายที่มาของคำตอบทีละขั้น ชี้จุดที่มักพลาด อ่านแล้วกลับไปทำข้ออื่นได้ด้วยตนเอง"
             tone="maroon"
+            sampleWord="เฉลย"
+            sampleHref="/samples/tpat3-sample-answers.pdf"
+            sampleLabel="โหลดตัวอย่างเฉลยฟรี (PDF)"
           />
         </div>
+
+        <p className="mt-6 text-center font-label text-xs text-ink/50">
+          📄 ไฟล์ PDF เปิดได้ทุกเครื่อง · โหลดได้ไม่จำกัด
+        </p>
       </section>
 
       {/* ===== Pricing ===== */}
       <section className="mx-auto max-w-6xl px-5 py-20">
-        <div className="mx-auto max-w-lg border border-maroon bg-paper">
+        <div className="mx-auto max-w-[576px] border border-maroon bg-paper">
           <div className="flex items-center justify-between border-b border-dashed border-maroon/30 px-7 py-4">
             <span className="font-label text-xs font-semibold uppercase tracking-[0.18em] text-maroon">รายการสั่งซื้อ</span>
             <Gear teeth={10} className="h-5 w-5 text-maroon/50" />
@@ -178,7 +207,7 @@ export default function Home() {
             </div>
             <button
               onClick={buy}
-              className="mt-7 w-full bg-maroon py-4 font-semibold text-paper transition hover:bg-maroon-dark"
+              className="mt-7 w-full bg-maroon py-5 text-lg font-bold text-paper transition hover:bg-maroon-dark"
             >
               สั่งซื้อแล้วรับไฟล์ทางอีเมล
             </button>
@@ -201,6 +230,10 @@ export default function Home() {
             <FaqItem
               q="ซื้อแล้วได้ไฟล์ยังไง เมื่อไหร่?"
               a="หลังชำระเงินสำเร็จ ระบบจะส่งลิงก์ดาวน์โหลดไปที่อีเมลที่คุณกรอกไว้โดยอัตโนมัติทันที"
+            />
+            <FaqItem
+              q="มีตัวอย่างให้ดูก่อนไหม?"
+              a="มี! กดปุ่ม “โหลดตัวอย่างโจทย์” หรือ “โหลดตัวอย่างเฉลย” ในหัวข้อ “ในชุดนี้” ได้เลย ฟรี ไม่ต้องกรอกอะไร — ไฟล์ตัวอย่างเป็น PDF แบบเดียวกับไฟล์จริง"
             />
             <FaqItem
               q="ไม่ได้รับอีเมล ทำยังไงดี?"
@@ -296,21 +329,58 @@ function ExamBooklet() {
   );
 }
 
-/* ---------- การ์ดไฟล์ ---------- */
+/* ---------- ไอคอนดาวน์โหลด ---------- */
+function DownloadIcon({ className = "h-4 w-4" }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2} aria-hidden>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v12m0 0l-4.5-4.5M12 16l4.5-4.5M4 20h16" />
+    </svg>
+  );
+}
+
+/* ---------- การ์ดไฟล์ + ปุ่มโหลดตัวอย่าง ---------- */
 function FileCard({
-  no, tag, title, desc, tone,
-}: { no: string; tag: string; title: string; desc: string; tone: "steel" | "maroon" }) {
+  no, tag, title, desc, tone, sampleWord, sampleHref, sampleLabel,
+}: {
+  no: string; tag: string; title: string; desc: string; tone: "steel" | "maroon";
+  sampleWord: string; sampleHref: string; sampleLabel: string;
+}) {
   const accent = tone === "maroon" ? "text-maroon" : "text-steel";
   const bar = tone === "maroon" ? "bg-maroon" : "bg-steel";
+  const word = tone === "maroon" ? "text-maroon" : "text-[#3D4854]";
   return (
-    <div className="border border-grid bg-white p-7 transition hover:border-maroon">
+    <div className="flex flex-col border border-grid bg-white p-7 transition hover:border-maroon">
       <div className="flex items-center justify-between">
         <span className={`font-display text-2xl font-bold ${accent}`}>{no}</span>
         <span className="font-label text-[11px] font-semibold uppercase tracking-[0.18em] text-ink/50">{tag}</span>
       </div>
-      <h3 className="mt-5 font-display text-xl font-semibold text-ink">{title}</h3>
-      <p className="mt-2 leading-relaxed text-ink/65">{desc}</p>
+
+      <div className="mt-5 flex flex-1 items-start gap-5">
+        <div className="flex-1">
+          <h3 className="font-display text-xl font-semibold text-ink">{title}</h3>
+          <p className="mt-2 leading-relaxed text-ink/65">{desc}</p>
+        </div>
+        {/* รูปกระดาษตัวอย่างจิ๋ว */}
+        <div
+          aria-hidden
+          className="relative flex aspect-[210/297] w-[84px] shrink-0 flex-col items-center justify-center gap-1 border border-grid bg-white shadow-[0_8px_18px_-8px_rgba(36,16,22,0.3)]"
+        >
+          <div className="absolute inset-[7px] border border-maroon/30" />
+          <span className={`relative font-display text-lg font-bold ${word}`}>{sampleWord}</span>
+          <span className="relative text-[9px] uppercase tracking-[0.14em] text-ink/45">Sample</span>
+        </div>
+      </div>
+
       <div className={`mt-6 h-1 w-10 ${bar}`} />
+
+      <a
+        href={sampleHref}
+        download
+        className="mt-5 inline-flex w-full items-center justify-center gap-2.5 bg-[#3D4854] px-4 py-3.5 text-[0.95rem] font-bold text-white transition hover:-translate-y-0.5 hover:bg-[#2E3742]"
+      >
+        <DownloadIcon className="h-[17px] w-[17px]" />
+        {sampleLabel}
+      </a>
     </div>
   );
 }

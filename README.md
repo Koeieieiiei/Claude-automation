@@ -65,12 +65,12 @@
 **[4] webhook รับสัญญาณจ่ายเงิน** — [app/api/stripe/webhook/route.ts](app/api/stripe/webhook/route.ts)
 - ตรวจ **ลายเซ็น Stripe** (`constructEvent`) ด้วย raw body — กันคนปลอม event
 - รับ 2 event: `checkout.session.completed` (กรณีจ่ายทันที) และ `async_payment_succeeded` (PromptPay)
-- **กันส่งซ้ำ (idempotency):** ถ้า order สถานะ `delivered` แล้ว → ข้าม
+- **กันส่งซ้ำ (idempotency) แบบ atomic:** ใช้ `claimDelivery()` จองสิทธิ์ส่งของในคำสั่งเดียว — webhook ที่มาซ้ำ/พร้อมกันจะถูกข้าม
 
 **[5] ส่งของอัตโนมัติ** — [lib/fulfillment.ts](lib/fulfillment.ts)
+- เช็คก่อนว่าไฟล์ต้นฉบับ (โจทย์+เฉลย) มีจริง — ถ้าไม่มีจะล้มก่อนส่งอีเมล ไม่หลอกลูกค้าด้วยลิงก์เสีย
 - `createDownloadToken()` สร้าง token เซ็น HMAC ([lib/download-token.ts](lib/download-token.ts)) — ฝังชื่อ/อีเมล + วันหมดอายุ (ดีฟอลต์ 72 ชม.)
 - ส่งอีเมล HTML พร้อมปุ่มดาวน์โหลด 2 ไฟล์ผ่าน Resend ([lib/email.ts](lib/email.ts))
-- อัปเดต order เป็น `delivered`
 
 **[6]-[8] ลูกค้าโหลดไฟล์** — [app/api/download/[file]/[token]/route.ts](app/api/download/%5Bfile%5D/%5Btoken%5D/route.ts)
 - `verifyDownloadToken()` ตรวจลายเซ็น (timing-safe) + วันหมดอายุ → ไม่ผ่านคืน 403
@@ -85,8 +85,9 @@
 ## 🔒 ความปลอดภัย
 
 - **ลิงก์ดาวน์โหลดเซ็นด้วย HMAC-SHA256** + มีวันหมดอายุ — ปลอมไม่ได้ ([lib/download-token.ts](lib/download-token.ts))
-- **Guard กันคีย์ลับอ่อน:** ถ้า `DOWNLOAD_SECRET` ไม่ปลอดภัย (ว่าง/สั้น/เป็นค่า placeholder) ระบบจะ **หยุดทำงานทันทีใน production** แทนที่จะปล่อยให้ปลอมลิงก์ได้ ([lib/config.ts](lib/config.ts))
+- **Guard กันคีย์ลับอ่อน:** ถ้า `DOWNLOAD_SECRET` ไม่ปลอดภัย (ว่าง/สั้น/เป็นค่า placeholder) ระบบจะ **หยุดทำงานทันที** ทุกที่ที่ไม่ใช่ dev แทนที่จะปล่อยให้ปลอมลิงก์ได้ ([lib/config.ts](lib/config.ts))
 - **ตรวจลายเซ็น Stripe webhook** ทุกครั้ง กัน event ปลอม
+- **กัน formula injection** ใน Google Sheets — เขียนแบบ RAW + neutralize อักขระอันตราย ([lib/sheets.ts](lib/sheets.ts))
 - **escapeHtml** ชื่อผู้ซื้อก่อนใส่ในอีเมล กัน HTML injection ([lib/email.ts](lib/email.ts))
 - ใช้ **service role key ฝั่ง server เท่านั้น** + เปิด RLS บนตาราง orders
 
@@ -113,7 +114,7 @@ npm run dev                        # เปิด http://localhost:3000
 
 ### รัน unit test
 ```bash
-npm test                           # vitest — 17 เคส (token, config guard, track route)
+npm test                           # vitest — 32 เคส (token, config guard, track route, idempotency, sheets sanitize)
 ```
 
 ---
@@ -169,5 +170,3 @@ npx vercel --prod --yes
 - **ไม่รับคืนเงิน** — เป็นสินค้าดิจิทัลที่ส่งทันที (ระบุใน FAQ บนเว็บแล้ว)
 - **ความเสี่ยงคงเหลือ (volume ต่ำยอมรับได้):** webhook ยังไม่มี idempotency ด้วย `event.id`, และยังไม่มี timeout บนการเรียก service ภายนอก
 - **ลิขสิทธิ์เนื้อหา** — ข้อสอบที่ขายต้องเป็นผลงานของคุณเอง
-#   C l a u d e - a u t o m a t i o n  
- 

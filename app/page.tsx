@@ -150,7 +150,7 @@ export default function Home() {
       </section>
 
       {/* ===== ในชุดนี้มีอะไร + โหลดตัวอย่างฟรี ===== */}
-      <section id="try" className="mx-auto max-w-6xl scroll-mt-20 px-5 py-20">
+      <section id="try" className="mx-auto max-w-6xl scroll-mt-20 px-5 pb-11 pt-20">
         <p className="eyebrow">ในชุดนี้ · มีตัวอย่างให้ลองฟรี</p>
         <h2 className="mt-3 max-w-xl font-display text-3xl font-bold leading-snug text-ink md:text-4xl">
           สองไฟล์ ที่ทำงานคนละหน้าที่
@@ -188,20 +188,20 @@ export default function Home() {
       </section>
 
       {/* ===== Pricing ===== */}
-      <section className="mx-auto max-w-6xl px-5 py-20">
-        <div className="mx-auto max-w-[576px] border border-maroon bg-paper">
+      <section className="mx-auto max-w-6xl px-5 pb-12">
+        <div className="mx-auto max-w-[640px] border border-maroon bg-paper">
           <div className="flex items-center justify-between border-b border-dashed border-maroon/30 px-7 py-4">
             <span className="font-label text-xs font-semibold uppercase tracking-[0.18em] text-maroon">รายการสั่งซื้อ</span>
             <Gear teeth={10} className="h-5 w-5 text-maroon/50" />
           </div>
-          <div className="px-7 py-8">
+          <div className="px-[38px] py-[42px]">
             <div className="flex items-end justify-between gap-4">
               <div>
                 <p className="font-display text-lg font-semibold text-ink">{PRODUCT_NAME}</p>
                 <p className="mt-1 text-sm text-ink/55">โจทย์ + เฉลยละเอียด · PDF 2 ไฟล์</p>
               </div>
               <div className="text-right">
-                <p className="font-display text-4xl font-bold text-maroon">฿{PRICE.toLocaleString()}</p>
+                <p className="font-display text-[2.6rem] font-bold leading-tight text-maroon">฿{PRICE.toLocaleString()}</p>
                 <p className="text-xs text-ink/50">จ่ายครั้งเดียว</p>
               </div>
             </div>

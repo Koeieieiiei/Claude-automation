@@ -11,10 +11,12 @@ interface Props {
 export default function BuyModal({ product, onClose }: Props) {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const canSubmit = firstName.trim() && lastName.trim() && !loading;
+  const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const canSubmit = firstName.trim() && lastName.trim() && emailValid && !loading;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -25,7 +27,7 @@ export default function BuyModal({ product, onClose }: Props) {
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ productId: product.id, firstName, lastName }),
+        body: JSON.stringify({ productId: product.id, firstName, lastName, email }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "เกิดข้อผิดพลาด");
@@ -68,20 +70,14 @@ export default function BuyModal({ product, onClose }: Props) {
             <Field label="ชื่อ" value={firstName} onChange={setFirstName} placeholder="ชื่อจริง" />
             <Field label="นามสกุล" value={lastName} onChange={setLastName} placeholder="นามสกุล" />
           </div>
-          <p className="font-label text-[11px] leading-snug text-ink/55">
-            ชื่อ–นามสกุลนี้จะถูกฝังเป็นลายน้ำบนไฟล์ เพื่อระบุตัวผู้ซื้อ
-          </p>
-
-          {/* ขั้นถัดไปกรอกอีเมลบน Stripe — ย้ำเรื่องกรอกให้ถูก เพราะไฟล์ส่งไปตามอีเมลนั้น */}
-          <div className="border border-maroon/30 bg-maroon/5 px-3.5 py-3">
-            <p className="font-label text-[11px] font-semibold uppercase tracking-wider text-maroon">
-              ขั้นถัดไป: กรอกอีเมล
-            </p>
-            <p className="mt-1 text-[13px] leading-relaxed text-ink/75">
-              ในหน้าชำระเงินถัดไป คุณจะกรอก <strong>อีเมลสำหรับรับไฟล์</strong> เอง
-              — ⚠️ โปรดตรวจให้ถูกต้อง ระบบจะส่งไฟล์ไปตามอีเมลนั้น หากกรอกผิดจะไม่มีการคืนเงิน
-            </p>
-          </div>
+          <Field
+            label="อีเมล"
+            value={email}
+            onChange={setEmail}
+            placeholder="you@email.com"
+            type="email"
+            hint="⚠️ ตรวจสอบอีเมลให้ถูกต้องอีกครั้งก่อนชำระเงิน — หากกรอกอีเมลผิด ไฟล์จะถูกส่งไปผิดและจะไม่มีการคืนเงิน"
+          />
 
           {error && (
             <p className="border border-maroon/30 bg-maroon/5 px-3 py-2 text-sm text-maroon">{error}</p>
@@ -109,13 +105,14 @@ export default function BuyModal({ product, onClose }: Props) {
 }
 
 function Field({
-  label, value, onChange, placeholder, type = "text",
+  label, value, onChange, placeholder, type = "text", hint,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
   placeholder?: string;
   type?: string;
+  hint?: string;
 }) {
   return (
     <label className="block">
@@ -127,6 +124,7 @@ function Field({
         placeholder={placeholder}
         className="w-full border border-ink/25 bg-white px-3 py-2.5 text-ink outline-none transition focus:border-maroon focus:ring-2 focus:ring-maroon/15"
       />
+      {hint && <span className="mt-1.5 block font-label text-[11px] font-medium leading-snug text-maroon">{hint}</span>}
     </label>
   );
 }

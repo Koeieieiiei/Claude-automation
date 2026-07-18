@@ -74,34 +74,12 @@ async function handlePaid(session: Stripe.Checkout.Session) {
   // — fulfillOrder จะ fallback เป็นชุด Mock เดิมให้เอง
   const productId = meta.productId ?? "mock1";
 
-  // อีเมลปลายทาง = อีเมลที่ลูกค้ากรอก/ยืนยันบนหน้า Stripe (customer_details.email)
-  // เป็นแหล่งความจริงหลัก แล้วค่อย fallback ตามลำดับสำหรับ order เก่า/เคสพิเศษ
-  const buyerEmail =
-    session.customer_details?.email ??
-    session.customer_email ??
-    meta.email ??
-    order?.email ??
-    "";
-
-  if (!buyerEmail) {
-    // ไม่ควรเกิด เพราะ Stripe บังคับกรอกอีเมลเสมอ — แต่ถ้าเกิด อย่าส่งอีเมลไป "" (Resend จะ error)
-    console.error(`webhook: ไม่พบอีเมลผู้ซื้อสำหรับ order ${orderId} — ข้ามการส่งของ`);
-    throw new Error("ไม่พบอีเมลผู้ซื้อ");
-  }
-
-  // เก็บอีเมลที่ยืนยันแล้วลง order (เผื่อ order สร้างไว้ตอนแรกยังไม่มีอีเมล) — best effort
-  if (order && order.email !== buyerEmail) {
-    await updateOrder(orderId, { email: buyerEmail }).catch((e) =>
-      console.error(`บันทึกอีเมลลง order ${orderId} ไม่สำเร็จ:`, e)
-    );
-  }
-
   try {
     await fulfillOrder({
       id: orderId,
       firstName: meta.firstName ?? order?.first_name ?? "",
       lastName: meta.lastName ?? order?.last_name ?? "",
-      email: buyerEmail,
+      email: meta.email ?? session.customer_email ?? order?.email ?? "",
       // ใช้ != null (ไม่ใช่ truthy) — ยอด 0 บาท (เช่น คูปองลด 100%) ต้องบันทึกเป็น 0 จริง
       amount:
         order?.amount ??

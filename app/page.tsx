@@ -310,7 +310,7 @@ export default function Home() {
             />
             <FaqItem
               q="ไม่ได้รับอีเมล ทำยังไงดี?"
-              a="กรุณาเช็กกล่อง Junk / Spam ก่อน โดยเฉพาะผู้ใช้ Hotmail / Outlook ที่มักกรองอีเมลใหม่เข้าโฟลเดอร์นี้ — ลองค้นคำว่า “tpat3mock” ในอีเมลของคุณ หากยังไม่พบ ติดต่อ mrtpat3@gmail.com ได้เลย"
+              a="กรุณาเช็กกล่อง Junk / Spam ก่อน โดยเฉพาะผู้ใช้ Hotmail / Outlook ที่มักกรองอีเมลใหม่เข้าโฟลเดอร์นี้ — ลองค้นคำว่า “tpat3mock” ในอีเมลของคุณ หากยังไม่พบ ติดต่อ mr.tpat3@gmail.com ได้เลย"
             />
             <FaqItem
               q="จ่ายเงินยังไงได้บ้าง?"
@@ -332,8 +332,8 @@ export default function Home() {
 
           <p className="mt-6 text-center font-label text-sm text-ink/55">
             มีคำถามเพิ่มเติม? ติดต่อ{" "}
-            <a href="mailto:mrtpat3@gmail.com" className="font-medium text-maroon underline-offset-2 hover:underline">
-              mrtpat3@gmail.com
+            <a href="mailto:mr.tpat3@gmail.com" className="font-medium text-maroon underline-offset-2 hover:underline">
+              mr.tpat3@gmail.com
             </a>
           </p>
         </div>
@@ -348,8 +348,8 @@ export default function Home() {
           </span>
           <span>
             © {new Date().getFullYear()} Mrtpat3 ·{" "}
-            <a href="mailto:mrtpat3@gmail.com" className="font-medium text-maroon underline-offset-2 hover:underline">
-              mrtpat3@gmail.com
+            <a href="mailto:mr.tpat3@gmail.com" className="font-medium text-maroon underline-offset-2 hover:underline">
+              mr.tpat3@gmail.com
             </a>
           </span>
         </div>

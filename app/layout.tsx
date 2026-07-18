@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Tpat3 and Physics by Mrtpat3",
+  title: "Mr.tpat3",
   description:
     "ข้อสอบ Mock TPAT3 พร้อมเฉลยละเอียด และสรุปฟิสิกส์ 3 เล่มแบ่งตามหมวด ดาวน์โหลดเป็น Ebook ทันทีหลังชำระเงิน",
 };

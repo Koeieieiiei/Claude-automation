@@ -19,7 +19,7 @@ const downloadSecret = env("DOWNLOAD_SECRET");
 
 export const config = {
   // ชื่อร้าน/เว็บ (ชื่อและราคาสินค้าแต่ละตัวอยู่ใน lib/catalog.ts)
-  siteName: env("NEXT_PUBLIC_SITE_NAME", "Tpat3 and Physics by Mrtpat3"),
+  siteName: env("NEXT_PUBLIC_SITE_NAME", "Mr.tpat3"),
   // ถ้าไม่ได้ตั้ง NEXT_PUBLIC_BASE_URL บน Vercel ให้ใช้ URL ที่ Vercel แจกมา
   // แทนที่จะ fallback เป็น localhost (ซึ่งจะกลายเป็นลิงก์เสียในอีเมลลูกค้า)
   baseUrl:

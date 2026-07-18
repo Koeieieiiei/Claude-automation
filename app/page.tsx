@@ -63,7 +63,7 @@ export default function Home() {
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-3.5">
           <div className="flex items-center gap-2.5">
             <Gear teeth={10} className="h-6 w-6 text-maroon" spin="cw" />
-            <span className="font-display text-lg font-bold tracking-tight text-ink">Mrtpat3</span>
+            <span className="font-display text-lg font-bold tracking-tight text-ink">Mr.tpat3</span>
             <span className="font-label text-xs font-semibold tracking-[0.22em] text-maroon">TPAT3 · ฟิสิกส์</span>
           </div>
           <nav className="hidden items-center gap-6 md:flex" aria-label="เมนูหลัก">
@@ -347,7 +347,7 @@ export default function Home() {
             ทุกไฟล์ฝังลายน้ำระบุผู้ซื้อ เพื่อป้องกันการเผยแพร่ต่อ
           </span>
           <span>
-            © {new Date().getFullYear()} Mrtpat3 ·{" "}
+            © {new Date().getFullYear()} Mr.tpat3 ·{" "}
             <a href="mailto:mr.tpat3@gmail.com" className="font-medium text-maroon underline-offset-2 hover:underline">
               mr.tpat3@gmail.com
             </a>

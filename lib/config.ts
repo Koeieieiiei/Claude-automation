@@ -18,12 +18,8 @@ const INSECURE_SECRET_SAMPLES = [
 const downloadSecret = env("DOWNLOAD_SECRET");
 
 export const config = {
-  product: {
-    name: env("NEXT_PUBLIC_PRODUCT_NAME", "ข้อสอบ Mock TPAT3 (Ebook)"),
-    // ใช้ env var "ตัวเดียวกัน" กับที่หน้าเว็บโชว์ (app/page.tsx) — แหล่งความจริงเดียว
-    // กันเคสโชว์ราคาหนึ่งแต่เก็บเงินอีกราคา เพราะตั้งค่าไว้คนละตัวแปร
-    price: Number(env("NEXT_PUBLIC_PRODUCT_PRICE", "199")),
-  },
+  // ชื่อร้าน/เว็บ (ชื่อและราคาสินค้าแต่ละตัวอยู่ใน lib/catalog.ts)
+  siteName: env("NEXT_PUBLIC_SITE_NAME", "Tpat3 and Physics by Mrtpat3"),
   // ถ้าไม่ได้ตั้ง NEXT_PUBLIC_BASE_URL บน Vercel ให้ใช้ URL ที่ Vercel แจกมา
   // แทนที่จะ fallback เป็น localhost (ซึ่งจะกลายเป็นลิงก์เสียในอีเมลลูกค้า)
   baseUrl:
@@ -55,7 +51,7 @@ export const config = {
 
   download: {
     secret: downloadSecret || "dev-insecure-secret",
-    expiryHours: Number(env("DOWNLOAD_EXPIRY_HOURS", "72")),
+    expiryHours: Number(env("DOWNLOAD_EXPIRY_HOURS", "168")), // ค่าเริ่มต้น 7 วัน
     // ถือว่า "ไม่ปลอดภัย" ถ้า: ไม่ได้ตั้งค่า / สั้นเกินไป / ตรงกับค่า placeholder ตัวอย่างเป๊ะ
     // (เทียบแบบ exact เพื่อเลี่ยง false-positive กับ secret สุ่มที่บังเอิญมีสตริงพวกนี้)
     insecure:

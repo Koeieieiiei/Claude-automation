@@ -38,3 +38,6 @@ google-service-account.json
 next-env.d.ts
 
 .vercel
+
+# ไฟล์สรุปต้นฉบับ (สินค้า) — ห้าม commit เช่นกัน
+/assets/master-summary*.pdf

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyDownloadToken } from "@/lib/download-token";
-import { getMasterPdfBytes, watermarkPdf, PRODUCTS, ProductFile } from "@/lib/watermark";
+import { FILE_INFO, isFileId } from "@/lib/catalog";
+import { getMasterPdfBytes, watermarkPdf } from "@/lib/watermark";
 
 export const runtime = "nodejs";
 
@@ -10,10 +11,9 @@ export async function GET(
 ) {
   const { file, token } = await params;
 
-  if (file !== "questions" && file !== "answers") {
+  if (!isFileId(file)) {
     return NextResponse.json({ error: "ไฟล์ไม่ถูกต้อง" }, { status: 404 });
   }
-  const which = file as ProductFile;
 
   const payload = verifyDownloadToken(token);
   if (!payload) {
@@ -23,9 +23,19 @@ export async function GET(
     );
   }
 
+  // โทเค็นแต่ละใบดาวน์โหลดได้เฉพาะไฟล์ของสินค้าที่ซื้อเท่านั้น
+  // (โทเค็นรุ่นเก่าไม่มีรายการไฟล์ — ออกก่อนระบบหลายสินค้า จึงเป็นชุด Mock เดิมเสมอ)
+  const allowedFiles = payload.files ?? ["questions", "answers"];
+  if (!allowedFiles.includes(file)) {
+    return NextResponse.json(
+      { error: "ลิงก์นี้ไม่มีสิทธิ์ดาวน์โหลดไฟล์ดังกล่าว" },
+      { status: 403 }
+    );
+  }
+
   let pdfBytes: Uint8Array;
   try {
-    const master = await getMasterPdfBytes(which);
+    const master = await getMasterPdfBytes(file);
     pdfBytes = await watermarkPdf(master, {
       firstName: payload.firstName,
       lastName: payload.lastName,
@@ -39,13 +49,11 @@ export async function GET(
     );
   }
 
-  const filename = which === "questions" ? "mock-tpat3-questions.pdf" : "mock-tpat3-answers.pdf";
-
   return new NextResponse(Buffer.from(pdfBytes), {
     status: 200,
     headers: {
       "Content-Type": "application/pdf",
-      "Content-Disposition": `attachment; filename="${filename}"`,
+      "Content-Disposition": `attachment; filename="${FILE_INFO[file].downloadName}"`,
       "Cache-Control": "no-store",
     },
   });

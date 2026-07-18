@@ -13,7 +13,7 @@ export default function SuccessPage() {
             เราส่ง <strong>ลิงก์ดาวน์โหลด</strong> ไปที่อีเมลของคุณแล้ว
             ลองเช็คกล่องจดหมายได้เลย
           </p>
-          <p className="mt-2 font-label text-sm text-ink/50">คุณจะได้รับ 2 ไฟล์ · โจทย์ + เฉลย</p>
+          <p className="mt-2 font-label text-sm text-ink/50">ลิงก์ดาวน์โหลดครบทุกไฟล์ของชุดที่ซื้อ อยู่ในอีเมลฉบับเดียว</p>
           <div className="mt-6 border border-maroon/40 bg-maroon/[0.04] px-5 py-4 text-left">
             <p className="font-label text-[11px] font-semibold uppercase tracking-[0.18em] text-maroon">โปรดทราบ</p>
             <p className="mt-1.5 text-sm leading-relaxed text-ink/75">

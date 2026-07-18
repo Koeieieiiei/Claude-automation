@@ -13,6 +13,10 @@ export async function sendDownloadEmail(input: {
   expiryHours: number;
 }): Promise<void> {
   const subject = `ดาวน์โหลด ${input.productName} ของคุณ`;
+  const fileCount = input.links.length;
+  // โชว์อายุลิงก์เป็น "วัน" ถ้าหารด้วย 24 ลงตัว (เช่น 168 ชม. → 7 วัน) อ่านง่ายกว่า
+  const expiryText =
+    input.expiryHours % 24 === 0 ? `${input.expiryHours / 24} วัน` : `${input.expiryHours} ชั่วโมง`;
   const buttons = input.links
     .map(
       (l) =>
@@ -23,9 +27,9 @@ export async function sendDownloadEmail(input: {
     `<div style="font-family:Arial,'Helvetica Neue',sans-serif;max-width:560px;margin:0 auto;color:#241016">` +
     `<h2 style="color:#6E1423">ขอบคุณสำหรับการสั่งซื้อ 🎉</h2>` +
     `<p>สวัสดีคุณ <strong>${escapeHtml(input.firstName)}</strong></p>` +
-    `<p>การชำระเงินสำหรับ <strong>${escapeHtml(input.productName)}</strong> สำเร็จแล้ว คุณจะได้รับ <strong>2 ไฟล์</strong> กดปุ่มด้านล่างเพื่อดาวน์โหลดแต่ละไฟล์</p>` +
+    `<p>การชำระเงินสำหรับ <strong>${escapeHtml(input.productName)}</strong> สำเร็จแล้ว คุณจะได้รับ <strong>${fileCount} ไฟล์</strong> กดปุ่มด้านล่างเพื่อดาวน์โหลดแต่ละไฟล์</p>` +
     `<div style="margin-top:20px">${buttons}</div>` +
-    `<p style="color:#666;font-size:13px;border-top:1px solid #eeeeee;padding-top:14px;margin-top:18px">ลิงก์เหล่านี้จะหมดอายุใน ${input.expiryHours} ชั่วโมง<br/>⚠️ ไฟล์มีลายน้ำระบุชื่อและอีเมลของคุณ โปรดอย่าเผยแพร่ต่อ</p>` +
+    `<p style="color:#666;font-size:13px;border-top:1px solid #eeeeee;padding-top:14px;margin-top:18px">ลิงก์เหล่านี้จะหมดอายุใน ${expiryText}<br/>⚠️ ไฟล์มีลายน้ำระบุชื่อและอีเมลของคุณ โปรดอย่าเผยแพร่ต่อ</p>` +
     `</div>`;
 
   if (!ready.resend) {

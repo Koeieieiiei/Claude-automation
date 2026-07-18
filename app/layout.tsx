@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "ข้อสอบ Mock TPAT3 (Ebook)",
-  description: "ข้อสอบจำลอง TPAT3 พร้อมเฉลย ดาวน์โหลดเป็น Ebook ทันทีหลังชำระเงิน",
+  title: "Tpat3 and Physics by Mrtpat3",
+  description:
+    "ข้อสอบ Mock TPAT3 พร้อมเฉลยละเอียด และสรุปฟิสิกส์ 3 เล่มแบ่งตามหมวด ดาวน์โหลดเป็น Ebook ทันทีหลังชำระเงิน",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

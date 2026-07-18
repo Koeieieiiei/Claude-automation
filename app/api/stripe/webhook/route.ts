@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { config } from "@/lib/config";
+import { getProduct } from "@/lib/catalog";
 import { getStripe } from "@/lib/stripe";
 import { getOrder, updateOrder, claimDelivery } from "@/lib/orders";
 import { fulfillOrder } from "@/lib/fulfillment";
@@ -69,6 +70,10 @@ async function handlePaid(session: Stripe.Checkout.Session) {
     );
   }
 
+  // order เก่าที่จ่ายเงินก่อนอัปเดตระบบหลายสินค้า ไม่มี productId ใน metadata
+  // — fulfillOrder จะ fallback เป็นชุด Mock เดิมให้เอง
+  const productId = meta.productId ?? "mock1";
+
   try {
     await fulfillOrder({
       id: orderId,
@@ -78,7 +83,10 @@ async function handlePaid(session: Stripe.Checkout.Session) {
       // ใช้ != null (ไม่ใช่ truthy) — ยอด 0 บาท (เช่น คูปองลด 100%) ต้องบันทึกเป็น 0 จริง
       amount:
         order?.amount ??
-        (session.amount_total != null ? session.amount_total / 100 : config.product.price),
+        (session.amount_total != null
+          ? session.amount_total / 100
+          : getProduct(productId)?.price ?? 0),
+      productId,
     });
   } catch (err) {
     // ส่งของไม่สำเร็จ → คืนสถานะกลับเป็น paid เพื่อให้ Stripe retry รอบหน้า claim ได้ใหม่

@@ -1,14 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import type { Product } from "@/lib/catalog";
 
 interface Props {
-  price: number;
-  productName: string;
+  product: Product;
   onClose: () => void;
 }
 
-export default function BuyModal({ price, productName, onClose }: Props) {
+export default function BuyModal({ product, onClose }: Props) {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
@@ -27,7 +27,7 @@ export default function BuyModal({ price, productName, onClose }: Props) {
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ firstName, lastName, email }),
+        body: JSON.stringify({ productId: product.id, firstName, lastName, email }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "เกิดข้อผิดพลาด");
@@ -50,14 +50,14 @@ export default function BuyModal({ price, productName, onClose }: Props) {
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-ink px-6 py-4">
+        <div className="flex items-center justify-between gap-3 border-b border-ink px-6 py-4">
           <div>
             <p className="font-label text-[10px] uppercase tracking-[0.2em] text-maroon">ใบสั่งซื้อ</p>
-            <h2 className="mt-0.5 font-display text-lg font-bold text-ink">{productName}</h2>
+            <h2 className="mt-0.5 font-display text-lg font-bold leading-snug text-ink">{product.name}</h2>
           </div>
           <button
             onClick={onClose}
-            className="grid h-7 w-7 place-items-center border border-ink/30 font-label text-ink transition hover:bg-ink hover:text-paper"
+            className="grid h-7 w-7 shrink-0 place-items-center border border-ink/30 font-label text-ink transition hover:bg-ink hover:text-paper"
             aria-label="ปิด"
           >
             ✕
@@ -85,7 +85,7 @@ export default function BuyModal({ price, productName, onClose }: Props) {
 
           <div className="flex items-center justify-between border-t border-dashed border-ink/20 pt-4">
             <span className="font-label text-xs text-ink/60">ยอดชำระ</span>
-            <span className="font-display text-2xl font-bold text-ink">฿{price.toLocaleString()}</span>
+            <span className="font-display text-2xl font-bold text-ink">฿{product.price.toLocaleString()}</span>
           </div>
 
           <button

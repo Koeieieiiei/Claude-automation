@@ -11,6 +11,11 @@ export interface DownloadPayload {
   firstName: string;
   lastName: string;
   email: string;
+  /**
+   * รายชื่อไฟล์ที่โทเค็นนี้มีสิทธิ์ดาวน์โหลด (FileId จาก lib/catalog.ts)
+   * โทเค็นรุ่นเก่าไม่มี field นี้ — ฝั่งตรวจสิทธิ์จะถือว่าเป็นชุด Mock เดิม (โจทย์+เฉลย)
+   */
+  files?: string[];
   exp: number; // unix ms
 }
 

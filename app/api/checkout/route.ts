@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { config, ready } from "@/lib/config";
+import { getProduct } from "@/lib/catalog";
 import { createOrder, updateOrder } from "@/lib/orders";
 import { getStripe } from "@/lib/stripe";
 import { fulfillOrder } from "@/lib/fulfillment";
 
 const schema = z.object({
+  productId: z.string().trim().min(1).max(50),
   firstName: z.string().trim().min(1).max(100),
   lastName: z.string().trim().min(1).max(100),
   email: z.string().trim().email().max(200),
@@ -23,11 +25,18 @@ export async function POST(req: NextRequest) {
   if (!parsed.success) {
     return NextResponse.json({ error: "กรุณากรอกชื่อ นามสกุล และอีเมลให้ครบถูกต้อง" }, { status: 400 });
   }
-  const { firstName, lastName, email } = parsed.data;
+  const { productId, firstName, lastName, email } = parsed.data;
+
+  // ราคาและชื่อสินค้าอ่านจากแคตตาล็อกฝั่ง server เสมอ — client ส่งมาแค่ id
+  // (กันการแก้ราคาจากหน้าเว็บ)
+  const product = getProduct(productId);
+  if (!product) {
+    return NextResponse.json({ error: "ไม่พบสินค้าที่เลือก กรุณารีเฟรชหน้าเว็บแล้วลองใหม่" }, { status: 400 });
+  }
 
   try {
     // 1) สร้าง order (สถานะ pending)
-    const order = await createOrder({ firstName, lastName, email, amount: config.product.price });
+    const order = await createOrder({ firstName, lastName, email, amount: product.price });
 
     const stripe = getStripe();
 
@@ -45,7 +54,14 @@ export async function POST(req: NextRequest) {
         );
       }
       await updateOrder(order.id, { status: "paid" });
-      await fulfillOrder({ id: order.id, firstName, lastName, email, amount: order.amount });
+      await fulfillOrder({
+        id: order.id,
+        firstName,
+        lastName,
+        email,
+        amount: order.amount,
+        productId: product.id,
+      });
       await updateOrder(order.id, { status: "delivered" });
       return NextResponse.json({
         url: `${config.baseUrl}/success?order=${order.id}&mock=1`,
@@ -62,13 +78,13 @@ export async function POST(req: NextRequest) {
           quantity: 1,
           price_data: {
             currency: config.stripe.currency,
-            unit_amount: Math.round(config.product.price * 100), // สตางค์
-            product_data: { name: config.product.name },
+            unit_amount: Math.round(product.price * 100), // สตางค์
+            product_data: { name: product.name },
           },
         },
       ],
-      // เก็บข้อมูลผู้ซื้อไว้ใน metadata เพื่อให้ webhook นำไปใส่ลายน้ำ
-      metadata: { orderId: order.id, firstName, lastName, email },
+      // เก็บข้อมูลผู้ซื้อ + สินค้า ไว้ใน metadata เพื่อให้ webhook นำไปส่งของ/ใส่ลายน้ำ
+      metadata: { orderId: order.id, productId: product.id, firstName, lastName, email },
       success_url: `${config.baseUrl}/success?order=${order.id}`,
       cancel_url: `${config.baseUrl}/?canceled=1`,
     });

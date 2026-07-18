@@ -69,6 +69,7 @@ export function logSale(order: {
   lastName: string;
   email: string;
   amount: number;
+  productName?: string;
 }) {
   return appendRow("sales", [
     new Date().toISOString(),
@@ -77,5 +78,6 @@ export function logSale(order: {
     order.email,
     order.amount,
     "paid",
+    order.productName ?? "",
   ]);
 }

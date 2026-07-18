@@ -10,7 +10,9 @@ const schema = z.object({
   productId: z.string().trim().min(1).max(50),
   firstName: z.string().trim().min(1).max(100),
   lastName: z.string().trim().min(1).max(100),
-  email: z.string().trim().email().max(200),
+  // อีเมลย้ายไปให้ลูกค้ากรอก/แก้เองบนหน้า Stripe แล้ว (ดู webhook ที่อ่าน customer_details.email)
+  // จึงเป็น optional — เผื่อ dev ส่งมาเองตอนทดสอบโหมด mock (ที่ไม่มีหน้า Stripe ให้กรอก)
+  email: z.string().trim().email().max(200).optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -23,7 +25,7 @@ export async function POST(req: NextRequest) {
 
   const parsed = schema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: "กรุณากรอกชื่อ นามสกุล และอีเมลให้ครบถูกต้อง" }, { status: 400 });
+    return NextResponse.json({ error: "กรุณากรอกชื่อและนามสกุลให้ครบถูกต้อง" }, { status: 400 });
   }
   const { productId, firstName, lastName, email } = parsed.data;
 
@@ -35,8 +37,8 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    // 1) สร้าง order (สถานะ pending)
-    const order = await createOrder({ firstName, lastName, email, amount: product.price });
+    // 1) สร้าง order (สถานะ pending) — อีเมลจะถูกเติมตอน webhook จากที่ลูกค้ากรอกบน Stripe
+    const order = await createOrder({ firstName, lastName, email: email ?? "", amount: product.price });
 
     const stripe = getStripe();
 
@@ -53,12 +55,19 @@ export async function POST(req: NextRequest) {
           { status: 503 }
         );
       }
-      await updateOrder(order.id, { status: "paid" });
+      // โหมด mock ไม่มีหน้า Stripe ให้กรอกอีเมล — ถ้า dev ไม่ได้ส่ง email มาก็ใช้ค่าทดสอบ
+      const mockEmail = email ?? "dev-test@example.com";
+      if (!email) {
+        console.warn(
+          "โหมด mock: ไม่มีอีเมลจากฟอร์ม (อีเมลถูกย้ายไปกรอกบน Stripe แล้ว) — ใช้อีเมลทดสอบแทน"
+        );
+      }
+      await updateOrder(order.id, { status: "paid", email: mockEmail });
       await fulfillOrder({
         id: order.id,
         firstName,
         lastName,
-        email,
+        email: mockEmail,
         amount: order.amount,
         productId: product.id,
       });
@@ -72,7 +81,8 @@ export async function POST(req: NextRequest) {
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
       payment_method_types: ["promptpay"],
-      customer_email: email,
+      // ไม่ล็อก customer_email ไว้ล่วงหน้า — ปล่อยให้ลูกค้ากรอก/แก้อีเมลเองบนหน้า Stripe
+      // แล้ว webhook จะอ่านอีเมลที่ยืนยันจริงจาก session.customer_details.email ไปส่งไฟล์
       line_items: [
         {
           quantity: 1,
@@ -84,7 +94,8 @@ export async function POST(req: NextRequest) {
         },
       ],
       // เก็บข้อมูลผู้ซื้อ + สินค้า ไว้ใน metadata เพื่อให้ webhook นำไปส่งของ/ใส่ลายน้ำ
-      metadata: { orderId: order.id, productId: product.id, firstName, lastName, email },
+      // (อีเมลไม่อยู่ตรงนี้แล้ว — มาจาก customer_details.email ที่ลูกค้ากรอกบน Stripe)
+      metadata: { orderId: order.id, productId: product.id, firstName, lastName },
       success_url: `${config.baseUrl}/success?order=${order.id}`,
       cancel_url: `${config.baseUrl}/?canceled=1`,
     });

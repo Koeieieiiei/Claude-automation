@@ -15,9 +15,9 @@ const config: Config = {
         grid: "#E4DCD7",
       },
       fontFamily: {
-        sans: ['"Sarabun"', "system-ui", "sans-serif"],
-        display: ['"Noto Serif Thai"', "Georgia", "serif"],
-        label: ['"Sarabun"', "system-ui", "sans-serif"],
+        sans: ['"IBM Plex Sans Thai"', "system-ui", "sans-serif"],
+        display: ['"IBM Plex Sans Thai"', "system-ui", "sans-serif"],
+        label: ['"IBM Plex Sans Thai"', "system-ui", "sans-serif"],
       },
     },
   },

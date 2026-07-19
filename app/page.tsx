@@ -130,11 +130,11 @@ export default function Home() {
         <div className="mt-10 grid gap-5 md:grid-cols-[1.1fr_1fr]">
           {/* การ์ดสินค้า Mock */}
           <div className="flex flex-col border border-grid bg-white p-7 transition hover:border-maroon">
-            <div className="flex items-center justify-between">
+            <div>
               <span className="font-display text-2xl font-bold text-maroon">ชุดที่ 1</span>
-              <span className="font-label text-[11px] font-semibold uppercase tracking-[0.18em] text-ink/50">
+              <p className="mt-1.5 font-label text-[11px] font-semibold uppercase tracking-[0.18em] text-ink/50">
                 โจทย์ + เฉลย + กระดาษคำตอบ · PDF 3 ไฟล์
-              </span>
+              </p>
             </div>
             <h3 className="mt-5 font-display text-xl font-semibold text-ink">ข้อสอบ Mock TPAT3</h3>
             <div className="mt-auto" />

@@ -24,7 +24,6 @@ function gearPath(teeth: number, rOut: number, rIn: number, rHub: number, c = 50
     });
   }
   d += "Z ";
-  // เจาะรูดุมตรงกลาง (fill-rule evenodd)
   d += `M ${c + rHub} ${c} A ${rHub} ${rHub} 0 1 0 ${c - rHub} ${c} A ${rHub} ${rHub} 0 1 0 ${c + rHub} ${c} Z`;
   return d;
 }
@@ -69,8 +68,8 @@ export default function Home() {
           <nav className="hidden items-center gap-6 md:flex" aria-label="เมนูหลัก">
             <a href="#mock" className="text-sm font-semibold text-ink/60 transition hover:text-maroon">ข้อสอบ Mock</a>
             <a href="#summaries" className="text-sm font-semibold text-ink/60 transition hover:text-maroon">สรุป 3 เล่ม</a>
-            <a href="#bundles" className="text-sm font-semibold text-ink/60 transition hover:text-maroon">ชุดสุดคุ้ม</a>
-            <a href="#faq" className="text-sm font-semibold text-ink/60 transition hover:text-maroon">คำถามที่พบบ่อย</a>
+            <a href="#bundles" className="text-sm font-semibold text-ink/60 transition hover:text-maroon">Bundles</a>
+            <a href="#faq" className="text-sm font-semibold text-ink/60 transition hover:text-maroon">ข้อสงสัย</a>
           </nav>
           <button
             onClick={() => buy(PRODUCTS["bundle-all"])}
@@ -83,21 +82,15 @@ export default function Home() {
 
       {/* ===== Hero ===== */}
       <section className="grid-paper relative overflow-hidden border-b border-grid">
-        {/* เฟืองตกแต่งพื้นหลัง */}
         <Gear teeth={16} className="pointer-events-none absolute -right-16 -top-16 h-72 w-72 text-maroon/[0.07]" spin="cw" />
         <Gear teeth={12} className="pointer-events-none absolute right-28 top-40 h-36 w-36 text-steel/20" spin="ccw" />
         <Gear teeth={14} className="pointer-events-none absolute -bottom-16 left-[-3rem] h-56 w-56 text-maroon/[0.06]" spin="ccw" />
 
         <div className="relative mx-auto max-w-6xl px-5 py-20 md:py-24">
-          <p className="eyebrow">ความถนัดวิทยาศาสตร์ เทคโนโลยี วิศวกรรม</p>
-          <h1 className="mt-4 font-display text-[2.4rem] font-bold leading-[1.15] tracking-tight text-ink md:text-[3.4rem]">
-            อ่านให้ตรงจุด<br />
-            <span className="text-maroon">ซ้อมให้เหมือนจริง</span>
+          <h1 className="font-display text-[2.4rem] font-bold leading-[1.15] tracking-tight text-ink md:text-[3.4rem]">
+            Tpat3 and Physics A-Level<br />
+            <span className="text-maroon">by Mr.tpat3</span>
           </h1>
-          <p className="mt-6 max-w-md text-lg leading-relaxed text-ink/70">
-            สรุปฟิสิกส์ 3 เล่มแบ่งตามหมวด อ่านจบเป็นภาพเดียว
-            แล้วลงสนามซ้อมด้วยข้อสอบ Mock TPAT3 พร้อมเฉลยที่พาคิดทีละขั้น
-          </p>
 
           <div className="mt-8 flex flex-wrap items-center gap-5">
             <a
@@ -109,7 +102,6 @@ export default function Home() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
               </svg>
             </a>
-            <span className="font-label text-sm text-ink/55">ได้ไฟล์ทางอีเมลทันที</span>
           </div>
 
           <a
@@ -124,31 +116,16 @@ export default function Home() {
 
       {/* ===== Spec strip ===== */}
       <section className="border-b border-maroon-dark bg-maroon text-paper">
-        <div className="mx-auto grid max-w-6xl grid-cols-2 divide-x divide-white/15 md:grid-cols-4">
-          {[
-            ["รูปแบบ", "PDF เปิดได้ทุกเครื่อง"],
-            ["การส่งมอบ", "อีเมลอัตโนมัติทันที"],
-            ["ชำระเงิน", "PromptPay ผ่าน Stripe"],
-            ["ความปลอดภัย", "ลายน้ำระบุผู้ซื้อ"],
-          ].map(([k, v]) => (
-            <div key={k} className="px-5 py-5">
-              <p className="font-label text-[11px] font-semibold uppercase tracking-[0.18em] text-white/60">{k}</p>
-              <p className="mt-1.5 font-display text-base font-medium">{v}</p>
-            </div>
-          ))}
+        <div className="mx-auto max-w-6xl px-5 py-[15px] text-center text-[15px] font-medium">
+          ส่งไฟล์ผ่านอีเมลแบบอัตโนมัติทันที
         </div>
       </section>
 
       {/* ===== Mock ===== */}
       <section id="mock" className="mx-auto max-w-6xl scroll-mt-20 px-5 pb-16 pt-20">
-        <p className="eyebrow">สนามซ้อม · Mock Exam</p>
-        <h2 className="mt-3 max-w-xl font-display text-3xl font-bold leading-snug text-ink md:text-4xl">
-          ข้อสอบ Mock TPAT3 เสมือนสนามจริง
+        <h2 className="max-w-xl font-display text-3xl font-bold leading-snug text-ink md:text-4xl">
+          ไฟล์ข้อสอบ Mock TPAT3
         </h2>
-        <p className="mt-3 max-w-xl text-ink/60">
-          โจทย์ล้วนไว้จับเวลา แยกกับเฉลยละเอียดที่อธิบายวิธีคิดทุกข้อ —
-          ลองโหลดตัวอย่างทั้งสองไฟล์ไปดูได้ฟรี ไม่ต้องกรอกอะไร
-        </p>
 
         <div className="mt-10 grid gap-5 md:grid-cols-[1.1fr_1fr]">
           {/* การ์ดสินค้า Mock */}
@@ -156,14 +133,11 @@ export default function Home() {
             <div className="flex items-center justify-between">
               <span className="font-display text-2xl font-bold text-maroon">ชุดที่ ๑</span>
               <span className="font-label text-[11px] font-semibold uppercase tracking-[0.18em] text-ink/50">
-                โจทย์ + เฉลย · PDF 2 ไฟล์
+                โจทย์ + เฉลย + กระดาษคำตอบ · PDF 3 ไฟล์
               </span>
             </div>
-            <h3 className="mt-5 font-display text-xl font-semibold text-ink">Mock TPAT3 ครบทุกพาร์ท</h3>
-            <p className="mt-2 flex-1 leading-relaxed text-ink/65">
-              ข้อสอบปรนัย 5 ตัวเลือก ระดับความยากอิงสนามจริง พร้อมเฉลยที่ไม่ใช่แค่บอกข้อถูก
-              แต่พาคิดจนทำข้อถัดไปเองได้
-            </p>
+            <h3 className="mt-5 font-display text-xl font-semibold text-ink">ข้อสอบ Mock TPAT3</h3>
+            <div className="mt-auto" />
             <div className="mt-6 h-1 w-10 bg-maroon" />
             <p className="mt-4 font-display text-3xl font-bold text-maroon">
               ฿{PRODUCTS.mock1.price.toLocaleString()} <span className="text-sm font-medium text-ink/50">/ ชุด</span>
@@ -178,13 +152,8 @@ export default function Home() {
 
           {/* การ์ดตัวอย่างฟรี */}
           <div className="flex flex-col border border-dashed border-maroon/40 p-7">
-            <span className="w-fit border border-maroon/40 px-2.5 py-1 font-label text-[11px] font-bold uppercase tracking-[0.16em] text-maroon">
-              Demo · โหลดฟรี
-            </span>
-            <h3 className="mt-5 font-display text-xl font-semibold text-ink">ลองก่อนซื้อ ทั้งโจทย์และเฉลย</h3>
-            <p className="mt-2 flex-1 leading-relaxed text-ink/65">
-              ไฟล์ตัวอย่างเป็น PDF แบบเดียวกับไฟล์จริง โหลดได้เลยไม่ต้องกรอกอีเมล
-            </p>
+            <h3 className="font-display text-xl font-semibold text-ink">ไฟล์ Demo (ตัวอย่างฟรี)</h3>
+            <div className="mt-auto" />
             <SampleButton href="/samples/tpat3-sample-questions.pdf" label="โหลดตัวอย่างโจทย์ฟรี (PDF)" />
             <SampleButton href="/samples/tpat3-sample-answers.pdf" label="โหลดตัวอย่างเฉลยฟรี (PDF)" />
           </div>
@@ -193,12 +162,11 @@ export default function Home() {
 
       {/* ===== สรุป 3 เล่ม ===== */}
       <section id="summaries" className="mx-auto max-w-6xl scroll-mt-20 px-5 pb-16">
-        <p className="eyebrow">คลังความรู้ · สรุปฟิสิกส์</p>
-        <h2 className="mt-3 max-w-2xl font-display text-3xl font-bold leading-snug text-ink md:text-4xl">
-          สรุป 3 เล่ม แบ่งตามหมวด อ่านจบเป็นภาพเดียว
+        <h2 className="max-w-2xl font-display text-3xl font-bold leading-snug text-ink md:text-4xl">
+          ไฟล์สรุปฟิสิกส์ 3 เล่ม
         </h2>
-        <p className="mt-3 max-w-xl text-ink/60">
-          เลือกซื้อเฉพาะหมวดที่ยังไม่แน่น หรือเก็บครบทั้งชุดในราคาพิเศษด้านล่าง — เล่มแรกมีตัวอย่างให้โหลดฟรี
+        <p className="mt-3 max-w-2xl text-[1.2rem] font-medium leading-relaxed text-ink">
+          ซื้อสรุป 1 เล่ม ได้ 2 ไฟล์ — ไฟล์เนื้อหา และไฟล์สูตรล้วน
         </p>
 
         <div className="mt-10 grid gap-5 md:grid-cols-3">
@@ -207,26 +175,21 @@ export default function Home() {
             tag={<span className="border border-maroon/40 px-2 py-0.5 font-label text-[10px] font-bold uppercase tracking-[0.14em] text-maroon">มีตัวอย่างฟรี</span>}
             product={PRODUCTS.sum1}
             title="บทนำ + กลศาสตร์"
-            desc="พื้นฐานที่ทุกบทต่อยอด: หน่วยและเวกเตอร์ การเคลื่อนที่ แรงและกฎนิวตัน งาน–พลังงาน โมเมนตัม การหมุน"
             bar="bg-maroon"
             onBuy={buy}
-            sample={{ href: "/samples/tpat3-summary1-sample.pdf", label: "โหลดตัวอย่างฟรี: บทนำ + พลศาสตร์" }}
+            sample={{ href: "/samples/tpat3-summary1-sample.pdf", label: "โหลดตัวอย่างฟรี: บทนำ + กลศาสตร์" }}
           />
           <SummaryCard
             no="เล่ม ๒"
-            tag={<span className="font-label text-[11px] font-semibold uppercase tracking-[0.18em] text-ink/50">4 หมวด</span>}
             product={PRODUCTS.sum2}
             title="สสาร + ความร้อน + คลื่น + แสง"
-            desc="สมบัติสสารและของไหล เทอร์โมไดนามิกส์ คลื่นกลและเสียง แสงเชิงเรขาคณิตและเชิงกายภาพ"
             bar="bg-[#3D4854]"
             onBuy={buy}
           />
           <SummaryCard
             no="เล่ม ๓"
-            tag={<span className="font-label text-[11px] font-semibold uppercase tracking-[0.18em] text-ink/50">4 หมวด</span>}
             product={PRODUCTS.sum3}
             title="ไฟฟ้า + แม่เหล็ก + อะตอม + นิวเคลียร์"
-            desc="ไฟฟ้าสถิตและวงจร แม่เหล็กไฟฟ้า ฟิสิกส์อะตอม ฟิสิกส์นิวเคลียร์ — หมวดที่ออกสอบถี่และพลาดง่ายที่สุด"
             bar="bg-maroon-dark"
             onBuy={buy}
           />
@@ -237,22 +200,15 @@ export default function Home() {
       <section id="bundles" className="grid-paper scroll-mt-20 border-y border-grid">
         <div className="mx-auto max-w-6xl px-5 py-20">
           <div className="text-center">
-            <p className="eyebrow">ชุดสุดคุ้ม</p>
-            <h2 className="mt-3 font-display text-3xl font-bold leading-snug text-ink md:text-4xl">
-              จับคู่ให้แล้ว จ่ายน้อยกว่าซื้อแยก
-            </h2>
-            <p className="mx-auto mt-3 max-w-xl text-ink/60">
-              อ่านสรุปให้แน่นก่อน แล้วจับเวลาลง Mock — ครบทั้งความรู้และสนามซ้อมในเซ็ตเดียว
-            </p>
+            <h2 className="font-display text-3xl font-bold leading-snug text-ink md:text-4xl">Bundles</h2>
           </div>
 
           <div className="mt-12 grid items-stretch gap-5 md:grid-cols-[1fr_1fr_1.12fr]">
             <BundleCard
-              eyebrow="เริ่มต้น"
+              eyebrow="เช็คความพร้อม"
               product={PRODUCTS.mock1}
               displayName="Mock เดี่ยว"
-              forWho="เหมาะกับคนที่อ่านเนื้อหาแน่นแล้ว อยากลองสนามเลย"
-              items={["Mock TPAT3 ชุดที่ 1 (โจทย์ + เฉลยละเอียด)"]}
+              items={["Mock TPAT3"]}
               dimItems={["สรุปฟิสิกส์ 3 เล่ม"]}
               onBuy={buy}
             />
@@ -260,73 +216,55 @@ export default function Home() {
               eyebrow="เก็บเนื้อหา"
               product={PRODUCTS["bundle-sum"]}
               displayName="สรุปครบ 3 เล่ม"
-              forWho="เหมาะกับคนที่เพิ่งเริ่ม อยากปูพื้นให้ครบทุกหมวดก่อน"
-              items={[
-                "สรุปเล่ม 1: บทนำ + กลศาสตร์",
-                "สรุปเล่ม 2: สสาร + ความร้อน + คลื่น + แสง",
-                "สรุปเล่ม 3: ไฟฟ้า + แม่เหล็ก + อะตอม + นิวเคลียร์",
-              ]}
+              items={["เล่ม 1", "เล่ม 2", "เล่ม 3"]}
               dimItems={["Mock TPAT3"]}
               onBuy={buy}
             />
             <BundleCard
               hot
-              eyebrow="ครบจบในเซ็ตเดียว"
+              eyebrow="รวมแพควิศวะ"
               product={PRODUCTS["bundle-all"]}
               displayName="ครบเซ็ตพร้อมสอบ"
-              forWho="สรุปครบทุกหมวด + สนามซ้อมจับเวลา ในราคาต่ำกว่าซื้อแยกทุกแบบ"
-              items={[
-                "Mock TPAT3 ชุดที่ 1 (โจทย์ + เฉลยละเอียด)",
-                "สรุปเล่ม 1: บทนำ + กลศาสตร์",
-                "สรุปเล่ม 2: สสาร + ความร้อน + คลื่น + แสง",
-                "สรุปเล่ม 3: ไฟฟ้า + แม่เหล็ก + อะตอม + นิวเคลียร์",
-              ]}
+              items={["Mock TPAT3", "เล่ม 1", "เล่ม 2", "เล่ม 3"]}
               onBuy={buy}
             />
           </div>
-
-          <p className="mt-8 text-center font-label text-sm text-ink/60">
-            ทุกแบบจ่ายครั้งเดียว ได้ไฟล์ PDF ทางอีเมลทันที · ชำระปลอดภัยผ่าน Stripe (PromptPay)
-          </p>
         </div>
       </section>
 
       {/* ===== FAQ ===== */}
       <section id="faq" className="scroll-mt-20 bg-paper">
         <div className="mx-auto max-w-2xl px-5 py-14">
-          <p className="eyebrow">คำถามที่พบบ่อย</p>
-          <h2 className="mt-2 font-display text-2xl font-bold leading-snug text-ink md:text-[1.75rem]">
-            สงสัยอะไร ดูตรงนี้ก่อนได้
-          </h2>
+          <h2 className="font-display text-2xl font-bold leading-snug text-ink md:text-[1.75rem]">ข้อสงสัย</h2>
 
           <div className="mt-7 divide-y divide-grid border-y border-grid">
             <FaqItem
               q="ซื้อแล้วได้ไฟล์ยังไง เมื่อไหร่?"
-              a="หลังชำระเงินสำเร็จ ระบบจะส่งลิงก์ดาวน์โหลดไปที่อีเมลที่คุณกรอกไว้โดยอัตโนมัติทันที"
+              a="ชำระเงินสำเร็จ ระบบส่งลิงก์ดาวน์โหลดไปที่อีเมลที่กรอกไว้อัตโนมัติทันที"
             />
             <FaqItem
               q="มีตัวอย่างให้ดูก่อนไหม?"
-              a="มี! กดปุ่ม “โหลดตัวอย่างโจทย์” หรือ “โหลดตัวอย่างเฉลย” ในหัวข้อข้อสอบ Mock และตัวอย่างสรุปเล่ม 1 ในหัวข้อสรุป ได้เลย ฟรี ไม่ต้องกรอกอะไร — ไฟล์ตัวอย่างเป็น PDF แบบเดียวกับไฟล์จริง"
+              a="มี — โหลดตัวอย่างโจทย์/เฉลย และตัวอย่างสรุปเล่ม 1 ได้ฟรี ไม่ต้องกรอกอะไร เป็น PDF แบบเดียวกับไฟล์จริง"
             />
             <FaqItem
               q="ไม่ได้รับอีเมล ทำยังไงดี?"
-              a="กรุณาเช็กกล่อง Junk / Spam ก่อน โดยเฉพาะผู้ใช้ Hotmail / Outlook ที่มักกรองอีเมลใหม่เข้าโฟลเดอร์นี้ — ลองค้นคำว่า “tpat3mock” ในอีเมลของคุณ หากยังไม่พบ ติดต่อ mr.tpat3@gmail.com ได้เลย"
+              a="เช็กกล่อง Junk / Spam ก่อน (โดยเฉพาะ Hotmail / Outlook) ลองค้นคำว่า “tpat3mock” ถ้ายังไม่พบ ติดต่อ mr.tpat3@gmail.com"
             />
             <FaqItem
               q="จ่ายเงินยังไงได้บ้าง?"
-              a="ชำระผ่าน PromptPay โดยสแกน QR ด้วยแอปธนาคารของคุณ ระบบชำระเงินดำเนินการอย่างปลอดภัยผ่าน Stripe"
+              a="PromptPay สแกน QR ผ่านแอปธนาคาร ดำเนินการอย่างปลอดภัยผ่าน Stripe"
             />
             <FaqItem
-              q="ได้ไฟล์เป็นรูปแบบอะไร?"
-              a="เป็นไฟล์ PDF ทั้งหมด — ชุดข้อสอบ Mock ได้ 2 ไฟล์ (ไฟล์โจทย์ และไฟล์เฉลยละเอียด) ส่วนสรุปได้เล่มละ 1 ไฟล์"
+              q="ได้ไฟล์อะไรบ้าง?"
+              a="ไฟล์ PDF ทั้งหมด — Mock ได้ 3 ไฟล์ (โจทย์ + เฉลย + กระดาษคำตอบ) · สรุปเล่ม 1 / 2 / 3 ได้เล่มละ 2 ไฟล์ (เนื้อหา + สูตรล้วน)"
             />
             <FaqItem
-              q="ซื้อแล้วแชร์ต่อให้เพื่อนได้ไหม?"
-              a="ทุกไฟล์ฝังลายน้ำระบุตัวผู้ซื้อไว้ ห้ามเผยแพร่หรือส่งต่อ การแชร์ไฟล์ถือเป็นการละเมิดและสามารถตรวจสอบย้อนกลับได้"
+              q="ซื้อแล้วแชร์ต่อได้ไหม?"
+              a="ทุกไฟล์ฝังลายน้ำระบุผู้ซื้อ ห้ามเผยแพร่หรือส่งต่อ ตรวจสอบย้อนกลับได้"
             />
             <FaqItem
               q="ขอคืนเงินได้ไหม?"
-              a="เนื่องจากเป็นสินค้าดิจิทัลที่ได้รับไฟล์ทันที จึงขอสงวนสิทธิ์ไม่รับคืนเงินทุกกรณี กรุณาพิจารณาก่อนสั่งซื้อ"
+              a="เป็นสินค้าดิจิทัลที่ได้รับไฟล์ทันที จึงขอสงวนสิทธิ์ไม่คืนเงินทุกกรณี กรุณาพิจารณาก่อนสั่งซื้อ"
             />
           </div>
 
@@ -338,22 +276,6 @@ export default function Home() {
           </p>
         </div>
       </section>
-
-      {/* ===== Footer ===== */}
-      <footer className="border-t border-grid">
-        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-5 py-7 text-center font-label text-xs text-ink/50 sm:flex-row sm:text-left">
-          <span className="flex items-center gap-2">
-            <Gear teeth={9} className="h-4 w-4 text-maroon/60" />
-            ทุกไฟล์ฝังลายน้ำระบุผู้ซื้อ เพื่อป้องกันการเผยแพร่ต่อ
-          </span>
-          <span>
-            © {new Date().getFullYear()} Mr.tpat3 ·{" "}
-            <a href="mailto:mr.tpat3@gmail.com" className="font-medium text-maroon underline-offset-2 hover:underline">
-              mr.tpat3@gmail.com
-            </a>
-          </span>
-        </div>
-      </footer>
 
       {buying && <BuyModal product={buying} onClose={() => setBuying(null)} />}
     </div>
@@ -385,13 +307,12 @@ function SampleButton({ href, label }: { href: string; label: string }) {
 
 /* ---------- การ์ดหนังสือสรุป ---------- */
 function SummaryCard({
-  no, tag, product, title, desc, bar, onBuy, sample,
+  no, tag, product, title, bar, onBuy, sample,
 }: {
   no: string;
-  tag: React.ReactNode;
+  tag?: React.ReactNode;
   product: Product;
   title: string;
-  desc: string;
   bar: string;
   onBuy: (p: Product) => void;
   sample?: { href: string; label: string };
@@ -403,8 +324,7 @@ function SummaryCard({
         {tag}
       </div>
       <h3 className="mt-5 font-display text-xl font-semibold text-ink">{title}</h3>
-      <p className="mt-2 flex-1 leading-relaxed text-ink/65">{desc}</p>
-      <div className={`mt-6 h-1.5 w-full ${bar}`} />
+      <div className={`mt-auto h-1.5 w-full ${bar}`} style={{ marginTop: "auto" }} />
       <p className="mt-4 font-display text-3xl font-bold text-maroon">฿{product.price.toLocaleString()}</p>
       <button
         onClick={() => onBuy(product)}
@@ -419,12 +339,11 @@ function SummaryCard({
 
 /* ---------- การ์ดชุดสุดคุ้ม ---------- */
 function BundleCard({
-  eyebrow, product, displayName, forWho, items, dimItems = [], onBuy, hot = false,
+  eyebrow, product, displayName, items, dimItems = [], onBuy, hot = false,
 }: {
   eyebrow: string;
   product: Product;
   displayName: string;
-  forWho: string;
   items: string[];
   dimItems?: string[];
   onBuy: (p: Product) => void;
@@ -446,7 +365,6 @@ function BundleCard({
       )}
       <p className="eyebrow tracking-[0.18em]">{eyebrow}</p>
       <h3 className="mt-2 font-display text-xl font-bold text-ink">{displayName}</h3>
-      <p className="mt-2 text-sm leading-relaxed text-ink/60">{forWho}</p>
       <ul className="mt-5 flex-1">
         {items.map((item) => (
           <li key={item} className="relative border-b border-dashed border-grid py-2 pl-6 text-[0.92rem] text-ink">

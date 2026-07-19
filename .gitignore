@@ -29,9 +29,8 @@ npm-debug.log*
 *.credentials.json
 google-service-account.json
 
-# ไฟล์ข้อสอบต้นฉบับ (สินค้า) — ห้าม commit ขึ้น repo
-/assets/master-questions.pdf
-/assets/master-answers.pdf
+# ไฟล์ต้นฉบับ (สินค้า) — ห้าม commit ขึ้น repo (เก็บบน Supabase Storage แทน)
+/assets/master-*.pdf
 
 # typescript
 *.tsbuildinfo

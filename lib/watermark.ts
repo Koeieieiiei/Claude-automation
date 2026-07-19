@@ -14,9 +14,13 @@ const THAI_FONT = join(ASSETS, "fonts", "Sarabun-Regular.ttf");
 const MASTER_SOURCES: Record<FileId, { local: string; storage: string }> = {
   questions: { local: join(ASSETS, "master-questions.pdf"), storage: "master/questions.pdf" },
   answers: { local: join(ASSETS, "master-answers.pdf"), storage: "master/answers.pdf" },
-  summary1: { local: join(ASSETS, "master-summary1.pdf"), storage: "master/summary1.pdf" },
-  summary2: { local: join(ASSETS, "master-summary2.pdf"), storage: "master/summary2.pdf" },
-  summary3: { local: join(ASSETS, "master-summary3.pdf"), storage: "master/summary3.pdf" },
+  answersheet: { local: join(ASSETS, "master-answersheet.pdf"), storage: "master/answersheet.pdf" },
+  sum1content: { local: join(ASSETS, "master-sum1-content.pdf"), storage: "master/sum1-content.pdf" },
+  sum1formula: { local: join(ASSETS, "master-sum1-formula.pdf"), storage: "master/sum1-formula.pdf" },
+  sum2content: { local: join(ASSETS, "master-sum2-content.pdf"), storage: "master/sum2-content.pdf" },
+  sum2formula: { local: join(ASSETS, "master-sum2-formula.pdf"), storage: "master/sum2-formula.pdf" },
+  sum3content: { local: join(ASSETS, "master-sum3-content.pdf"), storage: "master/sum3-content.pdf" },
+  sum3formula: { local: join(ASSETS, "master-sum3-formula.pdf"), storage: "master/sum3-formula.pdf" },
 };
 
 // cache ไฟล์ต้นฉบับไว้ระดับ module — ลดการโหลดซ้ำ (ดาวน์โหลดหลายไฟล์/หลายครั้งบน instance เดียวกัน)

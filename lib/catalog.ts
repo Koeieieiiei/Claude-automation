@@ -9,19 +9,44 @@
  */
 
 /** ไฟล์ PDF แต่ละตัวที่ระบบส่งมอบได้ */
-export type FileId = "questions" | "answers" | "summary1" | "summary2" | "summary3";
+export type FileId =
+  | "questions" // Mock: ไฟล์โจทย์ 1–70
+  | "answers" // Mock: ไฟล์เฉลย 1–70
+  | "answersheet" // Mock: กระดาษคำตอบ
+  | "sum1content" // สรุปเล่ม 1 บทนำ+กลศาสตร์ (เนื้อหา/mind map)
+  | "sum1formula" // สรุปเล่ม 1 (สูตรล้วน)
+  | "sum2content" // สรุปเล่ม 2 (เนื้อหา)
+  | "sum2formula" // สรุปเล่ม 2 (สูตรล้วน)
+  | "sum3content" // สรุปเล่ม 3 (เนื้อหา)
+  | "sum3formula"; // สรุปเล่ม 3 (สูตรล้วน)
 
 export const FILE_INFO: Record<FileId, { label: string; downloadName: string }> = {
-  questions: { label: "ไฟล์โจทย์ Mock TPAT3", downloadName: "mock-tpat3-questions.pdf" },
-  answers: { label: "ไฟล์เฉลย Mock TPAT3", downloadName: "mock-tpat3-answers.pdf" },
-  summary1: { label: "สรุปเล่ม 1: บทนำ + กลศาสตร์", downloadName: "mrtpat3-summary1-intro-mechanics.pdf" },
-  summary2: {
-    label: "สรุปเล่ม 2: สสาร + ความร้อน + คลื่น + แสง",
-    downloadName: "mrtpat3-summary2-matter-heat-waves-light.pdf",
+  questions: { label: "ไฟล์โจทย์ Mock TPAT3 (ข้อ 1–70)", downloadName: "mock-tpat3-questions.pdf" },
+  answers: { label: "ไฟล์เฉลย Mock TPAT3 (ข้อ 1–70)", downloadName: "mock-tpat3-answers.pdf" },
+  answersheet: { label: "กระดาษคำตอบ Mock TPAT3", downloadName: "mock-tpat3-answer-sheet.pdf" },
+  sum1content: {
+    label: "สรุปเล่ม 1 บทนำ + กลศาสตร์ (เนื้อหา)",
+    downloadName: "mrtpat3-summary1-mechanics-content.pdf",
   },
-  summary3: {
-    label: "สรุปเล่ม 3: ไฟฟ้า + แม่เหล็ก + อะตอม + นิวเคลียร์",
-    downloadName: "mrtpat3-summary3-electric-atom-nuclear.pdf",
+  sum1formula: {
+    label: "สรุปเล่ม 1 บทนำ + กลศาสตร์ (สูตรล้วน)",
+    downloadName: "mrtpat3-summary1-mechanics-formula.pdf",
+  },
+  sum2content: {
+    label: "สรุปเล่ม 2 สสาร + ความร้อน + คลื่น + แสง (เนื้อหา)",
+    downloadName: "mrtpat3-summary2-content.pdf",
+  },
+  sum2formula: {
+    label: "สรุปเล่ม 2 สสาร + ความร้อน + คลื่น + แสง (สูตรล้วน)",
+    downloadName: "mrtpat3-summary2-formula.pdf",
+  },
+  sum3content: {
+    label: "สรุปเล่ม 3 ไฟฟ้า + แม่เหล็ก + อะตอม + นิวเคลียร์ (เนื้อหา)",
+    downloadName: "mrtpat3-summary3-content.pdf",
+  },
+  sum3formula: {
+    label: "สรุปเล่ม 3 ไฟฟ้า + แม่เหล็ก + อะตอม + นิวเคลียร์ (สูตรล้วน)",
+    downloadName: "mrtpat3-summary3-formula.pdf",
   },
 };
 
@@ -43,41 +68,51 @@ export interface Product {
 export const PRODUCTS: Record<ProductId, Product> = {
   mock1: {
     id: "mock1",
-    name: "Mock TPAT3 ชุดที่ 1 (โจทย์ + เฉลยละเอียด)",
+    name: "Mock TPAT3 ชุดที่ 1 (โจทย์ + เฉลย + กระดาษคำตอบ)",
     price: 299,
-    files: ["questions", "answers"],
+    files: ["questions", "answers", "answersheet"],
   },
   sum1: {
     id: "sum1",
     name: "สรุปเล่ม 1: บทนำ + กลศาสตร์",
     price: 199,
-    files: ["summary1"],
+    files: ["sum1content", "sum1formula"],
   },
   sum2: {
     id: "sum2",
     name: "สรุปเล่ม 2: สสาร + ความร้อน + คลื่น + แสง",
     price: 169,
-    files: ["summary2"],
+    files: ["sum2content", "sum2formula"],
   },
   sum3: {
     id: "sum3",
     name: "สรุปเล่ม 3: ไฟฟ้า + แม่เหล็ก + อะตอม + นิวเคลียร์",
     price: 189,
-    files: ["summary3"],
+    files: ["sum3content", "sum3formula"],
   },
   "bundle-sum": {
     id: "bundle-sum",
     name: "ชุดสรุปครบ 3 เล่ม",
-    price: 449,
+    price: 399,
     compareAt: 557, // 199 + 169 + 189
-    files: ["summary1", "summary2", "summary3"],
+    files: ["sum1content", "sum1formula", "sum2content", "sum2formula", "sum3content", "sum3formula"],
   },
   "bundle-all": {
     id: "bundle-all",
     name: "ครบเซ็ตพร้อมสอบ (Mock + สรุปครบ 3 เล่ม)",
-    price: 649,
+    price: 599,
     compareAt: 856, // 299 + 199 + 169 + 189
-    files: ["questions", "answers", "summary1", "summary2", "summary3"],
+    files: [
+      "questions",
+      "answers",
+      "answersheet",
+      "sum1content",
+      "sum1formula",
+      "sum2content",
+      "sum2formula",
+      "sum3content",
+      "sum3formula",
+    ],
   },
 };
 

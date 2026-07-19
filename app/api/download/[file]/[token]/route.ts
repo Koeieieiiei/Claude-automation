@@ -4,6 +4,9 @@ import { FILE_INFO, isFileId } from "@/lib/catalog";
 import { getMasterPdfBytes, watermarkPdf } from "@/lib/watermark";
 
 export const runtime = "nodejs";
+// ไฟล์เฉลยเป็น PDF ใหญ่ (~15MB) การใส่ลายน้ำทุกหน้าใช้เวลาหลายวินาที
+// ขยายเวลาทำงานสูงสุดของฟังก์ชันกันโดน timeout บน Vercel
+export const maxDuration = 60;
 
 export async function GET(
   _req: NextRequest,

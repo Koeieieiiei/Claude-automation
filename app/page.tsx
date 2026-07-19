@@ -131,7 +131,7 @@ export default function Home() {
           {/* การ์ดสินค้า Mock */}
           <div className="flex flex-col border border-grid bg-white p-7 transition hover:border-maroon">
             <div className="flex items-center justify-between">
-              <span className="font-display text-2xl font-bold text-maroon">ชุดที่ ๑</span>
+              <span className="font-display text-2xl font-bold text-maroon">ชุดที่ 1</span>
               <span className="font-label text-[11px] font-semibold uppercase tracking-[0.18em] text-ink/50">
                 โจทย์ + เฉลย + กระดาษคำตอบ · PDF 3 ไฟล์
               </span>
@@ -171,7 +171,7 @@ export default function Home() {
 
         <div className="mt-10 grid gap-5 md:grid-cols-3">
           <SummaryCard
-            no="เล่ม ๑"
+            no="เล่ม 1"
             tag={<span className="border border-maroon/40 px-2 py-0.5 font-label text-[10px] font-bold uppercase tracking-[0.14em] text-maroon">มีตัวอย่างฟรี</span>}
             product={PRODUCTS.sum1}
             title="บทนำ + กลศาสตร์"
@@ -180,14 +180,14 @@ export default function Home() {
             sample={{ href: "/samples/tpat3-summary1-sample.pdf", label: "โหลดตัวอย่างฟรี: บทนำ + กลศาสตร์" }}
           />
           <SummaryCard
-            no="เล่ม ๒"
+            no="เล่ม 2"
             product={PRODUCTS.sum2}
             title="สสาร + ความร้อน + คลื่น + แสง"
             bar="bg-[#3D4854]"
             onBuy={buy}
           />
           <SummaryCard
-            no="เล่ม ๓"
+            no="เล่ม 3"
             product={PRODUCTS.sum3}
             title="ไฟฟ้า + แม่เหล็ก + อะตอม + นิวเคลียร์"
             bar="bg-maroon-dark"

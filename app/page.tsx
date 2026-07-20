@@ -153,6 +153,9 @@ export default function Home() {
           {/* การ์ดตัวอย่างฟรี */}
           <div className="flex flex-col border border-dashed border-maroon/40 p-7">
             <h3 className="font-display text-xl font-semibold text-ink">ไฟล์ Demo (ตัวอย่างฟรี)</h3>
+            <p className="mt-2 text-sm leading-relaxed text-ink/60">
+              ตัวอย่าง 4 ข้อนี้เป็นคนละชุดกับข้อสอบจริง 70 ข้อ — ไม่ใช่ข้อที่อยู่ในชุดเต็ม
+            </p>
             <div className="mt-auto" />
             <SampleButton href="/samples/tpat3-sample-questions.pdf" downloadName="ตัวอย่างโจทย์ Mock TPAT3.pdf" label="โหลดตัวอย่างโจทย์ฟรี (PDF)" />
             <SampleButton href="/samples/tpat3-sample-answers.pdf" downloadName="ตัวอย่างเฉลย Mock TPAT3.pdf" label="โหลดตัวอย่างเฉลยฟรี (PDF)" />

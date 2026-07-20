@@ -154,8 +154,8 @@ export default function Home() {
           <div className="flex flex-col border border-dashed border-maroon/40 p-7">
             <h3 className="font-display text-xl font-semibold text-ink">ไฟล์ Demo (ตัวอย่างฟรี)</h3>
             <div className="mt-auto" />
-            <SampleButton href="/samples/tpat3-sample-questions.pdf" label="โหลดตัวอย่างโจทย์ฟรี (PDF)" />
-            <SampleButton href="/samples/tpat3-sample-answers.pdf" label="โหลดตัวอย่างเฉลยฟรี (PDF)" />
+            <SampleButton href="/samples/tpat3-sample-questions.pdf" downloadName="ตัวอย่างโจทย์ Mock TPAT3.pdf" label="โหลดตัวอย่างโจทย์ฟรี (PDF)" />
+            <SampleButton href="/samples/tpat3-sample-answers.pdf" downloadName="ตัวอย่างเฉลย Mock TPAT3.pdf" label="โหลดตัวอย่างเฉลยฟรี (PDF)" />
           </div>
         </div>
       </section>
@@ -177,7 +177,7 @@ export default function Home() {
             title="บทนำ + กลศาสตร์"
             bar="bg-maroon"
             onBuy={buy}
-            sample={{ href: "/samples/tpat3-summary1-sample.pdf", label: "โหลดตัวอย่างฟรี: บทนำ + กลศาสตร์" }}
+            sample={{ href: "/samples/tpat3-summary1-sample.pdf", downloadName: "ตัวอย่างสรุป บทนำ+กลศาสตร์.pdf", label: "โหลดตัวอย่างฟรี: บทนำ + กลศาสตร์" }}
           />
           <SummaryCard
             no="เล่ม 2"
@@ -292,11 +292,11 @@ function DownloadIcon({ className = "h-4 w-4" }: { className?: string }) {
 }
 
 /* ---------- ปุ่มโหลดไฟล์ตัวอย่าง ---------- */
-function SampleButton({ href, label }: { href: string; label: string }) {
+function SampleButton({ href, label, downloadName }: { href: string; label: string; downloadName: string }) {
   return (
     <a
       href={href}
-      download
+      download={downloadName}
       className="mt-4 inline-flex w-full items-center justify-center gap-2.5 bg-[#3D4854] px-4 py-3.5 text-[0.95rem] font-bold text-white transition hover:-translate-y-0.5 hover:bg-[#2E3742]"
     >
       <DownloadIcon className="h-[17px] w-[17px]" />
@@ -315,7 +315,7 @@ function SummaryCard({
   title: string;
   bar: string;
   onBuy: (p: Product) => void;
-  sample?: { href: string; label: string };
+  sample?: { href: string; label: string; downloadName: string };
 }) {
   return (
     <div className="flex flex-col border border-grid bg-white p-7 transition hover:border-maroon">
@@ -332,7 +332,7 @@ function SummaryCard({
       >
         สั่งซื้อเล่มนี้ · ฿{product.price.toLocaleString()}
       </button>
-      {sample && <SampleButton href={sample.href} label={sample.label} />}
+      {sample && <SampleButton href={sample.href} label={sample.label} downloadName={sample.downloadName} />}
     </div>
   );
 }

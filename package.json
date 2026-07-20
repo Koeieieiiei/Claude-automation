@@ -9,6 +9,7 @@
     "lint": "next lint",
     "stripe:login": "tools/stripe/stripe.exe login",
     "stripe:listen": "tools/stripe/stripe.exe listen --forward-to localhost:3000/api/stripe/webhook",
+    "cover:questions": "node --env-file=.env.local scripts/prepend-cover.mjs",
     "test": "vitest run"
   },
   "dependencies": {

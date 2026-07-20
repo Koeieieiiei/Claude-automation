@@ -1,6 +1,6 @@
 import { config } from "./config";
-import { FILE_INFO, getProduct, PRODUCTS, Product } from "./catalog";
-import { createDownloadToken } from "./download-token";
+import { getProduct, PRODUCTS, Product } from "./catalog";
+import { buildDownloadLinks } from "./downloads";
 import { sendDownloadEmail } from "./email";
 import { logSale } from "./sheets";
 import { getMasterPdfBytes } from "./watermark";
@@ -34,19 +34,14 @@ export async function fulfillOrder(order: {
   // (ผลพลอยได้: อุ่น cache ให้การดาวน์โหลดจริงเร็วขึ้น)
   await Promise.all(product.files.map((file) => getMasterPdfBytes(file)));
 
-  const token = createDownloadToken({
-    orderId: order.id,
+  // ลิงก์ดาวน์โหลด — ใช้ตัวสร้างร่วมกับปุ่มดาวน์โหลดบนหน้า success (lib/downloads.ts)
+  const links = buildDownloadLinks({
+    id: order.id,
     firstName: order.firstName,
     lastName: order.lastName,
     email: order.email,
-    files: product.files,
+    product,
   });
-
-  // ลิงก์ดาวน์โหลดหนึ่งลิงก์ต่อหนึ่งไฟล์ (token เดียวกัน ต่างกันที่ชนิดไฟล์)
-  const links = product.files.map((file) => ({
-    label: FILE_INFO[file].label,
-    url: `${config.baseUrl}/api/download/${file}/${token}`,
-  }));
 
   await sendDownloadEmail({
     to: order.email,

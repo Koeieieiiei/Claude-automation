@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
       });
       await updateOrder(order.id, { status: "delivered" });
       return NextResponse.json({
-        url: `${config.baseUrl}/success?order=${order.id}&mock=1`,
+        url: `${config.baseUrl}/success?order=${order.id}&mock=1&product=${product.id}`,
       });
     }
 

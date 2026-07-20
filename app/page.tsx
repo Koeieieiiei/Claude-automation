@@ -117,7 +117,7 @@ export default function Home() {
       {/* ===== Spec strip ===== */}
       <section className="border-b border-maroon-dark bg-maroon text-paper">
         <div className="mx-auto max-w-6xl px-5 py-[15px] text-center text-[15px] font-medium">
-          ส่งไฟล์ผ่านอีเมลแบบอัตโนมัติทันที
+          จ่ายเงินเสร็จ ดาวน์โหลดได้ทันที · ส่งลิงก์เข้าอีเมลไว้เปิดย้อนหลังด้วย
         </div>
       </section>
 
@@ -130,6 +130,7 @@ export default function Home() {
         <div className="mt-10 grid gap-5 md:grid-cols-[1.1fr_1fr]">
           {/* การ์ดสินค้า Mock */}
           <div className="flex flex-col border border-grid bg-white p-7 transition hover:border-maroon">
+            <MockStack />
             <div>
               <span className="font-display text-2xl font-bold text-maroon">ชุดที่ 1</span>
               <p className="mt-1.5 font-label text-[11px] font-semibold uppercase tracking-[0.18em] text-ink/50">
@@ -152,6 +153,9 @@ export default function Home() {
 
           {/* การ์ดตัวอย่างฟรี */}
           <div className="flex flex-col border border-dashed border-maroon/40 p-7">
+            <div className="mx-auto mb-6 w-full max-w-[210px]">
+              <Cover src="/covers/demo.png" alt="ปกไฟล์ Demo ตัวอย่างฟรี" />
+            </div>
             <h3 className="font-display text-xl font-semibold text-ink">ไฟล์ Demo (ตัวอย่างฟรี)</h3>
             <p className="mt-2 text-sm leading-relaxed text-ink/60">
               ตัวอย่าง 4 ข้อนี้เป็นคนละชุดกับข้อสอบจริง 70 ข้อ — ไม่ใช่ข้อที่อยู่ในชุดเต็ม
@@ -179,6 +183,7 @@ export default function Home() {
             product={PRODUCTS.sum1}
             title="บทนำ + กลศาสตร์"
             bar="bg-maroon"
+            cover="/covers/sum1.png"
             onBuy={buy}
             sample={{ href: "/samples/tpat3-summary1-sample.pdf", downloadName: "ตัวอย่างสรุป บทนำ+กลศาสตร์.pdf", label: "โหลดตัวอย่างฟรี: บทนำ + กลศาสตร์" }}
           />
@@ -187,6 +192,7 @@ export default function Home() {
             product={PRODUCTS.sum2}
             title="สสาร + ความร้อน + คลื่น + แสง"
             bar="bg-[#3D4854]"
+            cover="/covers/sum2.png"
             onBuy={buy}
           />
           <SummaryCard
@@ -194,6 +200,7 @@ export default function Home() {
             product={PRODUCTS.sum3}
             title="ไฟฟ้า + แม่เหล็ก + อะตอม + นิวเคลียร์"
             bar="bg-maroon-dark"
+            cover="/covers/sum3.png"
             onBuy={buy}
           />
         </div>
@@ -243,7 +250,7 @@ export default function Home() {
           <div className="mt-7 divide-y divide-grid border-y border-grid">
             <FaqItem
               q="ซื้อแล้วได้ไฟล์ยังไง เมื่อไหร่?"
-              a="ชำระเงินสำเร็จ ระบบส่งลิงก์ดาวน์โหลดไปที่อีเมลที่กรอกไว้อัตโนมัติทันที"
+              a="ชำระเงินสำเร็จ ดาวน์โหลดได้เลยจากหน้าเว็บทันที และระบบยังส่งลิงก์ดาวน์โหลดเข้าอีเมลที่กรอกไว้ให้อีกทาง เผื่อเปิดย้อนหลังภายหลัง"
             />
             <FaqItem
               q="มีตัวอย่างให้ดูก่อนไหม?"
@@ -251,7 +258,7 @@ export default function Home() {
             />
             <FaqItem
               q="ไม่ได้รับอีเมล ทำยังไงดี?"
-              a="เช็กกล่อง Junk / Spam ก่อน (โดยเฉพาะ Hotmail / Outlook) ลองค้นคำว่า “tpat3mock” ถ้ายังไม่พบ ติดต่อ mr.tpat3@gmail.com"
+              a="ไม่ต้องกังวล — หลังชำระเงินคุณกดดาวน์โหลดได้ทันทีจากหน้าเว็บอยู่แล้ว อีเมลเป็นแค่ตัวสำรองไว้เปิดย้อนหลัง หากหาอีเมลไม่พบ เช็กกล่อง Junk / Spam (โดยเฉพาะ Hotmail / Outlook) ลองค้นคำว่า “tpat3mock” ถ้ายังไม่พบ ติดต่อ mr.tpat3@gmail.com"
             />
             <FaqItem
               q="จ่ายเงินยังไงได้บ้าง?"
@@ -294,6 +301,47 @@ function DownloadIcon({ className = "h-4 w-4" }: { className?: string }) {
   );
 }
 
+/* ---------- ปกหนังสือ (รูปภาพ) ----------
+   ไฟล์รูปอยู่ที่ public/covers/*.png — สัดส่วนปก 1792×2400 (3:4) */
+function Cover({ src, alt }: { src: string; alt: string }) {
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={src}
+      alt={alt}
+      loading="lazy"
+      className="block w-full border border-grid bg-white shadow-[0_16px_36px_-18px_rgba(36,16,22,0.5)]"
+      style={{ aspectRatio: "1792 / 2400", objectFit: "cover" }}
+    />
+  );
+}
+
+/* ---------- สแตกปก Mock + กระดาษคำตอบ (วางเหลื่อมซ้อนกัน) ---------- */
+function MockStack() {
+  return (
+    <div className="relative mx-auto mb-6 w-full max-w-[240px]" style={{ aspectRatio: "1 / 1.08" }}>
+      {/* กระดาษคำตอบ — เหลื่อมอยู่ด้านหลังขวา เอียงเล็กน้อย */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/covers/answersheet.png"
+        alt="กระดาษคำตอบ Mock TPAT3"
+        loading="lazy"
+        className="absolute right-0 top-0 w-[62%] rotate-[6deg] border border-grid bg-white shadow-[0_14px_30px_-16px_rgba(36,16,22,0.45)]"
+        style={{ aspectRatio: "1792 / 2400", objectFit: "cover" }}
+      />
+      {/* ปก Mock — อยู่ด้านหน้าซ้าย เอียงสวนทาง */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/covers/mock.png"
+        alt="ปกข้อสอบ Mock TPAT3"
+        loading="lazy"
+        className="absolute bottom-0 left-0 w-[72%] -rotate-[4deg] border border-grid bg-white shadow-[0_20px_40px_-16px_rgba(36,16,22,0.6)]"
+        style={{ aspectRatio: "1792 / 2400", objectFit: "cover" }}
+      />
+    </div>
+  );
+}
+
 /* ---------- ปุ่มโหลดไฟล์ตัวอย่าง ---------- */
 function SampleButton({ href, label, downloadName }: { href: string; label: string; downloadName: string }) {
   return (
@@ -310,7 +358,7 @@ function SampleButton({ href, label, downloadName }: { href: string; label: stri
 
 /* ---------- การ์ดหนังสือสรุป ---------- */
 function SummaryCard({
-  no, tag, product, title, bar, onBuy, sample,
+  no, tag, product, title, bar, onBuy, sample, cover,
 }: {
   no: string;
   tag?: React.ReactNode;
@@ -319,9 +367,13 @@ function SummaryCard({
   bar: string;
   onBuy: (p: Product) => void;
   sample?: { href: string; label: string; downloadName: string };
+  cover: string;
 }) {
   return (
     <div className="flex flex-col border border-grid bg-white p-7 transition hover:border-maroon">
+      <div className="mx-auto mb-6 w-full max-w-[200px]">
+        <Cover src={cover} alt={`ปกสรุปฟิสิกส์ ${title}`} />
+      </div>
       <div className="flex items-center justify-between">
         <span className="font-display text-2xl font-bold text-maroon">{no}</span>
         {tag}

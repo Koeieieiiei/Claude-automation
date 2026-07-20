@@ -319,15 +319,14 @@ function Cover({ src, alt }: { src: string; alt: string }) {
 /* ---------- สแตกปก Mock + กระดาษคำตอบ (วางเหลื่อมซ้อนกัน) ---------- */
 function MockStack() {
   return (
-    <div className="relative mx-auto mb-6 w-full max-w-[240px]" style={{ aspectRatio: "1 / 1.08" }}>
-      {/* กระดาษคำตอบ — เหลื่อมอยู่ด้านหลังขวา เอียงเล็กน้อย */}
+    <div className="relative mx-auto mb-6 w-full max-w-[300px]" style={{ aspectRatio: "1 / 1.12" }}>
+      {/* กระดาษคำตอบ — เหลื่อมอยู่ด้านหลังขวา เอียงเล็กน้อย (แสดงเต็มสัดส่วนจริง ไม่ครอบ) */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src="/covers/answersheet.png"
         alt="กระดาษคำตอบ Mock TPAT3"
         loading="lazy"
-        className="absolute right-0 top-0 w-[62%] rotate-[6deg] border border-grid bg-white shadow-[0_14px_30px_-16px_rgba(36,16,22,0.45)]"
-        style={{ aspectRatio: "1792 / 2400", objectFit: "cover" }}
+        className="absolute right-0 top-0 h-auto w-[64%] rotate-[6deg] border border-grid bg-white shadow-[0_14px_30px_-16px_rgba(36,16,22,0.45)]"
       />
       {/* ปก Mock — อยู่ด้านหน้าซ้าย เอียงสวนทาง */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -335,8 +334,7 @@ function MockStack() {
         src="/covers/mock.png"
         alt="ปกข้อสอบ Mock TPAT3"
         loading="lazy"
-        className="absolute bottom-0 left-0 w-[72%] -rotate-[4deg] border border-grid bg-white shadow-[0_20px_40px_-16px_rgba(36,16,22,0.6)]"
-        style={{ aspectRatio: "1792 / 2400", objectFit: "cover" }}
+        className="absolute bottom-0 left-0 h-auto w-[72%] -rotate-[4deg] border border-grid bg-white shadow-[0_20px_40px_-16px_rgba(36,16,22,0.6)]"
       />
     </div>
   );

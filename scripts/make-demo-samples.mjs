@@ -8,6 +8,17 @@ import fontkit from "@pdf-lib/fontkit";
 import { mkdir, readFile, writeFile } from "fs/promises";
 import { join } from "path";
 
+// ⚠️ ล็อกกันอุบัติเหตุ: ตอนนี้ไฟล์ตัวอย่างจริงใน public/samples/ เป็น PDF ที่ฝังลายน้ำแบรนด์
+// (Mr.tpat3 / Tiktok: Mrtpat3) และใช้งานบนเว็บจริงแล้ว — สคริปต์นี้จะ "เขียนทับ" ด้วยหน้าเปล่า
+// placeholder ถ้าเผลอรัน ตัวอย่างจริงจะหายทันที จึงล็อกไว้ ต้องยืนยันเจตนาก่อนถึงจะรันได้
+if (process.env.ALLOW_OVERWRITE_SAMPLES !== "1") {
+  console.error(
+    "❌ ปฏิเสธการรัน — สคริปต์นี้จะเขียนทับไฟล์ตัวอย่างแบรนด์จริงใน public/samples/ ด้วย placeholder เปล่า\n" +
+      "   ถ้าตั้งใจจริง ให้รันด้วย: ALLOW_OVERWRITE_SAMPLES=1 node scripts/make-demo-samples.mjs"
+  );
+  process.exit(1);
+}
+
 const MAROON = rgb(0.431, 0.078, 0.137); // #6E1423
 const INK = rgb(0.141, 0.063, 0.086); // #241016
 

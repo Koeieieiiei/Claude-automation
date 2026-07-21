@@ -54,6 +54,10 @@ export async function GET(
       return pending();
     }
   } else {
+    // ⚠️ อนุญาตให้เชื่อ order.status + ?product= ได้เฉพาะตอน dev เท่านั้น
+    // ถ้าอยู่ production แต่ Stripe หาย = ตั้งค่าพลาด — ต้อง fail closed (ตอบ pending)
+    // ไม่งั้น ?product= จะกลายเป็นช่องแก้ URL ขอไฟล์ที่ไม่ได้ซื้อ (เหมือน checkout ที่ fail closed)
+    if (process.env.NODE_ENV === "production") return pending();
     // โหมด dev (ยังไม่ได้ตั้งค่า Stripe): checkout ข้ามการจ่ายเงินและตั้งสถานะให้แล้ว
     paid = order.status === "paid" || order.status === "delivered";
     const q = req.nextUrl.searchParams.get("product");

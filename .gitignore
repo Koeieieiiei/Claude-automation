@@ -40,3 +40,7 @@ next-env.d.ts
 
 # ไฟล์สรุปต้นฉบับ (สินค้า) — ห้าม commit เช่นกัน
 /assets/master-summary*.pdf
+
+# ไฟล์พรีวิว/ทดสอบที่ generate เอง — ไม่ใช่ส่วนของสินค้า
+watermark-preview.pdf
+*-preview.pdf

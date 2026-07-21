@@ -13,6 +13,8 @@ type Status = "loading" | "pending" | "ready" | "not_found" | "error";
 
 // หยุด poll หลังราว 5 นาที — ถ้ายังไม่ยืนยัน ปล่อยให้ลูกค้าพึ่งลิงก์ในอีเมลแทน
 const MAX_PENDING_POLLS = 100;
+// เน็ต/เซิร์ฟเวอร์สะดุด: ลองซ้ำไม่กี่ครั้งพอ (~25 วิ) แล้วหยุด — ไม่ยิงซ้ำไม่รู้จบ
+const MAX_ERROR_RETRIES = 5;
 
 /** กรอบการ์ดสถานะคำสั่งซื้อ — ใช้ร่วมกันทุกสถานะ (และ fallback ของหน้า) */
 export function Frame({ badge, children }: { badge: React.ReactNode; children: React.ReactNode }) {
@@ -50,6 +52,7 @@ export default function SuccessView() {
     let active = true;
     let timer: ReturnType<typeof setTimeout>;
     let tries = 0;
+    let errors = 0;
 
     async function poll() {
       try {
@@ -81,6 +84,8 @@ export default function SuccessView() {
       } catch {
         if (!active) return;
         setStatus("error");
+        errors += 1;
+        if (errors >= MAX_ERROR_RETRIES) return; // ยอมแพ้ — หน้าจะบอกให้ไปใช้ลิงก์ในอีเมล
         timer = setTimeout(poll, 5000); // เน็ตสะดุด — ลองใหม่
       }
     }

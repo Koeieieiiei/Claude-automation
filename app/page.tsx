@@ -195,7 +195,7 @@ export default function Home() {
             </div>
             <h3 className="font-display text-xl font-semibold text-ink">ไฟล์ Demo (ตัวอย่างฟรี)</h3>
             <p className="mt-2 text-sm leading-relaxed text-ink/60">
-              ตัวอย่างหน้าสรุปจากไฟล์จริง — โหลดดูสไตล์การสรุปก่อนตัดสินใจ
+              ตัวอย่างหน้าสรุปจากไฟล์จริง — โหลดดูก่อนตัดสินใจ
             </p>
             <div className="mt-auto" />
             <SampleButton href="/samples/tpat3-summary1-sample.pdf" downloadName="ตัวอย่างสรุปเนื้อหา TPAT3.pdf" label="โหลดตัวอย่างสรุปฟรี (PDF)" />

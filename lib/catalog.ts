@@ -13,40 +13,20 @@ export type FileId =
   | "questions" // Mock: ไฟล์โจทย์ 1–70
   | "answers" // Mock: ไฟล์เฉลย 1–70
   | "answersheet" // Mock: กระดาษคำตอบ
-  | "sum1content" // สรุปเล่ม 1 บทนำ+กลศาสตร์ (เนื้อหา/mind map)
-  | "sum1formula" // สรุปเล่ม 1 (สูตรล้วน)
-  | "sum2content" // สรุปเล่ม 2 (เนื้อหา)
-  | "sum2formula" // สรุปเล่ม 2 (สูตรล้วน)
-  | "sum3content" // สรุปเล่ม 3 (เนื้อหา)
-  | "sum3formula"; // สรุปเล่ม 3 (สูตรล้วน)
+  | "sum4content" // สรุปเนื้อหา TPAT3 (ไฟล์เนื้อหา)
+  | "sum4formula"; // สรุปเนื้อหา TPAT3 (ไฟล์สูตรล้วน)
 
 export const FILE_INFO: Record<FileId, { label: string; downloadName: string }> = {
   questions: { label: "ไฟล์โจทย์ Mock TPAT3 (ข้อ 1–70)", downloadName: "mock-tpat3-questions.pdf" },
   answers: { label: "ไฟล์เฉลย Mock TPAT3 (ข้อ 1–70)", downloadName: "mock-tpat3-answers.pdf" },
   answersheet: { label: "กระดาษคำตอบ Mock TPAT3", downloadName: "mock-tpat3-answer-sheet.pdf" },
-  sum1content: {
-    label: "สรุปเล่ม 1 บทนำ + กลศาสตร์ (เนื้อหา)",
-    downloadName: "mrtpat3-summary1-mechanics-content.pdf",
+  sum4content: {
+    label: "สรุปเนื้อหา TPAT3 (ไฟล์เนื้อหา)",
+    downloadName: "mrtpat3-summary-content.pdf",
   },
-  sum1formula: {
-    label: "สรุปเล่ม 1 บทนำ + กลศาสตร์ (สูตรล้วน)",
-    downloadName: "mrtpat3-summary1-mechanics-formula.pdf",
-  },
-  sum2content: {
-    label: "สรุปเล่ม 2 สสาร + ความร้อน + คลื่น + แสง (เนื้อหา)",
-    downloadName: "mrtpat3-summary2-content.pdf",
-  },
-  sum2formula: {
-    label: "สรุปเล่ม 2 สสาร + ความร้อน + คลื่น + แสง (สูตรล้วน)",
-    downloadName: "mrtpat3-summary2-formula.pdf",
-  },
-  sum3content: {
-    label: "สรุปเล่ม 3 ไฟฟ้า + แม่เหล็ก + อะตอม + นิวเคลียร์ (เนื้อหา)",
-    downloadName: "mrtpat3-summary3-content.pdf",
-  },
-  sum3formula: {
-    label: "สรุปเล่ม 3 ไฟฟ้า + แม่เหล็ก + อะตอม + นิวเคลียร์ (สูตรล้วน)",
-    downloadName: "mrtpat3-summary3-formula.pdf",
+  sum4formula: {
+    label: "สรุปเนื้อหา TPAT3 (ไฟล์สูตรล้วน)",
+    downloadName: "mrtpat3-summary-formula.pdf",
   },
 };
 
@@ -54,7 +34,7 @@ export function isFileId(v: string): v is FileId {
   return v in FILE_INFO;
 }
 
-export type ProductId = "mock1" | "sum1" | "sum2" | "sum3" | "bundle-sum" | "bundle-all";
+export type ProductId = "mock1" | "sum4" | "bundle-all";
 
 export interface Product {
   id: ProductId;
@@ -69,50 +49,21 @@ export const PRODUCTS: Record<ProductId, Product> = {
   mock1: {
     id: "mock1",
     name: "Mock TPAT3 ชุดที่ 1 (โจทย์ + เฉลย + กระดาษคำตอบ)",
-    price: 299,
+    price: 199,
     files: ["questions", "answers", "answersheet"],
   },
-  sum1: {
-    id: "sum1",
-    name: "สรุปเล่ม 1: บทนำ + กลศาสตร์",
-    price: 199,
-    files: ["sum1content", "sum1formula"],
-  },
-  sum2: {
-    id: "sum2",
-    name: "สรุปเล่ม 2: สสาร + ความร้อน + คลื่น + แสง",
-    price: 169,
-    files: ["sum2content", "sum2formula"],
-  },
-  sum3: {
-    id: "sum3",
-    name: "สรุปเล่ม 3: ไฟฟ้า + แม่เหล็ก + อะตอม + นิวเคลียร์",
-    price: 189,
-    files: ["sum3content", "sum3formula"],
-  },
-  "bundle-sum": {
-    id: "bundle-sum",
-    name: "ชุดสรุปครบ 3 เล่ม",
-    price: 399,
-    compareAt: 557, // 199 + 169 + 189
-    files: ["sum1content", "sum1formula", "sum2content", "sum2formula", "sum3content", "sum3formula"],
+  sum4: {
+    id: "sum4",
+    name: "สรุปเนื้อหาสำหรับสอบ TPAT3 (เนื้อหา + สูตรล้วน)",
+    price: 129,
+    files: ["sum4content", "sum4formula"],
   },
   "bundle-all": {
     id: "bundle-all",
-    name: "ครบเซ็ตพร้อมสอบ (Mock + สรุปครบ 3 เล่ม)",
-    price: 599,
-    compareAt: 856, // 299 + 199 + 169 + 189
-    files: [
-      "questions",
-      "answers",
-      "answersheet",
-      "sum1content",
-      "sum1formula",
-      "sum2content",
-      "sum2formula",
-      "sum3content",
-      "sum3formula",
-    ],
+    name: "ครบเซ็ตพร้อมสอบ (Mock + สรุปเนื้อหา TPAT3)",
+    price: 249,
+    compareAt: 328, // 199 + 129
+    files: ["questions", "answers", "answersheet", "sum4content", "sum4formula"],
   },
 };
 

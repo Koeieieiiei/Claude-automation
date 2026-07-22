@@ -29,7 +29,7 @@ export async function sendDownloadEmail(input: {
     `<p>สวัสดีคุณ <strong>${escapeHtml(input.firstName)}</strong></p>` +
     `<p>การชำระเงินสำหรับ <strong>${escapeHtml(input.productName)}</strong> สำเร็จแล้ว คุณจะได้รับ <strong>${fileCount} ไฟล์</strong> กดปุ่มด้านล่างเพื่อดาวน์โหลดแต่ละไฟล์</p>` +
     `<div style="margin-top:20px">${buttons}</div>` +
-    `<p style="color:#666;font-size:13px;border-top:1px solid #eeeeee;padding-top:14px;margin-top:18px">ลิงก์เหล่านี้จะหมดอายุใน ${expiryText}<br/>⚠️ ไฟล์มีลายน้ำระบุชื่อและอีเมลของคุณ โปรดอย่าเผยแพร่ต่อ</p>` +
+    `<p style="color:#666;font-size:13px;border-top:1px solid #eeeeee;padding-top:14px;margin-top:18px">ลิงก์เหล่านี้จะหมดอายุใน ${expiryText}</p>` +
     `</div>`;
 
   if (!ready.resend) {

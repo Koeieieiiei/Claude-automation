@@ -155,7 +155,7 @@ export default function SuccessView() {
           </div>
 
           <p className="mt-4 font-label text-[12px] leading-snug text-ink/50">
-            แต่ละไฟล์ฝังลายน้ำระบุชื่อและอีเมลของคุณตอนกดดาวน์โหลด จึงอาจใช้เวลา 2–3 วินาทีต่อไฟล์ · โปรดอย่าเผยแพร่ต่อ
+            ระบบเตรียมไฟล์ให้ตอนกดดาวน์โหลด จึงอาจใช้เวลา 2–3 วินาทีต่อไฟล์
           </p>
 
           <div className="mt-6 border border-maroon/40 bg-maroon/[0.04] px-5 py-4">

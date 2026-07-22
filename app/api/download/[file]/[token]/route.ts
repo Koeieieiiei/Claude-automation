@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyDownloadToken } from "@/lib/download-token";
 import { FILE_INFO, isFileId } from "@/lib/catalog";
-import { getMasterPdfBytes, watermarkPdf } from "@/lib/watermark";
+import { buildDeliverablePdf } from "@/lib/watermark";
 
 export const runtime = "nodejs";
 // ไฟล์เฉลยเป็น PDF ใหญ่ (~15MB) การใส่ลายน้ำทุกหน้าใช้เวลาหลายวินาที
@@ -38,8 +38,8 @@ export async function GET(
 
   let pdfBytes: Uint8Array;
   try {
-    const master = await getMasterPdfBytes(file);
-    pdfBytes = await watermarkPdf(master, {
+    // ใส่ลายน้ำตามกติการายไฟล์ — กระดาษคำตอบไม่ใส่, ไฟล์โจทย์เว้นหน้าปก
+    pdfBytes = await buildDeliverablePdf(file, {
       firstName: payload.firstName,
       lastName: payload.lastName,
       email: payload.email,

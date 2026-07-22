@@ -67,7 +67,7 @@ export default function Home() {
           </div>
           <nav className="hidden items-center gap-6 md:flex" aria-label="เมนูหลัก">
             <a href="#mock" className="text-sm font-semibold text-ink/60 transition hover:text-maroon">ข้อสอบ Mock</a>
-            <a href="#summaries" className="text-sm font-semibold text-ink/60 transition hover:text-maroon">สรุป 3 เล่ม</a>
+            <a href="#summaries" className="text-sm font-semibold text-ink/60 transition hover:text-maroon">ไฟล์สรุป</a>
             <a href="#bundles" className="text-sm font-semibold text-ink/60 transition hover:text-maroon">Bundles</a>
             <a href="#faq" className="text-sm font-semibold text-ink/60 transition hover:text-maroon">ข้อสงสัย</a>
           </nav>
@@ -97,7 +97,7 @@ export default function Home() {
               href="#bundles"
               className="group inline-flex items-center gap-3 bg-maroon px-[42px] py-[23px] text-[19px] font-bold text-white transition hover:bg-maroon-dark"
             >
-              ดูชุดสุดคุ้ม · เริ่ม ฿{PRODUCTS.mock1.price.toLocaleString()}
+              ดูชุดสุดคุ้ม · เริ่ม ฿{PRODUCTS.sum4.price.toLocaleString()}
               <svg className="h-4 w-4 transition group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
               </svg>
@@ -126,6 +126,9 @@ export default function Home() {
         <h2 className="max-w-xl font-display text-3xl font-bold leading-snug text-ink md:text-4xl">
           ไฟล์ข้อสอบ Mock TPAT3
         </h2>
+        <p className="mt-3 max-w-2xl text-[1.2rem] font-medium leading-relaxed text-ink">
+          โจทย์ + เฉลย + กระดาษคำตอบ · PDF 3 ไฟล์
+        </p>
 
         <div className="mt-10 grid gap-5 md:grid-cols-[1.1fr_1fr]">
           {/* การ์ดสินค้า Mock */}
@@ -133,11 +136,8 @@ export default function Home() {
             <MockStack />
             <div>
               <span className="font-display text-2xl font-bold text-maroon">ชุดที่ 1</span>
-              <p className="mt-1.5 font-label text-[11px] font-semibold uppercase tracking-[0.18em] text-ink/50">
-                โจทย์ + เฉลย + กระดาษคำตอบ · PDF 3 ไฟล์
-              </p>
             </div>
-            <h3 className="mt-5 font-display text-xl font-semibold text-ink">ข้อสอบ Mock TPAT3</h3>
+            <h3 className="mt-3 font-display text-xl font-semibold text-ink">ข้อสอบ Mock TPAT3</h3>
             <div className="mt-auto" />
             <div className="mt-6 h-1 w-10 bg-maroon" />
             <p className="mt-4 font-display text-3xl font-bold text-maroon">
@@ -167,42 +167,39 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ===== สรุป 3 เล่ม ===== */}
+      {/* ===== ไฟล์สรุปเนื้อหา ===== */}
       <section id="summaries" className="mx-auto max-w-6xl scroll-mt-20 px-5 pb-16">
         <h2 className="max-w-2xl font-display text-3xl font-bold leading-snug text-ink md:text-4xl">
-          ไฟล์สรุปฟิสิกส์ 3 เล่ม
+          ไฟล์สรุปเนื้อหาสำหรับสอบ TPAT3
         </h2>
         <p className="mt-3 max-w-2xl text-[1.2rem] font-medium leading-relaxed text-ink">
-          ซื้อสรุป 1 เล่ม ได้ 2 ไฟล์ — ไฟล์เนื้อหา และไฟล์สูตรล้วน
+          ซื้อ 1 ชุด ได้ 2 ไฟล์ — ไฟล์เนื้อหา และไฟล์สูตรล้วน
         </p>
 
-        <div className="mt-10 grid gap-5 md:grid-cols-3">
+        {/* จงใจให้แคบกว่าโซน Mock — ดันให้ Mock เป็นพระเอกของหน้า */}
+        <div className="mt-10 grid max-w-4xl gap-5 md:grid-cols-2">
           <SummaryCard
-            no="เล่ม 1"
+            no="สรุป TPAT3"
             tag={<span className="border border-maroon/40 px-2 py-0.5 font-label text-[10px] font-bold uppercase tracking-[0.14em] text-maroon">มีตัวอย่างฟรี</span>}
-            product={PRODUCTS.sum1}
-            title="บทนำ + กลศาสตร์"
+            product={PRODUCTS.sum4}
+            title="สรุปเนื้อหาฟิสิกส์สำหรับสอบ TPAT3"
             bar="bg-maroon"
-            cover="/covers/sum1.png"
-            onBuy={buy}
-            sample={{ href: "/samples/tpat3-summary1-sample.pdf", downloadName: "ตัวอย่างสรุป บทนำ+กลศาสตร์.pdf", label: "โหลดตัวอย่างฟรี: บทนำ + กลศาสตร์" }}
-          />
-          <SummaryCard
-            no="เล่ม 2"
-            product={PRODUCTS.sum2}
-            title="สสาร + ความร้อน + คลื่น + แสง"
-            bar="bg-[#3D4854]"
-            cover="/covers/sum2.png"
+            cover="/covers/sum4.png"
             onBuy={buy}
           />
-          <SummaryCard
-            no="เล่ม 3"
-            product={PRODUCTS.sum3}
-            title="ไฟฟ้า + แม่เหล็ก + อะตอม + นิวเคลียร์"
-            bar="bg-maroon-dark"
-            cover="/covers/sum3.png"
-            onBuy={buy}
-          />
+
+          {/* การ์ดตัวอย่างฟรีของไฟล์สรุป — วางข้างกันแบบเดียวกับฝั่ง Mock */}
+          <div className="flex flex-col border border-dashed border-maroon/40 p-7">
+            <div className="mx-auto mb-6 w-full max-w-[210px]">
+              <Cover src="/covers/demo.png" alt="ปกไฟล์ Demo ตัวอย่างสรุปฟรี" />
+            </div>
+            <h3 className="font-display text-xl font-semibold text-ink">ไฟล์ Demo (ตัวอย่างฟรี)</h3>
+            <p className="mt-2 text-sm leading-relaxed text-ink/60">
+              ตัวอย่างหน้าสรุปจากไฟล์จริง — โหลดดูสไตล์การสรุปก่อนตัดสินใจ
+            </p>
+            <div className="mt-auto" />
+            <SampleButton href="/samples/tpat3-summary1-sample.pdf" downloadName="ตัวอย่างสรุปเนื้อหา TPAT3.pdf" label="โหลดตัวอย่างสรุปฟรี (PDF)" />
+          </div>
         </div>
       </section>
 
@@ -218,15 +215,17 @@ export default function Home() {
               eyebrow="เช็คความพร้อม"
               product={PRODUCTS.mock1}
               displayName="Mock เดี่ยว"
-              items={["Mock TPAT3"]}
-              dimItems={["สรุปฟิสิกส์ 3 เล่ม"]}
+              covers={[{ src: "/covers/mock.png", alt: "ปกข้อสอบ Mock TPAT3" }]}
+              items={["Mock TPAT3 (โจทย์ + เฉลย + กระดาษคำตอบ)"]}
+              dimItems={["สรุปเนื้อหา TPAT3"]}
               onBuy={buy}
             />
             <BundleCard
               eyebrow="เก็บเนื้อหา"
-              product={PRODUCTS["bundle-sum"]}
-              displayName="สรุปครบ 3 เล่ม"
-              items={["เล่ม 1", "เล่ม 2", "เล่ม 3"]}
+              product={PRODUCTS.sum4}
+              displayName="สรุปเดี่ยว"
+              covers={[{ src: "/covers/sum4.png", alt: "ปกสรุปเนื้อหา TPAT3" }]}
+              items={["สรุปเนื้อหา TPAT3 (เนื้อหา + สูตรล้วน)"]}
               dimItems={["Mock TPAT3"]}
               onBuy={buy}
             />
@@ -235,7 +234,11 @@ export default function Home() {
               eyebrow="รวมแพควิศวะ"
               product={PRODUCTS["bundle-all"]}
               displayName="ครบเซ็ตพร้อมสอบ"
-              items={["Mock TPAT3", "เล่ม 1", "เล่ม 2", "เล่ม 3"]}
+              covers={[
+                { src: "/covers/mock.png", alt: "ปกข้อสอบ Mock TPAT3" },
+                { src: "/covers/sum4.png", alt: "ปกสรุปเนื้อหา TPAT3" },
+              ]}
+              items={["Mock TPAT3 (โจทย์ + เฉลย + กระดาษคำตอบ)", "สรุปเนื้อหา TPAT3 (เนื้อหา + สูตรล้วน)"]}
               onBuy={buy}
             />
           </div>
@@ -254,7 +257,7 @@ export default function Home() {
             />
             <FaqItem
               q="มีตัวอย่างให้ดูก่อนไหม?"
-              a="มี — โหลดตัวอย่างโจทย์/เฉลย และตัวอย่างสรุปเล่ม 1 ได้ฟรี ไม่ต้องกรอกอะไร เป็น PDF แบบเดียวกับไฟล์จริง"
+              a="มี — โหลดตัวอย่างโจทย์/เฉลย และตัวอย่างไฟล์สรุปได้ฟรี ไม่ต้องกรอกอะไร เป็น PDF แบบเดียวกับไฟล์จริง"
             />
             <FaqItem
               q="ไม่ได้รับอีเมล ทำยังไงดี?"
@@ -266,11 +269,7 @@ export default function Home() {
             />
             <FaqItem
               q="ได้ไฟล์อะไรบ้าง?"
-              a="ไฟล์ PDF ทั้งหมด — Mock ได้ 3 ไฟล์ (โจทย์ + เฉลย + กระดาษคำตอบ) · สรุปเล่ม 1 / 2 / 3 ได้เล่มละ 2 ไฟล์ (เนื้อหา + สูตรล้วน)"
-            />
-            <FaqItem
-              q="ซื้อแล้วแชร์ต่อได้ไหม?"
-              a="ทุกไฟล์ฝังลายน้ำระบุผู้ซื้อ ห้ามเผยแพร่หรือส่งต่อ ตรวจสอบย้อนกลับได้"
+              a="ไฟล์ PDF ทั้งหมด — Mock ได้ 3 ไฟล์ (โจทย์ + เฉลย + กระดาษคำตอบ) · สรุปเนื้อหา TPAT3 ได้ 2 ไฟล์ (เนื้อหา + สูตรล้วน)"
             />
             <FaqItem
               q="ขอคืนเงินได้ไหม?"
@@ -369,7 +368,7 @@ function SummaryCard({
 }) {
   return (
     <div className="flex flex-col border border-grid bg-white p-7 transition hover:border-maroon">
-      <div className="mx-auto mb-6 w-full max-w-[200px]">
+      <div className="mx-auto mb-6 w-full max-w-[210px]">
         <Cover src={cover} alt={`ปกสรุปฟิสิกส์ ${title}`} />
       </div>
       <div className="flex items-center justify-between">
@@ -392,7 +391,7 @@ function SummaryCard({
 
 /* ---------- การ์ดชุดสุดคุ้ม ---------- */
 function BundleCard({
-  eyebrow, product, displayName, items, dimItems = [], onBuy, hot = false,
+  eyebrow, product, displayName, items, dimItems = [], onBuy, hot = false, covers = [],
 }: {
   eyebrow: string;
   product: Product;
@@ -401,6 +400,8 @@ function BundleCard({
   dimItems?: string[];
   onBuy: (p: Product) => void;
   hot?: boolean;
+  /** รูปปกโชว์บนหัวการ์ด — ใบเดียววางตรง สองใบวางเหลื่อมซ้อนกัน */
+  covers?: { src: string; alt: string }[];
 }) {
   const save = product.compareAt ? product.compareAt - product.price : 0;
   return (
@@ -415,6 +416,27 @@ function BundleCard({
         <span className="absolute -top-3.5 left-6 bg-maroon px-3 py-1 font-label text-[11px] font-bold uppercase tracking-[0.18em] text-paper">
           คุ้มที่สุด
         </span>
+      )}
+      {covers.length > 0 && (
+        <div className="mb-6 flex items-center justify-center">
+          {covers.map((c, i) => (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              key={c.src}
+              src={c.src}
+              alt={c.alt}
+              loading="lazy"
+              className={`w-[108px] border border-grid bg-white shadow-[0_14px_30px_-16px_rgba(36,16,22,0.5)] ${
+                covers.length > 1
+                  ? i === 0
+                    ? "-rotate-[5deg]"
+                    : "z-10 -ml-7 mt-3 rotate-[5deg]"
+                  : ""
+              }`}
+              style={{ aspectRatio: "1792 / 2400", objectFit: "cover" }}
+            />
+          ))}
+        </div>
       )}
       <p className="eyebrow tracking-[0.18em]">{eyebrow}</p>
       <h3 className="mt-2 font-display text-xl font-bold text-ink">{displayName}</h3>

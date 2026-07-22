@@ -41,6 +41,9 @@ next-env.d.ts
 # ไฟล์สรุปต้นฉบับ (สินค้า) — ห้าม commit เช่นกัน
 /assets/master-summary*.pdf
 
+# PDF ต้นทางรูปปกใน public — ห้าม commit (ทุกไฟล์ใน public ถูกเปิดดาวน์โหลดสาธารณะ)
+/public/covers/*.pdf
+
 # ไฟล์พรีวิว/ทดสอบที่ generate เอง — ไม่ใช่ส่วนของสินค้า
 watermark-preview.pdf
 *-preview.pdf

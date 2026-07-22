@@ -25,7 +25,7 @@ const html =
   `<p>สวัสดีคุณ <strong>${esc(firstName)}</strong></p>` +
   `<p>การชำระเงินสำหรับ <strong>${esc(productName)}</strong> สำเร็จแล้ว คุณจะได้รับ <strong>2 ไฟล์</strong> กดปุ่มด้านล่างเพื่อดาวน์โหลดแต่ละไฟล์</p>` +
   `<div style="margin-top:20px">${buttons}</div>` +
-  `<p style="color:#666;font-size:13px;border-top:1px solid #eeeeee;padding-top:14px;margin-top:18px">ลิงก์เหล่านี้จะหมดอายุใน ${expiryHours} ชั่วโมง<br/>⚠️ ไฟล์มีลายน้ำระบุชื่อและอีเมลของคุณ โปรดอย่าเผยแพร่ต่อ</p>` +
+  `<p style="color:#666;font-size:13px;border-top:1px solid #eeeeee;padding-top:14px;margin-top:18px">ลิงก์เหล่านี้จะหมดอายุใน ${expiryHours} ชั่วโมง</p>` +
   `</div>`;
 
 const resend = new Resend(process.env.RESEND_API_KEY);

@@ -94,8 +94,10 @@ function fitSize(font: PDFFont, text: string, preferred: number, min: number, ma
 /** ไฟล์ที่ "ไม่ใส่ลายน้ำทั้งไฟล์" — กระดาษคำตอบมีไว้พิมพ์ฝนคำตอบจริง ลายน้ำจะกวนวงกลม OMR */
 const NO_WATERMARK: ReadonlySet<FileId> = new Set(["answersheet"]);
 
-/** ไฟล์ที่ "ข้ามลายน้ำเฉพาะหน้าแรก" — หน้าแรกของไฟล์โจทย์คือหน้าปกที่แปะรูปไว้ (scripts/prepend-cover.mjs) */
-const SKIP_COVER_PAGE: ReadonlySet<FileId> = new Set(["questions"]);
+/** ไฟล์ที่ "ข้ามลายน้ำเฉพาะหน้าแรก" — หน้าแรกเป็นหน้าปก
+ *  · questions  = หน้าปกที่แปะรูปไว้ (scripts/prepend-cover.mjs)
+ *  · sum4content = หน้าปก "สรุป TPAT3" ในตัว Mind Map (เจ้าของขอให้ปกสะอาดไม่มีลายน้ำ) */
+const SKIP_COVER_PAGE: ReadonlySet<FileId> = new Set(["questions", "sum4content"]);
 
 /**
  * เตรียมไฟล์ PDF พร้อมส่งให้ลูกค้า: โหลดต้นฉบับ + ใส่ลายน้ำตามกติการายไฟล์

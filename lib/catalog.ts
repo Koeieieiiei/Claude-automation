@@ -61,7 +61,7 @@ export const PRODUCTS: Record<ProductId, Product> = {
   "bundle-all": {
     id: "bundle-all",
     name: "ครบเซ็ตพร้อมสอบ (Mock + สรุปเนื้อหา TPAT3)",
-    price: 219,
+    price: 199,
     compareAt: 258, // 159 + 99
     files: ["questions", "answers", "answersheet", "sum4content", "sum4formula"],
   },

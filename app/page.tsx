@@ -239,6 +239,7 @@ export default function Home() {
                 { src: "/covers/sum4.png", alt: "ปกสรุปเนื้อหา TPAT3" },
               ]}
               items={["Mock TPAT3 (โจทย์ + เฉลย + กระดาษคำตอบ)", "สรุปเนื้อหา TPAT3 (เนื้อหา + สูตรล้วน)"]}
+              upsellFrom={PRODUCTS.mock1}
               onBuy={buy}
             />
           </div>
@@ -391,7 +392,7 @@ function SummaryCard({
 
 /* ---------- การ์ดชุดสุดคุ้ม ---------- */
 function BundleCard({
-  eyebrow, product, displayName, items, dimItems = [], onBuy, hot = false, covers = [],
+  eyebrow, product, displayName, items, dimItems = [], onBuy, hot = false, covers = [], upsellFrom,
 }: {
   eyebrow: string;
   product: Product;
@@ -402,8 +403,12 @@ function BundleCard({
   hot?: boolean;
   /** รูปปกโชว์บนหัวการ์ด — ใบเดียววางตรง สองใบวางเหลื่อมซ้อนกัน */
   covers?: { src: string; alt: string }[];
+  /** ถ้าใส่: ชูราคาส่วนต่างจากสินค้านี้ ("เพิ่ม +40") แทนที่จะโชว์ราคาเต็มเฉยๆ */
+  upsellFrom?: Product;
 }) {
   const save = product.compareAt ? product.compareAt - product.price : 0;
+  // ส่วนต่างจาก Mock เดี่ยว — จ่ายเพิ่มอีกนิดได้สรุปครบ (คำนวณสด กันลืมแก้ตอนเปลี่ยนราคา)
+  const upsell = upsellFrom ? product.price - upsellFrom.price : 0;
   return (
     <div
       className={`relative flex flex-col bg-white p-7 ${
@@ -414,7 +419,7 @@ function BundleCard({
     >
       {hot && (
         <span className="absolute -top-3.5 left-6 bg-maroon px-3 py-1 font-label text-[11px] font-bold uppercase tracking-[0.18em] text-paper">
-          คุ้มที่สุด
+          คุ้มสุด · คนซื้อเยอะสุด
         </span>
       )}
       {covers.length > 0 && (
@@ -454,19 +459,36 @@ function BundleCard({
           </li>
         ))}
       </ul>
-      <div className="mt-5 flex flex-wrap items-baseline gap-2.5">
-        <span className="font-display text-[2.1rem] font-bold leading-none text-maroon">
-          ฿{product.price.toLocaleString()}
-        </span>
-        {product.compareAt && (
-          <>
-            <span className="text-[0.95rem] text-ink/45 line-through">฿{product.compareAt.toLocaleString()}</span>
-            <span className="border border-maroon/40 px-2 py-0.5 font-label text-xs font-bold text-maroon">
-              ประหยัด ฿{save.toLocaleString()}
+      {upsell > 0 ? (
+        // ชูราคาส่วนต่าง — "เพิ่มสรุปแค่ +40" เด่นกว่าราคาเต็ม
+        <div className="mt-5">
+          <div className="flex items-baseline gap-2">
+            <span className="font-display text-[2.1rem] font-bold leading-none text-maroon">
+              เพิ่มสรุปแค่ +฿{upsell.toLocaleString()}
             </span>
-          </>
-        )}
-      </div>
+          </div>
+          <p className="mt-2 text-[0.9rem] text-ink/60">
+            จ่ายเพิ่มจาก Mock นิดเดียว ได้สรุปครบ (ปกติ ฿{PRODUCTS.sum4.price.toLocaleString()}) · รวมจ่าย ฿{product.price.toLocaleString()}
+            {product.compareAt && (
+              <> <span className="text-ink/40 line-through">฿{product.compareAt.toLocaleString()}</span></>
+            )}
+          </p>
+        </div>
+      ) : (
+        <div className="mt-5 flex flex-wrap items-baseline gap-2.5">
+          <span className="font-display text-[2.1rem] font-bold leading-none text-maroon">
+            ฿{product.price.toLocaleString()}
+          </span>
+          {product.compareAt && (
+            <>
+              <span className="text-[0.95rem] text-ink/45 line-through">฿{product.compareAt.toLocaleString()}</span>
+              <span className="border border-maroon/40 px-2 py-0.5 font-label text-xs font-bold text-maroon">
+                ประหยัด ฿{save.toLocaleString()}
+              </span>
+            </>
+          )}
+        </div>
+      )}
       <button
         onClick={() => onBuy(product)}
         className={`mt-5 w-full py-3.5 font-bold transition ${
@@ -475,7 +497,11 @@ function BundleCard({
             : "border border-maroon/40 text-maroon hover:border-maroon"
         }`}
       >
-        {hot ? `สั่งซื้อครบเซ็ต · ฿${product.price.toLocaleString()}` : "เลือกชุดนี้"}
+        {hot
+          ? upsell > 0
+            ? `เพิ่มสรุป +฿${upsell.toLocaleString()} · รวม ฿${product.price.toLocaleString()}`
+            : `สั่งซื้อครบเซ็ต · ฿${product.price.toLocaleString()}`
+          : "เลือกชุดนี้"}
       </button>
     </div>
   );

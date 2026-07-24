@@ -49,7 +49,7 @@ export const PRODUCTS: Record<ProductId, Product> = {
   mock1: {
     id: "mock1",
     name: "Mock TPAT3 ชุดที่ 1 (โจทย์ + เฉลย + กระดาษคำตอบ)",
-    price: 179,
+    price: 159,
     files: ["questions", "answers", "answersheet"],
   },
   sum4: {
@@ -62,7 +62,7 @@ export const PRODUCTS: Record<ProductId, Product> = {
     id: "bundle-all",
     name: "ครบเซ็ตพร้อมสอบ (Mock + สรุปเนื้อหา TPAT3)",
     price: 219,
-    compareAt: 278, // 179 + 99
+    compareAt: 258, // 159 + 99
     files: ["questions", "answers", "answersheet", "sum4content", "sum4formula"],
   },
 };

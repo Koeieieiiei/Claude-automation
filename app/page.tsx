@@ -460,18 +460,26 @@ function BundleCard({
         ))}
       </ul>
       {upsell > 0 ? (
-        // ชูราคาส่วนต่าง — "เพิ่มสรุปแค่ +40" เด่นกว่าราคาเต็ม
+        // ราคาเต็มตัวใหญ่ + บรรทัด "เพิ่มสรุปแค่ +40" ขนาดกลางเป็นตัวชู
         <div className="mt-5">
-          <div className="flex items-baseline gap-2">
+          <div className="flex flex-wrap items-baseline gap-2.5">
             <span className="font-display text-[2.1rem] font-bold leading-none text-maroon">
-              เพิ่มสรุปแค่ +฿{upsell.toLocaleString()}
+              ฿{product.price.toLocaleString()}
             </span>
-          </div>
-          <p className="mt-2 text-[0.9rem] text-ink/60">
-            จ่ายเพิ่มจาก Mock นิดเดียว ได้สรุปครบ (ปกติ ฿{PRODUCTS.sum4.price.toLocaleString()}) · รวมจ่าย ฿{product.price.toLocaleString()}
             {product.compareAt && (
-              <> <span className="text-ink/40 line-through">฿{product.compareAt.toLocaleString()}</span></>
+              <>
+                <span className="text-[0.95rem] text-ink/45 line-through">฿{product.compareAt.toLocaleString()}</span>
+                <span className="border border-maroon/40 px-2 py-0.5 font-label text-xs font-bold text-maroon">
+                  ประหยัด ฿{save.toLocaleString()}
+                </span>
+              </>
             )}
+          </div>
+          <p className="mt-2.5 font-display text-[1.15rem] font-bold text-maroon">
+            เพิ่มสรุปแค่ +฿{upsell.toLocaleString()}
+          </p>
+          <p className="mt-1 text-[0.85rem] text-ink/60">
+            จ่ายเพิ่มจาก Mock นิดเดียว ได้สรุปครบ (ปกติ ฿{PRODUCTS.sum4.price.toLocaleString()})
           </p>
         </div>
       ) : (

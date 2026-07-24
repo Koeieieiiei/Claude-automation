@@ -467,19 +467,11 @@ function BundleCard({
               ฿{product.price.toLocaleString()}
             </span>
             {product.compareAt && (
-              <>
-                <span className="text-[0.95rem] text-ink/45 line-through">฿{product.compareAt.toLocaleString()}</span>
-                <span className="border border-maroon/40 px-2 py-0.5 font-label text-xs font-bold text-maroon">
-                  ประหยัด ฿{save.toLocaleString()}
-                </span>
-              </>
+              <span className="text-[0.95rem] text-ink/45 line-through">฿{product.compareAt.toLocaleString()}</span>
             )}
           </div>
           <p className="mt-2.5 font-display text-[1.15rem] font-bold text-maroon">
             เพิ่มสรุปแค่ +฿{upsell.toLocaleString()}
-          </p>
-          <p className="mt-1 text-[0.85rem] text-ink/60">
-            จ่ายเพิ่มจาก Mock นิดเดียว ได้สรุปครบ (ปกติ ฿{PRODUCTS.sum4.price.toLocaleString()})
           </p>
         </div>
       ) : (

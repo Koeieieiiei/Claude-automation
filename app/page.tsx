@@ -499,7 +499,7 @@ function BundleCard({
       >
         {hot
           ? upsell > 0
-            ? `เพิ่มสรุป +฿${upsell.toLocaleString()} · รวม ฿${product.price.toLocaleString()}`
+            ? "สั่งซื้อครบเซ็ต"
             : `สั่งซื้อครบเซ็ต · ฿${product.price.toLocaleString()}`
           : "เลือกชุดนี้"}
       </button>

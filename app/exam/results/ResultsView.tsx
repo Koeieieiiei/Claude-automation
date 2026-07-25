@@ -114,17 +114,9 @@ export default function ResultsView() {
               ผลสอบ Mock TPAT3
             </span>
           </div>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => window.print()}
-              className="border border-ink/40 px-4 py-1.5 text-sm font-semibold text-ink transition hover:border-ink"
-            >
-              พิมพ์เก็บไว้
-            </button>
-            <a href="/" className="text-sm font-semibold text-maroon hover:underline">
-              หน้าหลัก →
-            </a>
-          </div>
+          <a href="/" className="text-sm font-semibold text-maroon hover:underline">
+            หน้าหลัก →
+          </a>
         </div>
       </header>
 
@@ -233,7 +225,6 @@ export default function ResultsView() {
           <h2 className="font-display text-2xl font-bold text-ink">ไฟล์แนบท้ายผลสอบ</h2>
           <p className="mt-2 text-sm leading-relaxed text-ink/70">
             ดาวน์โหลด<strong>ไฟล์โจทย์</strong>และ<strong>ไฟล์เฉลยละเอียด</strong>ไว้ทบทวนคู่กับผลวิเคราะห์ด้านบน
-            (ชุดเดียวกับที่ได้รับตอนซื้อ · PDF มีลายน้ำชื่อผู้ซื้อ) — แนะนำเปิดในคอมพิวเตอร์หรือ iPad
           </p>
           <div className="mt-5 grid gap-3 sm:grid-cols-2">
             {data.downloads.map((d) => (

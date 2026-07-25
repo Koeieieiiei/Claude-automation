@@ -42,8 +42,12 @@ function Gear({ teeth = 12, className = "", spin }: { teeth?: number; className?
   );
 }
 
+/** สถานะสิทธิ์ทำข้อสอบของเครื่องนี้ — ใช้สลับปุ่มใหญ่บน hero */
+type ExamState = "eligible" | "in_progress" | "submitted";
+
 export default function Home() {
   const [buying, setBuying] = useState<Product | null>(null);
+  const [examState, setExamState] = useState<ExamState | null>(null);
 
   useEffect(() => {
     fetch("/api/track", {
@@ -51,6 +55,34 @@ export default function Home() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ path: "/", referrer: document.referrer }),
     }).catch(() => {});
+  }, []);
+
+  // ผู้ซื้อชุด Mock ที่เคยเข้าห้องสอบจากเครื่องนี้ จะมีโทเค็นใน localStorage —
+  // เช็คสถานะกับ server แล้วเปลี่ยนปุ่ม hero: ยังไม่ทำ → "ทำข้อสอบ", ทำแล้ว → "ดูผลสอบ"
+  useEffect(() => {
+    let token = "";
+    try {
+      token = localStorage.getItem("exam.token") ?? "";
+    } catch {}
+    if (!token) return;
+    fetch("/api/exam/access", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token }),
+    })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!data) return;
+        if (data.state === "eligible" || data.state === "in_progress" || data.state === "submitted") {
+          setExamState(data.state);
+          if (data.token) {
+            try {
+              localStorage.setItem("exam.token", data.token);
+            } catch {}
+          }
+        }
+      })
+      .catch(() => {});
   }, []);
 
   const buy = (p: Product) => setBuying(p);
@@ -93,24 +125,44 @@ export default function Home() {
           </h1>
 
           <div className="mt-8 flex flex-wrap items-center gap-5">
+            {/* ผู้ซื้อที่ยังไม่ทำข้อสอบ เห็นปุ่มทำข้อสอบแทนปุ่มขาย (ทำแล้วเห็นปุ่มดูผล) */}
             <a
-              href="#bundles"
+              href={examState === "submitted" ? "/exam/results" : examState ? "/exam" : "#bundles"}
               className="group inline-flex items-center gap-3 bg-maroon px-[42px] py-[23px] text-[19px] font-bold text-white transition hover:bg-maroon-dark"
             >
-              ดูชุดสุดคุ้ม · เริ่ม ฿{PRODUCTS.sum4.price.toLocaleString()}
+              {examState === "eligible" && "ทำข้อสอบ Mock TPAT3 · 70 ข้อ · 3 ชม."}
+              {examState === "in_progress" && "ทำข้อสอบต่อ — เวลากำลังเดิน"}
+              {examState === "submitted" && "ดูผลสอบ + บทวิเคราะห์ของคุณ"}
+              {!examState && <>ดูชุดสุดคุ้ม · เริ่ม ฿{PRODUCTS.sum4.price.toLocaleString()}</>}
               <svg className="h-4 w-4 transition group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
               </svg>
             </a>
           </div>
 
-          <a
-            href="#mock"
-            className="mt-5 inline-flex w-fit items-center gap-2 border-b border-dashed border-maroon/45 pb-0.5 text-[0.95rem] font-semibold text-maroon transition hover:border-solid"
-          >
-            <DownloadIcon className="h-4 w-4" />
-            โหลดตัวอย่างฟรีก่อนตัดสินใจ
-          </a>
+          {examState && examState !== "submitted" && (
+            <p className="mt-3 text-sm font-medium text-ink/60">
+              💻 แนะนำให้ทำในคอมพิวเตอร์ หรือ iPad · 1 อีเมลมีสิทธิ์สอบ 1 รอบ
+            </p>
+          )}
+
+          <div className="mt-5 flex flex-wrap items-center gap-x-7 gap-y-2">
+            <a
+              href="#mock"
+              className="inline-flex w-fit items-center gap-2 border-b border-dashed border-maroon/45 pb-0.5 text-[0.95rem] font-semibold text-maroon transition hover:border-solid"
+            >
+              <DownloadIcon className="h-4 w-4" />
+              โหลดตัวอย่างฟรีก่อนตัดสินใจ
+            </a>
+            {!examState && (
+              <a
+                href="/exam"
+                className="inline-flex w-fit items-center gap-2 border-b border-dashed border-maroon/45 pb-0.5 text-[0.95rem] font-semibold text-maroon transition hover:border-solid"
+              >
+                ซื้อแล้ว? เข้าห้องสอบออนไลน์ →
+              </a>
+            )}
+          </div>
         </div>
       </section>
 

@@ -69,11 +69,11 @@
 
 **[5] ส่งของอัตโนมัติ** — [lib/fulfillment.ts](lib/fulfillment.ts)
 - เช็คก่อนว่าไฟล์ต้นฉบับ (โจทย์+เฉลย) มีจริง — ถ้าไม่มีจะล้มก่อนส่งอีเมล ไม่หลอกลูกค้าด้วยลิงก์เสีย
-- `createDownloadToken()` สร้าง token เซ็น HMAC ([lib/download-token.ts](lib/download-token.ts)) — ฝังชื่อ/อีเมล + วันหมดอายุ (ดีฟอลต์ 72 ชม.)
+- `createDownloadToken()` สร้าง token เซ็น HMAC ([lib/download-token.ts](lib/download-token.ts)) — ฝังชื่อ/อีเมล + รายการไฟล์ที่ซื้อ · **ลิงก์ไม่มีวันหมดอายุ** (ตั้ง `DOWNLOAD_EXPIRY_HOURS` เป็นจำนวนบวกถ้าอยากให้หมดอายุอีกครั้ง)
 - ส่งอีเมล HTML พร้อมปุ่มดาวน์โหลด 2 ไฟล์ผ่าน Resend ([lib/email.ts](lib/email.ts))
 
 **[6]-[8] ลูกค้าโหลดไฟล์** — [app/api/download/[file]/[token]/route.ts](app/api/download/%5Bfile%5D/%5Btoken%5D/route.ts)
-- `verifyDownloadToken()` ตรวจลายเซ็น (timing-safe) + วันหมดอายุ → ไม่ผ่านคืน 403
+- `verifyDownloadToken()` ตรวจลายเซ็น (timing-safe) → ไม่ผ่านคืน 403 (วันหมดอายุปิดอยู่ ลิงก์เก่าที่เคยหมดอายุจึงกลับมาใช้ได้)
 - โหลด PDF ต้นฉบับจาก Supabase Storage (มี cache ระดับ instance) ([lib/watermark.ts](lib/watermark.ts))
 - ฝังลายน้ำ **ตอนกดดาวน์โหลด** (on-the-fly): ชื่อ+อีเมลทแยงกลางหน้า + แถบล่างทุกหน้า
 - ส่ง PDF กลับเป็นไฟล์ดาวน์โหลด
@@ -84,7 +84,7 @@
 
 ## 🔒 ความปลอดภัย
 
-- **ลิงก์ดาวน์โหลดเซ็นด้วย HMAC-SHA256** + มีวันหมดอายุ — ปลอมไม่ได้ ([lib/download-token.ts](lib/download-token.ts))
+- **ลิงก์ดาวน์โหลดเซ็นด้วย HMAC-SHA256** + จำกัดสิทธิ์เฉพาะไฟล์ที่ซื้อ — ปลอมไม่ได้ ([lib/download-token.ts](lib/download-token.ts))
 - **Guard กันคีย์ลับอ่อน:** ถ้า `DOWNLOAD_SECRET` ไม่ปลอดภัย (ว่าง/สั้น/เป็นค่า placeholder) ระบบจะ **หยุดทำงานทันที** ทุกที่ที่ไม่ใช่ dev แทนที่จะปล่อยให้ปลอมลิงก์ได้ ([lib/config.ts](lib/config.ts))
 - **ตรวจลายเซ็น Stripe webhook** ทุกครั้ง กัน event ปลอม
 - **กัน formula injection** ใน Google Sheets — เขียนแบบ RAW + neutralize อักขระอันตราย ([lib/sheets.ts](lib/sheets.ts))
@@ -159,7 +159,7 @@ npx vercel --prod --yes
 | [app/api/download/[file]/[token]/route.ts](app/api/download/%5Bfile%5D/%5Btoken%5D/route.ts) | ตรวจ token → ฝังลายน้ำ → ส่งไฟล์ |
 | [lib/fulfillment.ts](lib/fulfillment.ts) | ออเคสเตรชัน: สร้างลิงก์ + ส่งอีเมล |
 | [lib/watermark.ts](lib/watermark.ts) | ฝังลายน้ำ PDF |
-| [lib/download-token.ts](lib/download-token.ts) | ลิงก์ดาวน์โหลดเซ็น HMAC + หมดอายุ + guard |
+| [lib/download-token.ts](lib/download-token.ts) | ลิงก์ดาวน์โหลดเซ็น HMAC (ไม่มีวันหมดอายุ) + guard |
 | [lib/config.ts](lib/config.ts) | อ่าน env + ตรวจความพร้อม/ความปลอดภัยของแต่ละ service |
 | [app/success/page.tsx](app/success/page.tsx) | หน้าหลังจ่ายเงิน + เตือนเช็ก Junk/Spam |
 

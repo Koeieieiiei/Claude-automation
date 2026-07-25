@@ -4,7 +4,10 @@ import { config } from "./config";
 /**
  * โทเค็นดาวน์โหลดแบบเซ็นด้วย HMAC — กันการปลอมแปลง
  * ข้อมูลผู้ซื้อ (ชื่อ/อีเมล) ฝังอยู่ในโทเค็นเพื่อใช้สร้างลายน้ำตอนดาวน์โหลด
- * โดยไม่ต้องพึ่งฐานข้อมูล และมีวันหมดอายุในตัว
+ * โดยไม่ต้องพึ่งฐานข้อมูล
+ *
+ * ค่าเริ่มต้น: ลิงก์ **ไม่มีวันหมดอายุ** (config.download.expiryHours = 0)
+ * ตั้ง DOWNLOAD_EXPIRY_HOURS เป็นจำนวนบวกเมื่อไหร่ ระบบจะกลับมาฝัง exp และบังคับวันหมดอายุ
  */
 export interface DownloadPayload {
   orderId: string;
@@ -16,7 +19,8 @@ export interface DownloadPayload {
    * โทเค็นรุ่นเก่าไม่มี field นี้ — ฝั่งตรวจสิทธิ์จะถือว่าเป็นชุด Mock เดิม (โจทย์+เฉลย)
    */
   files?: string[];
-  exp: number; // unix ms
+  /** unix ms — ไม่มี = ไม่หมดอายุ */
+  exp?: number;
 }
 
 function b64url(buf: Buffer): string {
@@ -48,12 +52,17 @@ function assertSecureSecret(): void {
   }
 }
 
+/** เปิดใช้วันหมดอายุก็ต่อเมื่อตั้ง DOWNLOAD_EXPIRY_HOURS ไว้ (0 = ปิด ซึ่งเป็นค่าเริ่มต้น) */
+function expiryEnabled(): boolean {
+  return config.download.expiryHours !== 0;
+}
+
 export function createDownloadToken(payload: Omit<DownloadPayload, "exp">): string {
   assertSecureSecret();
-  const full: DownloadPayload = {
-    ...payload,
-    exp: Date.now() + config.download.expiryHours * 3600 * 1000,
-  };
+  const full: DownloadPayload = { ...payload };
+  if (expiryEnabled()) {
+    full.exp = Date.now() + config.download.expiryHours * 3600 * 1000;
+  }
   const body = b64url(Buffer.from(JSON.stringify(full)));
   return `${body}.${sign(body)}`;
 }
@@ -70,7 +79,11 @@ export function verifyDownloadToken(token: string): DownloadPayload | null {
 
   try {
     const payload = JSON.parse(fromB64url(body).toString()) as DownloadPayload;
-    if (Date.now() > payload.exp) return null; // หมดอายุ
+    // เช็ควันหมดอายุเฉพาะตอนเปิดใช้ระบบหมดอายุเท่านั้น — ปิดอยู่ (ค่าเริ่มต้น) แปลว่า
+    // ลิงก์เก่าที่เคยฝัง exp ไว้ก็กลับมาใช้ได้ ลูกค้าเดิมไม่ต้องขอลิงก์ใหม่
+    if (expiryEnabled() && typeof payload.exp === "number" && Date.now() > payload.exp) {
+      return null;
+    }
     return payload;
   } catch {
     return null;

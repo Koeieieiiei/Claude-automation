@@ -10,13 +10,20 @@ export async function sendDownloadEmail(input: {
   firstName: string;
   productName: string;
   links: { label: string; url: string }[];
+  /** อายุลิงก์ (ชั่วโมง) — 0 = ไม่มีวันหมดอายุ (ค่าเริ่มต้นของร้าน) */
   expiryHours: number;
 }): Promise<void> {
   const subject = `ดาวน์โหลด ${input.productName} ของคุณ`;
   const fileCount = input.links.length;
   // โชว์อายุลิงก์เป็น "วัน" ถ้าหารด้วย 24 ลงตัว (เช่น 168 ชม. → 7 วัน) อ่านง่ายกว่า
-  const expiryText =
-    input.expiryHours % 24 === 0 ? `${input.expiryHours / 24} วัน` : `${input.expiryHours} ชั่วโมง`;
+  const footerNote =
+    input.expiryHours > 0
+      ? `ลิงก์เหล่านี้จะหมดอายุใน ${
+          input.expiryHours % 24 === 0
+            ? `${input.expiryHours / 24} วัน`
+            : `${input.expiryHours} ชั่วโมง`
+        }`
+      : "เก็บอีเมลฉบับนี้ไว้ได้เลย — ลิงก์ดาวน์โหลดไม่มีวันหมดอายุ";
   const buttons = input.links
     .map(
       (l) =>
@@ -29,7 +36,7 @@ export async function sendDownloadEmail(input: {
     `<p>สวัสดีคุณ <strong>${escapeHtml(input.firstName)}</strong></p>` +
     `<p>การชำระเงินสำหรับ <strong>${escapeHtml(input.productName)}</strong> สำเร็จแล้ว คุณจะได้รับ <strong>${fileCount} ไฟล์</strong> กดปุ่มด้านล่างเพื่อดาวน์โหลดแต่ละไฟล์</p>` +
     `<div style="margin-top:20px">${buttons}</div>` +
-    `<p style="color:#666;font-size:13px;border-top:1px solid #eeeeee;padding-top:14px;margin-top:18px">ลิงก์เหล่านี้จะหมดอายุใน ${expiryText}</p>` +
+    `<p style="color:#666;font-size:13px;border-top:1px solid #eeeeee;padding-top:14px;margin-top:18px">${escapeHtml(footerNote)}</p>` +
     `</div>`;
 
   if (!ready.resend) {

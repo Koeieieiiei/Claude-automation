@@ -41,7 +41,7 @@ export default function SuccessView() {
   const [status, setStatus] = useState<Status>("loading");
   const [links, setLinks] = useState<DownloadLink[]>([]);
   const [email, setEmail] = useState("");
-  const [expiryHours, setExpiryHours] = useState(168);
+  const [expiryHours, setExpiryHours] = useState(0); // 0 = ไม่มีวันหมดอายุ
 
   useEffect(() => {
     if (!order) {
@@ -130,7 +130,11 @@ export default function SuccessView() {
   }
 
   if (status === "ready") {
-    const expiryText = expiryHours % 24 === 0 ? `${expiryHours / 24} วัน` : `${expiryHours} ชั่วโมง`;
+    // expiryHours = 0 (ค่าเริ่มต้นของร้าน) แปลว่าลิงก์ไม่มีวันหมดอายุ
+    const expiryText =
+      expiryHours > 0
+        ? `ภายใน ${expiryHours % 24 === 0 ? `${expiryHours / 24} วัน` : `${expiryHours} ชั่วโมง`}`
+        : "ได้ตลอด ไม่มีวันหมดอายุ";
     return (
       <Frame badge="ชำระแล้ว ✓">
         <div className="px-8 py-10">
@@ -164,7 +168,7 @@ export default function SuccessView() {
             </p>
             <p className="mt-1.5 text-sm leading-relaxed text-ink/75">
               เราส่งลิงก์ชุดเดียวกันนี้ไปที่อีเมล{email ? <> <strong>{email}</strong></> : ""} ไว้ด้วย
-              เปิดดาวน์โหลดย้อนหลังได้ภายใน {expiryText} — หากไม่พบ ลองเช็กกล่อง Junk / Spam แล้วค้นคำว่า{" "}
+              เปิดดาวน์โหลดย้อนหลัง{expiryText} — หากไม่พบ ลองเช็กกล่อง Junk / Spam แล้วค้นคำว่า{" "}
               <strong>tpat3mock</strong>
             </p>
           </div>

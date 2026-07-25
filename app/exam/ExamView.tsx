@@ -33,7 +33,6 @@ export default function ExamView() {
   const [phase, setPhase] = useState<Phase>("loading");
   const [token, setToken] = useState("");
   const [email, setEmail] = useState("");
-  const [firstName, setFirstName] = useState("");
   const [resumed, setResumed] = useState(false);
   const [retakeMode, setRetakeMode] = useState(false); // อีเมลยกเว้น เริ่มรอบใหม่ทับรอบเก่า
   const [gateError, setGateError] = useState("");
@@ -71,7 +70,6 @@ export default function ExamView() {
       const t = data.token ?? "";
       setToken(t);
       setEmail(data.email ?? "");
-      setFirstName(data.firstName ?? "");
       try {
         localStorage.setItem(LS_TOKEN, t);
         localStorage.setItem(LS_EMAIL, data.email ?? "");
@@ -378,9 +376,7 @@ export default function ExamView() {
             <h1 className="font-display text-3xl font-bold text-ink">
               {resumed ? "ทำข้อสอบต่อ" : retakeMode ? "เริ่มรอบใหม่" : "พร้อมสอบหรือยัง?"}
             </h1>
-            <p className="mt-2 text-ink/70">
-              สวัสดี{firstName ? ` คุณ${firstName}` : ""} — อ่านกติกาสั้น ๆ ก่อนเริ่มนะ
-            </p>
+            <p className="mt-2 text-ink/70">กติกาก่อนสอบ</p>
 
             {retakeMode && (
               <p className="mt-4 border border-dashed border-maroon/50 bg-maroon/[0.05] px-4 py-3 text-sm leading-relaxed text-ink/75">
@@ -456,11 +452,6 @@ export default function ExamView() {
             >
               {busy ? "กำลังเข้าห้องสอบ…" : resumed ? "กลับเข้าห้องสอบ (เวลากำลังเดิน)" : "เริ่มทำข้อสอบ — เริ่มจับเวลา 3 ชั่วโมง"}
             </button>
-            {!resumed && (
-              <p className="mt-2 text-center font-label text-xs text-ink/50">
-                กดแล้วเวลาเดินทันทีและหยุดไม่ได้ — มีสิทธิ์ทำรอบเดียว
-              </p>
-            )}
           </div>
         </div>
 

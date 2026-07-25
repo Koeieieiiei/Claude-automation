@@ -54,3 +54,7 @@ next-env.d.ts
 # ไฟล์พรีวิว/ทดสอบที่ generate เอง — ไม่ใช่ส่วนของสินค้า
 watermark-preview.pdf
 *-preview.pdf
+
+# log ของเว็บทดสอบในเครื่อง
+prod-exam.log
+dev-exam.log

@@ -264,7 +264,7 @@ export default function Home() {
               product={PRODUCTS.mock1}
               displayName="Mock เดี่ยว"
               covers={[{ src: "/covers/mock.png", alt: "ปกข้อสอบ Mock TPAT3" }]}
-              items={["Mock TPAT3 (โจทย์ + เฉลย + กระดาษคำตอบ)"]}
+              items={["Mock TPAT3 (โจทย์ + เฉลย + กระดาษคำตอบ)", "โควตาเข้าสอบออนไลน์ 1 ครั้ง"]}
               dimItems={["สรุปเนื้อหา TPAT3"]}
               onBuy={buy}
             />
@@ -274,7 +274,7 @@ export default function Home() {
               displayName="สรุปเดี่ยว"
               covers={[{ src: "/covers/sum4.png", alt: "ปกสรุปเนื้อหา TPAT3" }]}
               items={["สรุปเนื้อหา TPAT3 (เนื้อหา + สูตรล้วน)"]}
-              dimItems={["Mock TPAT3"]}
+              dimItems={["Mock TPAT3", "โควตาเข้าสอบออนไลน์"]}
               onBuy={buy}
             />
             <BundleCard
@@ -286,7 +286,11 @@ export default function Home() {
                 { src: "/covers/mock.png", alt: "ปกข้อสอบ Mock TPAT3" },
                 { src: "/covers/sum4.png", alt: "ปกสรุปเนื้อหา TPAT3" },
               ]}
-              items={["Mock TPAT3 (โจทย์ + เฉลย + กระดาษคำตอบ)", "สรุปเนื้อหา TPAT3 (เนื้อหา + สูตรล้วน)"]}
+              items={[
+                "Mock TPAT3 (โจทย์ + เฉลย + กระดาษคำตอบ)",
+                "โควตาเข้าสอบออนไลน์ 1 ครั้ง",
+                "สรุปเนื้อหา TPAT3 (เนื้อหา + สูตรล้วน)",
+              ]}
               upsellFrom={PRODUCTS.mock1}
               onBuy={buy}
             />

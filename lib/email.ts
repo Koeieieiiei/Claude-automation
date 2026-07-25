@@ -30,7 +30,7 @@ export async function sendDownloadEmail(input: {
     .join("");
   // ชุดที่มีข้อสอบ: ชวนเข้าห้องสอบก่อน แล้วค่อยเป็นไฟล์ พร้อมเตือนเรื่องเปิดเฉลย
   const examBlock = input.hasExam
-    ? `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 8px"><tr><td style="background:#6E1423;border-radius:8px"><a href="${config.baseUrl}/exam" style="display:inline-block;color:#ffffff;padding:16px 34px;text-decoration:none;font-weight:700;font-size:16px;font-family:Arial,sans-serif">เริ่มสอบ &middot; 70 ข้อ &middot; จับเวลา 3 ชม. &rarr;</a></td></tr></table>` +
+    ? `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 8px"><tr><td style="background:#6E1423;border-radius:8px"><a href="${config.baseUrl}/exam" style="display:inline-block;color:#ffffff;padding:16px 34px;text-decoration:none;font-weight:700;font-size:16px;font-family:Arial,sans-serif">เริ่มสอบ TPAT3 &middot; 70 ข้อ &middot; จับเวลา 3 ชม. &rarr;</a></td></tr></table>` +
       `<p style="color:#666;font-size:13px;margin:0 0 22px">กรอกชื่อ นามสกุล และอีเมลให้ตรงกับที่สั่งซื้อเพื่อเข้าห้องสอบ &middot; 1 อีเมลมีสิทธิ์สอบ 1 รอบ &middot; แนะนำให้ทำในคอมพิวเตอร์หรือ iPad</p>` +
       `<p style="font-size:14px;margin:0 0 10px"><strong>ไฟล์ของคุณ ${fileCount} ไฟล์</strong> — แนะนำให้เปิดไฟล์เฉลยหลังทำข้อสอบเสร็จ ผลวิเคราะห์จะได้ตรงกับฝีมือจริง</p>`
     : `<p>การชำระเงินสำหรับ <strong>${escapeHtml(input.productName)}</strong> สำเร็จแล้ว คุณจะได้รับ <strong>${fileCount} ไฟล์</strong> กดปุ่มด้านล่างเพื่อดาวน์โหลดแต่ละไฟล์</p>`;

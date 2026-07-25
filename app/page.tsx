@@ -172,10 +172,10 @@ export default function Home() {
       {/* ===== Mock ===== */}
       <section id="mock" className="mx-auto max-w-6xl scroll-mt-20 px-5 pb-16 pt-20">
         <h2 className="max-w-xl font-display text-3xl font-bold leading-snug text-ink md:text-4xl">
-          ไฟล์ข้อสอบ Mock TPAT3
+          ข้อสอบ Mock TPAT3
         </h2>
         <p className="mt-3 max-w-2xl text-[1.2rem] font-medium leading-relaxed text-ink">
-          โจทย์ + เฉลย + กระดาษคำตอบ · PDF 3 ไฟล์ · โควตาเข้าสอบ 1 ครั้ง
+          โจทย์ · เฉลย · กระดาษคำตอบ + โควตาเข้าสอบ 1 ครั้ง
         </p>
 
         <div className="mt-10 grid gap-5 md:grid-cols-[1.1fr_1fr]">
@@ -264,7 +264,7 @@ export default function Home() {
               product={PRODUCTS.mock1}
               displayName="Mock เดี่ยว"
               covers={[{ src: "/covers/mock.png", alt: "ปกข้อสอบ Mock TPAT3" }]}
-              items={["Mock TPAT3 (โจทย์ + เฉลย + กระดาษคำตอบ)", "โควตาเข้าสอบออนไลน์ 1 ครั้ง"]}
+              items={["Mock TPAT3 (โจทย์ + เฉลย + กระดาษคำตอบ)", "โควตาเข้าสอบ TPAT3 ออนไลน์ 1 ครั้ง"]}
               dimItems={["สรุปเนื้อหา TPAT3"]}
               onBuy={buy}
             />
@@ -274,7 +274,7 @@ export default function Home() {
               displayName="สรุปเดี่ยว"
               covers={[{ src: "/covers/sum4.png", alt: "ปกสรุปเนื้อหา TPAT3" }]}
               items={["สรุปเนื้อหา TPAT3 (เนื้อหา + สูตรล้วน)"]}
-              dimItems={["Mock TPAT3", "โควตาเข้าสอบออนไลน์"]}
+              dimItems={["Mock TPAT3", "โควตาเข้าสอบ TPAT3 ออนไลน์"]}
               onBuy={buy}
             />
             <BundleCard
@@ -288,7 +288,7 @@ export default function Home() {
               ]}
               items={[
                 "Mock TPAT3 (โจทย์ + เฉลย + กระดาษคำตอบ)",
-                "โควตาเข้าสอบออนไลน์ 1 ครั้ง",
+                "โควตาเข้าสอบ TPAT3 ออนไลน์ 1 ครั้ง",
                 "สรุปเนื้อหา TPAT3 (เนื้อหา + สูตรล้วน)",
               ]}
               upsellFrom={PRODUCTS.mock1}
@@ -330,7 +330,7 @@ export default function Home() {
             />
             <FaqItem
               q="ได้อะไรบ้าง?"
-              a="ชุด Mock ได้ไฟล์ PDF 3 ไฟล์ (โจทย์ + เฉลยละเอียด + กระดาษคำตอบ) พร้อมสิทธิ์ทำข้อสอบออนไลน์ 1 รอบและผลวิเคราะห์ · สรุปเนื้อหา TPAT3 ได้ 2 ไฟล์ (เนื้อหา + สูตรล้วน) · ไฟล์เป็นของคุณถาวร ลิงก์ดาวน์โหลดไม่มีวันหมดอายุ"
+              a="ชุด Mock ได้ไฟล์ PDF 3 ไฟล์ (โจทย์ + เฉลยละเอียด + กระดาษคำตอบ) พร้อมโควตาเข้าสอบ TPAT3 ออนไลน์ 1 ครั้งและผลวิเคราะห์ · สรุปเนื้อหา TPAT3 ได้ 2 ไฟล์ (เนื้อหา + สูตรล้วน) · ไฟล์เป็นของคุณถาวร ลิงก์ดาวน์โหลดไม่มีวันหมดอายุ"
             />
             <FaqItem
               q="ขอคืนเงินได้ไหม?"

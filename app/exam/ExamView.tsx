@@ -63,7 +63,7 @@ export default function ExamView() {
     (data: AccessResponse, opts: { verified?: boolean } = {}) => {
       if (!data.state || data.state === "none") {
         setGateError(
-          "ชื่อหรืออีเมลไม่ตรงกับข้อมูลการสั่งซื้อ — ตรวจตัวสะกดอีกครั้ง (ต้องตรงกับที่กรอกตอนซื้อ)"
+          "ชื่อ นามสกุล หรืออีเมลไม่ตรงกับข้อมูลการสั่งซื้อ — ตรวจตัวสะกดอีกครั้ง (ต้องตรงกับที่กรอกตอนซื้อ)"
         );
         setPhase("gate");
         return;
@@ -95,7 +95,10 @@ export default function ExamView() {
   );
 
   const checkAccess = useCallback(
-    async (body: { token?: string; email?: string; firstName?: string }, opts: { verified?: boolean } = {}) => {
+    async (
+      body: { token?: string; email?: string; firstName?: string; lastName?: string },
+      opts: { verified?: boolean } = {}
+    ) => {
       setBusy(true);
       setGateError("");
       try {
@@ -292,7 +295,7 @@ export default function ExamView() {
           <div className="px-6 py-8">
             <h1 className="font-display text-2xl font-bold text-ink">ยืนยันตัวตนก่อนเข้าสอบ</h1>
             <p className="mt-2 text-sm leading-relaxed text-ink/70">
-              กรอก<strong>ชื่อและอีเมลให้ตรงกับตอนสั่งซื้อ</strong>ชุด Mock TPAT3
+              กรอก<strong>ชื่อ นามสกุล และอีเมลให้ตรงกับตอนสั่งซื้อ</strong>ชุด Mock TPAT3
               จึงจะเข้าทำข้อสอบออนไลน์ได้ (70 ข้อ · จับเวลา 3 ชั่วโมง · ทำได้ 1 รอบ)
             </p>
             <form
@@ -302,16 +305,28 @@ export default function ExamView() {
                 const f = new FormData(e.currentTarget);
                 const em = ((f.get("email") as string) ?? "").trim();
                 const fn = ((f.get("firstName") as string) ?? "").trim();
-                if (em && fn) checkAccess({ email: em, firstName: fn }, { verified: true });
+                const ln = ((f.get("lastName") as string) ?? "").trim();
+                if (em && fn && ln) {
+                  checkAccess({ email: em, firstName: fn, lastName: ln }, { verified: true });
+                }
               }}
             >
-              <input
-                name="firstName"
-                type="text"
-                required
-                placeholder="ชื่อ (ตามที่กรอกตอนสั่งซื้อ)"
-                className="w-full border border-ink/40 bg-white px-4 py-3 text-ink outline-none focus:border-maroon"
-              />
+              <div className="grid gap-3 sm:grid-cols-2">
+                <input
+                  name="firstName"
+                  type="text"
+                  required
+                  placeholder="ชื่อ"
+                  className="w-full border border-ink/40 bg-white px-4 py-3 text-ink outline-none focus:border-maroon"
+                />
+                <input
+                  name="lastName"
+                  type="text"
+                  required
+                  placeholder="นามสกุล"
+                  className="w-full border border-ink/40 bg-white px-4 py-3 text-ink outline-none focus:border-maroon"
+                />
+              </div>
               <input
                 name="email"
                 type="email"
@@ -320,6 +335,9 @@ export default function ExamView() {
                 placeholder="อีเมลที่ใช้สั่งซื้อ"
                 className="mt-3 w-full border border-ink/40 bg-white px-4 py-3 text-ink outline-none focus:border-maroon"
               />
+              <p className="mt-2 font-label text-xs text-ink/45">
+                ต้องตรงกับที่กรอกตอนสั่งซื้อทั้ง 3 ช่อง
+              </p>
               <button
                 type="submit"
                 disabled={busy}

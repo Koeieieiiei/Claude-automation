@@ -11,20 +11,21 @@ function sameName(a: string, b: string): boolean {
 }
 
 /**
- * เช็คสิทธิ์เข้าห้องสอบ — รับ { email, firstName } (พิมพ์เอง) หรือ { token } (จากลิงก์/localStorage)
+ * เช็คสิทธิ์เข้าห้องสอบ — รับ { email, firstName, lastName } (พิมพ์เอง)
+ * หรือ { token } (จากลิงก์/localStorage)
  *
- * กติกาตามสเปกเจ้าของร้าน: กดปุ่มทำข้อสอบแล้วต้องกรอก "ชื่อ + อีเมล" ก่อน
- * ตรงกับข้อมูลตอนซื้อทั้งคู่ถึงเข้าสอบได้ — ไม่ตรงอย่างใดอย่างหนึ่ง = เข้าไม่ได้
+ * กติกาตามสเปกเจ้าของร้าน: กดปุ่มทำข้อสอบแล้วต้องกรอก "ชื่อ + นามสกุล + อีเมล" ก่อน
+ * ตรงกับข้อมูลตอนซื้อทั้งหมดถึงเข้าสอบได้ — ไม่ตรงอย่างใดอย่างหนึ่ง = เข้าไม่ได้
  * (โทเค็นที่เคยผ่านการเช็คแล้วฝังตัวตนไว้ในลายเซ็น จึงไม่ต้องกรอกซ้ำ)
  *
  * ตอบ state อย่างใดอย่างหนึ่ง:
- *   none        ไม่พบสิทธิ์ (ยังไม่ซื้อ / ชื่อหรืออีเมลไม่ตรงกับที่ซื้อ)
+ *   none        ไม่พบสิทธิ์ (ยังไม่ซื้อ / ชื่อ-นามสกุล-อีเมลไม่ตรงกับที่ซื้อ)
  *   eligible    มีสิทธิ์ ยังไม่เริ่มทำ
  *   in_progress เริ่มทำแล้ว ยังไม่หมดเวลา (ทำต่อได้)
  *   submitted   ส่งข้อสอบแล้ว (ดูผลได้ ทำซ้ำไม่ได้ — 1 อีเมลทำได้ 1 รอบ)
  */
 export async function POST(req: NextRequest) {
-  let body: { email?: string; firstName?: string; token?: string };
+  let body: { email?: string; firstName?: string; lastName?: string; token?: string };
   try {
     body = await req.json();
   } catch {
@@ -34,24 +35,34 @@ export async function POST(req: NextRequest) {
   let email = "";
   let name: { firstName: string; lastName: string } | null = null;
   let orderId = "";
-  let typedFirstName: string | null = null; // ชื่อที่ผู้ใช้พิมพ์เอง — ต้องเทียบกับข้อมูลซื้อ
+  // ชื่อ-นามสกุลที่ผู้ใช้พิมพ์เอง — ต้องเทียบกับข้อมูลตอนซื้อ (null = เข้าด้วยโทเค็น ไม่ต้องเทียบ)
+  let typed: { firstName: string; lastName: string } | null = null;
 
   if (typeof body.token === "string" && body.token) {
     const payload = verifyExamToken(body.token);
     if (!payload) {
-      return NextResponse.json({ error: "ลิงก์หมดอายุหรือไม่ถูกต้อง — กรอกชื่อและอีเมลที่ใช้ซื้อเพื่อเข้าใหม่" }, { status: 403 });
+      return NextResponse.json(
+        { error: "ลิงก์หมดอายุหรือไม่ถูกต้อง — กรอกชื่อ นามสกุล และอีเมลที่ใช้ซื้อเพื่อเข้าใหม่" },
+        { status: 403 }
+      );
     }
     email = payload.email;
     name = { firstName: payload.firstName, lastName: payload.lastName };
     orderId = payload.orderId;
   } else if (typeof body.email === "string" && body.email.trim()) {
     email = body.email.trim().toLowerCase();
-    typedFirstName = typeof body.firstName === "string" ? body.firstName : "";
-    if (!typedFirstName.trim()) {
-      return NextResponse.json({ error: "กรุณากรอกชื่อ (ตามที่กรอกตอนสั่งซื้อ)" }, { status: 400 });
+    typed = {
+      firstName: typeof body.firstName === "string" ? body.firstName : "",
+      lastName: typeof body.lastName === "string" ? body.lastName : "",
+    };
+    if (!typed.firstName.trim() || !typed.lastName.trim()) {
+      return NextResponse.json(
+        { error: "กรุณากรอกทั้งชื่อและนามสกุล (ตามที่กรอกตอนสั่งซื้อ)" },
+        { status: 400 }
+      );
     }
   } else {
-    return NextResponse.json({ error: "กรุณากรอกชื่อและอีเมล" }, { status: 400 });
+    return NextResponse.json({ error: "กรุณากรอกชื่อ นามสกุล และอีเมล" }, { status: 400 });
   }
 
   const buyer = findEntitlement(email);
@@ -63,17 +74,20 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ state: "none" });
   }
 
-  // กรอกเอง: ชื่อต้องตรงกับข้อมูลตอนซื้อด้วย ไม่ใช่แค่อีเมล (อีเมลเจ้าของร้านไม่ต้องเช็ค)
-  if (typedFirstName !== null && !unlimited) {
-    const expected = attempt?.firstName ?? buyer?.firstName ?? "";
-    if (!sameName(typedFirstName, expected)) {
+  // กรอกเอง: ชื่อ-นามสกุลต้องตรงกับข้อมูลตอนซื้อด้วย ไม่ใช่แค่อีเมล
+  // (อีเมลเจ้าของร้านไม่ต้องเช็ค — ไว้ทดสอบระบบ)
+  if (typed && !unlimited) {
+    const expectedFirst = attempt?.firstName ?? buyer?.firstName ?? "";
+    const expectedLast = attempt?.lastName ?? buyer?.lastName ?? "";
+    if (!sameName(typed.firstName, expectedFirst) || !sameName(typed.lastName, expectedLast)) {
       return NextResponse.json({ state: "none" });
     }
   }
 
   const firstName =
-    attempt?.firstName ?? buyer?.firstName ?? name?.firstName ?? typedFirstName?.trim() ?? "";
-  const lastName = attempt?.lastName ?? buyer?.lastName ?? name?.lastName ?? "";
+    attempt?.firstName ?? buyer?.firstName ?? name?.firstName ?? typed?.firstName.trim() ?? "";
+  const lastName =
+    attempt?.lastName ?? buyer?.lastName ?? name?.lastName ?? typed?.lastName.trim() ?? "";
   const token = createExamToken({
     email,
     firstName,

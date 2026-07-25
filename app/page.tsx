@@ -125,44 +125,28 @@ export default function Home() {
           </h1>
 
           <div className="mt-8 flex flex-wrap items-center gap-5">
-            {/* ผู้ซื้อที่ยังไม่ทำข้อสอบ เห็นปุ่มทำข้อสอบแทนปุ่มขาย (ทำแล้วเห็นปุ่มดูผล) */}
+            {/* ปุ่มหลักคือ "ทำข้อสอบ" ตั้งแต่เปิดหน้าแรก — คนยังไม่ซื้อกดได้เหมือนกัน
+                แล้วไปเจอหน้ายืนยันตัวตนที่ /exam (ไม่มีสิทธิ์จะมีลิงก์พาไปหน้าขายให้)
+                ถ้าเครื่องนี้เคยสอบแล้ว ปุ่มจะเปลี่ยนเป็นทำต่อ/ดูผลอัตโนมัติ */}
             <a
-              href={examState === "submitted" ? "/exam/results" : examState ? "/exam" : "#bundles"}
+              href={examState === "submitted" ? "/exam/results" : "/exam"}
               className="group inline-flex items-center gap-3 bg-maroon px-[42px] py-[23px] text-[19px] font-bold text-white transition hover:bg-maroon-dark"
             >
-              {examState === "eligible" && "ทำข้อสอบ Mock TPAT3 · 70 ข้อ · 3 ชม."}
-              {examState === "in_progress" && "ทำข้อสอบต่อ — เวลากำลังเดิน"}
-              {examState === "submitted" && "ดูผลสอบ + บทวิเคราะห์"}
-              {!examState && <>ดูชุดสุดคุ้ม · เริ่ม ฿{PRODUCTS.sum4.price.toLocaleString()}</>}
+              {examState === "in_progress"
+                ? "ทำข้อสอบต่อ — เวลากำลังเดิน"
+                : examState === "submitted"
+                  ? "ดูผลสอบ + บทวิเคราะห์"
+                  : "ทำข้อสอบ Mock TPAT3 · 70 ข้อ · 3 ชม."}
               <svg className="h-4 w-4 transition group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
               </svg>
             </a>
           </div>
 
-          {examState && examState !== "submitted" && (
+          {examState !== "submitted" && (
             <p className="mt-3 text-sm font-medium text-ink/60">
               💻 แนะนำให้ทำในคอมพิวเตอร์ หรือ iPad · 1 อีเมลมีสิทธิ์สอบ 1 รอบ
             </p>
-          )}
-
-          {/* ลิงก์เสริมมีเฉพาะคนที่ยังไม่ซื้อ — คนซื้อแล้วเห็นปุ่มทำข้อสอบอย่างเดียว ไม่รก */}
-          {!examState && (
-            <div className="mt-5 flex flex-wrap items-center gap-x-7 gap-y-2">
-              <a
-                href="#mock"
-                className="inline-flex w-fit items-center gap-2 border-b border-dashed border-maroon/45 pb-0.5 text-[0.95rem] font-semibold text-maroon transition hover:border-solid"
-              >
-                <DownloadIcon className="h-4 w-4" />
-                โหลดตัวอย่างฟรีก่อนตัดสินใจ
-              </a>
-              <a
-                href="/exam"
-                className="inline-flex w-fit items-center gap-2 border-b border-dashed border-maroon/45 pb-0.5 text-[0.95rem] font-semibold text-maroon transition hover:border-solid"
-              >
-                ซื้อแล้ว? เข้าห้องสอบออนไลน์ →
-              </a>
-            </div>
           )}
         </div>
       </section>

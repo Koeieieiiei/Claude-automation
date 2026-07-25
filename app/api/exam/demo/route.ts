@@ -4,10 +4,11 @@ import {
   removeDemoBuyer,
   listDemoBuyers,
   getAttempt,
-  deleteAttempt,
+  resetAttempt,
   startAttempt,
   submitAttempt,
   getAnswerKey,
+  demoEnabled,
 } from "@/lib/exam-store";
 import { createExamToken } from "@/lib/exam-token";
 import { EXAM, Difficulty } from "@/lib/exam-config";
@@ -18,9 +19,6 @@ export const runtime = "nodejs";
  * เครื่องมือ "แบบจำลอง" สำหรับทดสอบระบบสอบโดยไม่ต้องจ่ายเงินจริง
  * ใช้ได้เฉพาะตอน dev ในเครื่อง (หรือ EXAM_DEMO=1) — บน production ตอบ 404 เสมอ
  */
-function demoEnabled(): boolean {
-  return process.env.NODE_ENV === "development" || process.env.EXAM_DEMO === "1";
-}
 
 /** จำลองฝีมือผู้สอบ 3 ระดับ — โอกาสตอบถูกแยกตามความยากข้อ */
 const ABILITY: Record<string, Record<Difficulty, number>> = {
@@ -58,21 +56,20 @@ export async function POST(req: NextRequest) {
         firstName: body.firstName?.trim() || "นักเรียน",
         lastName: body.lastName?.trim() || "ทดสอบ",
       });
-      const token = createExamToken(buyer);
-      return NextResponse.json({ ok: true, buyer, token });
+      return NextResponse.json({ ok: true, buyer, token: createExamToken(buyer) });
     }
 
     // ลบการสอบของอีเมล (คงสิทธิ์ผู้ซื้อไว้) — ไว้ทดสอบทำข้อสอบซ้ำ
     case "reset": {
       if (!email) return NextResponse.json({ error: "กรุณากรอกอีเมล" }, { status: 400 });
-      deleteAttempt(email);
+      await resetAttempt(email);
       return NextResponse.json({ ok: true });
     }
 
     // ลบทั้งสิทธิ์และการสอบ
     case "revoke": {
       if (!email) return NextResponse.json({ error: "กรุณากรอกอีเมล" }, { status: 400 });
-      deleteAttempt(email);
+      await resetAttempt(email);
       removeDemoBuyer(email);
       return NextResponse.json({ ok: true });
     }
@@ -80,7 +77,7 @@ export async function POST(req: NextRequest) {
     // จำลอง "สอบเสร็จทั้งชุด" ทันที (สุ่มคำตอบตามระดับฝีมือ) — ไว้ดูหน้าผลสอบเร็ว ๆ
     case "simulate": {
       if (!email) return NextResponse.json({ error: "กรุณากรอกอีเมล" }, { status: 400 });
-      if (getAttempt(email)) {
+      if (await getAttempt(email)) {
         return NextResponse.json(
           { error: "อีเมลนี้มีการสอบอยู่แล้ว — กด 'รีเซ็ตการสอบ' ก่อน" },
           { status: 409 }
@@ -91,10 +88,10 @@ export async function POST(req: NextRequest) {
         firstName: body.firstName?.trim() || "นักเรียน",
         lastName: body.lastName?.trim() || "ทดสอบ",
       });
-      startAttempt(buyer);
+      await startAttempt(buyer);
 
       const probs = ABILITY[body.ability ?? "avg"] ?? ABILITY.avg;
-      const key = getAnswerKey();
+      const key = await getAnswerKey();
       const answers = Array.from({ length: EXAM.totalQuestions }, (_, i) => {
         const k = key[String(i + 1)];
         if (Math.random() < probs[k.difficulty]) return k.answer;
@@ -102,11 +99,10 @@ export async function POST(req: NextRequest) {
         const wrong = [1, 2, 3, 4, 5].filter((c) => c !== k.answer);
         return wrong[Math.floor(Math.random() * wrong.length)];
       });
-      const attempt = submitAttempt(email, answers);
-      const token = createExamToken(buyer);
+      const attempt = await submitAttempt(email, answers);
       return NextResponse.json({
         ok: true,
-        token,
+        token: createExamToken(buyer),
         correctCount: attempt.correctCount,
         scaled: attempt.score,
       });
@@ -114,14 +110,16 @@ export async function POST(req: NextRequest) {
 
     // รายชื่อผู้ซื้อจำลอง + สถานะการสอบ (ไว้โชว์บนหน้า demo)
     case "list": {
-      const buyers = listDemoBuyers().map((b) => {
-        const attempt = getAttempt(b.email);
-        return {
-          ...b,
-          attemptState: attempt ? (attempt.submittedAt ? "submitted" : "in_progress") : "none",
-          correctCount: attempt?.correctCount ?? null,
-        };
-      });
+      const buyers = await Promise.all(
+        listDemoBuyers().map(async (b) => {
+          const attempt = await getAttempt(b.email);
+          return {
+            ...b,
+            attemptState: attempt ? (attempt.submittedAt ? "submitted" : "in_progress") : "none",
+            correctCount: attempt?.correctCount ?? null,
+          };
+        })
+      );
       return NextResponse.json({ buyers });
     }
 

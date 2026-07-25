@@ -20,83 +20,95 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "ไม่มีสิทธิ์ดูผลสอบ" }, { status: 403 });
   }
 
-  const { state, attempt } = getAttemptState(payload.email);
-  if (state !== "submitted" || !attempt || attempt.correctCount === null || attempt.score === null) {
-    return NextResponse.json(
-      { error: "ยังไม่มีผลสอบของอีเมลนี้ — ต้องทำข้อสอบและกดส่งก่อน" },
-      { status: 409 }
-    );
-  }
+  try {
+    const { state, attempt } = await getAttemptState(payload.email);
+    if (
+      state !== "submitted" ||
+      !attempt ||
+      attempt.correctCount === null ||
+      attempt.score === null
+    ) {
+      return NextResponse.json(
+        { error: "ยังไม่มีผลสอบของอีเมลนี้ — ต้องทำข้อสอบและกดส่งก่อน" },
+        { status: 409 }
+      );
+    }
 
-  const key = getAnswerKey();
-  const stats = computeStatistics(attempt.score);
+    const [key, stats] = await Promise.all([getAnswerKey(), computeStatistics(attempt.score)]);
 
-  // วิเคราะห์รายข้อ: บท (ตอน) / คำตอบ / ถูก-ผิด / ความยาก / % คนตอบถูก / คำแนะนำ (6 แบบ)
-  const questions = Array.from({ length: EXAM.totalQuestions }, (_, i) => {
-    const no = i + 1;
-    const k = key[String(no)];
-    const my = attempt.answers[i];
-    const correct = my === k.answer;
-    return {
-      no,
-      section: sectionOf(no).no,
-      myAnswer: my, // 0 = ไม่ได้ตอบ
-      correctAnswer: k.answer,
-      correct,
-      difficulty: k.difficulty,
-      difficultyLabel: DIFFICULTY_LABEL[k.difficulty],
-      pctCorrect: stats.perQuestionPctCorrect[String(no)],
-      advice: adviceFor(k.difficulty, correct),
-    };
-  });
+    // วิเคราะห์รายข้อ: บท (ตอน) / คำตอบ / ถูก-ผิด / ความยาก / % คนตอบถูก / คำแนะนำ (6 แบบ)
+    const questions = Array.from({ length: EXAM.totalQuestions }, (_, i) => {
+      const no = i + 1;
+      const k = key[String(no)];
+      const my = attempt.answers[i];
+      const correct = my === k.answer;
+      return {
+        no,
+        section: sectionOf(no).no,
+        myAnswer: my, // 0 = ไม่ได้ตอบ
+        correctAnswer: k.answer,
+        correct,
+        difficulty: k.difficulty,
+        difficultyLabel: DIFFICULTY_LABEL[k.difficulty],
+        pctCorrect: stats.perQuestionPctCorrect[String(no)],
+        advice: adviceFor(k.difficulty, correct),
+      };
+    });
 
-  const sections = EXAM.sections.map((s) => {
-    const qs = questions.filter((q) => q.section === s.no);
-    return {
-      no: s.no,
-      title: s.title,
-      from: s.from,
-      to: s.to,
-      total: qs.length,
-      correct: qs.filter((q) => q.correct).length,
-    };
-  });
+    const sections = EXAM.sections.map((s) => {
+      const qs = questions.filter((q) => q.section === s.no);
+      return {
+        no: s.no,
+        title: s.title,
+        from: s.from,
+        to: s.to,
+        total: qs.length,
+        correct: qs.filter((q) => q.correct).length,
+      };
+    });
 
-  // ไฟล์โจทย์ + เฉลยแนบท้ายผล — ใช้ระบบลิงก์ดาวน์โหลด (ลายน้ำ) ตัวเดิมของร้าน
-  const downloads = buildDownloadLinks({
-    id: attempt.orderId,
-    firstName: attempt.firstName,
-    lastName: attempt.lastName,
-    email: attempt.email,
-    product: { ...PRODUCTS.mock1, files: ["questions", "answers"] },
-  });
-
-  return NextResponse.json({
-    student: {
+    // ไฟล์โจทย์ + เฉลยแนบท้ายผล — ใช้ระบบลิงก์ดาวน์โหลด (ลายน้ำ) ตัวเดิมของร้าน
+    const downloads = buildDownloadLinks({
+      id: attempt.orderId,
       firstName: attempt.firstName,
       lastName: attempt.lastName,
       email: attempt.email,
-      startedAt: attempt.startedAt,
-      submittedAt: attempt.submittedAt,
-    },
-    score: {
-      correctCount: attempt.correctCount,
-      totalQuestions: EXAM.totalQuestions,
-      scaled: attempt.score, // คะแนนถ่วงน้ำหนัก เต็ม 100 (ข้อ 1-60 × 4/3, ข้อ 61-70 × 2)
-      maxScore: EXAM.maxScore,
-      answered: attempt.answers.filter((a) => a > 0).length,
-    },
-    overall: {
-      nTotal: stats.nTotal,
-      rank: stats.rank,
-      mean: stats.mean,
-      sd: stats.sd,
-      min: stats.min,
-      max: stats.max,
-      histogram: stats.histogram,
-    },
-    sections,
-    questions,
-    downloads,
-  });
+      product: { ...PRODUCTS.mock1, files: ["questions", "answers"] },
+    });
+
+    return NextResponse.json({
+      student: {
+        firstName: attempt.firstName,
+        lastName: attempt.lastName,
+        email: attempt.email,
+        startedAt: attempt.startedAt,
+        submittedAt: attempt.submittedAt,
+      },
+      score: {
+        correctCount: attempt.correctCount,
+        totalQuestions: EXAM.totalQuestions,
+        scaled: attempt.score, // คะแนนถ่วงน้ำหนัก เต็ม 100 (ข้อ 1-60 × 4/3, ข้อ 61-70 × 2)
+        maxScore: EXAM.maxScore,
+        answered: attempt.answers.filter((a) => a > 0).length,
+      },
+      overall: {
+        nTotal: stats.nTotal,
+        rank: stats.rank,
+        mean: stats.mean,
+        sd: stats.sd,
+        min: stats.min,
+        max: stats.max,
+        histogram: stats.histogram,
+      },
+      sections,
+      questions,
+      downloads,
+    });
+  } catch (err) {
+    console.error("สร้างผลสอบไม่สำเร็จ:", err);
+    return NextResponse.json(
+      { error: "ระบบขัดข้องชั่วคราว กรุณารีเฟรชอีกครั้ง" },
+      { status: 503 }
+    );
+  }
 }

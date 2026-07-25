@@ -1,8 +1,6 @@
-import fs from "fs";
-import path from "path";
 import { NextRequest, NextResponse } from "next/server";
 import { verifyExamToken } from "@/lib/exam-token";
-import { getAttemptState } from "@/lib/exam-store";
+import { getAttemptState, getExamPageImage } from "@/lib/exam-store";
 import { EXAM } from "@/lib/exam-config";
 
 export const runtime = "nodejs";
@@ -30,35 +28,25 @@ export async function GET(
     return NextResponse.json({ error: "ไม่มีสิทธิ์" }, { status: 403 });
   }
 
-  if (isQuestion) {
-    const { state } = getAttemptState(payload.email);
-    if (state !== "in_progress" && state !== "submitted") {
-      return NextResponse.json({ error: "ต้องกดเริ่มทำข้อสอบก่อน" }, { status: 403 });
-    }
-  }
-
-  const file = path.join(
-    process.cwd(),
-    "assets",
-    "exam-pages",
-    `page-${String(pageNo).padStart(2, "0")}.png`
-  );
-  let bytes: Buffer;
   try {
-    bytes = fs.readFileSync(file);
-  } catch {
-    return NextResponse.json(
-      { error: "ไม่พบรูปหน้าโจทย์ — รัน `python scripts/build-exam-assets.py` ก่อน" },
-      { status: 500 }
-    );
-  }
+    if (isQuestion) {
+      const { state } = await getAttemptState(payload.email);
+      if (state !== "in_progress" && state !== "submitted") {
+        return NextResponse.json({ error: "ต้องกดเริ่มทำข้อสอบก่อน" }, { status: 403 });
+      }
+    }
 
-  return new NextResponse(new Uint8Array(bytes), {
-    status: 200,
-    headers: {
-      "Content-Type": "image/png",
-      // cache ในเครื่องผู้สอบได้ (ลดโหลดระหว่าง scroll) แต่ห้าม cache ร่วมกับคนอื่น
-      "Cache-Control": "private, max-age=3600",
-    },
-  });
+    const bytes = await getExamPageImage(pageNo);
+    return new NextResponse(Buffer.from(bytes), {
+      status: 200,
+      headers: {
+        "Content-Type": "image/png",
+        // cache ในเครื่องผู้สอบได้ (ลดโหลดระหว่าง scroll) แต่ห้าม cache ร่วมกับคนอื่น
+        "Cache-Control": "private, max-age=3600",
+      },
+    });
+  } catch (err) {
+    console.error(`เสิร์ฟรูปหน้าโจทย์หน้า ${pageNo} ไม่สำเร็จ:`, err);
+    return NextResponse.json({ error: "โหลดโจทย์ไม่สำเร็จ" }, { status: 503 });
+  }
 }

@@ -17,10 +17,18 @@ export async function POST(req: NextRequest) {
   if (!payload) {
     return NextResponse.json({ error: "ไม่มีสิทธิ์" }, { status: 403 });
   }
-  if (!getAttempt(payload.email)) {
-    return NextResponse.json({ error: "ยังไม่ได้เริ่มสอบ" }, { status: 409 });
-  }
 
-  const attempt = submitAttempt(payload.email, body.answers);
-  return NextResponse.json({ ok: true, correctCount: attempt.correctCount });
+  try {
+    if (!(await getAttempt(payload.email))) {
+      return NextResponse.json({ error: "ยังไม่ได้เริ่มสอบ" }, { status: 409 });
+    }
+    const attempt = await submitAttempt(payload.email, body.answers);
+    return NextResponse.json({ ok: true, correctCount: attempt.correctCount });
+  } catch (err) {
+    console.error("ส่งข้อสอบไม่สำเร็จ:", err);
+    return NextResponse.json(
+      { error: "ส่งไม่สำเร็จ กรุณาลองกดส่งอีกครั้ง" },
+      { status: 503 }
+    );
+  }
 }

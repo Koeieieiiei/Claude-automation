@@ -18,9 +18,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "ไม่มีสิทธิ์" }, { status: 403 });
   }
 
-  const result = saveAnswers(payload.email, body.answers);
-  if (!result.ok) {
-    return NextResponse.json({ error: result.reason }, { status: 409 });
+  try {
+    const result = await saveAnswers(payload.email, body.answers);
+    if (!result.ok) {
+      return NextResponse.json({ error: result.reason }, { status: 409 });
+    }
+    return NextResponse.json({ ok: true, savedAt: Date.now() });
+  } catch (err) {
+    console.error("บันทึกคำตอบไม่สำเร็จ:", err);
+    return NextResponse.json({ error: "บันทึกไม่สำเร็จ" }, { status: 503 });
   }
-  return NextResponse.json({ ok: true, savedAt: Date.now() });
 }

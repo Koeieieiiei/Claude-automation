@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createExamToken, verifyExamToken } from "@/lib/exam-token";
-import { findEntitlement, getAttemptState, examDeadline, isUnlimitedEmail } from "@/lib/exam-store";
+import {
+  findEntitlementByEmail,
+  getAttemptState,
+  examDeadline,
+  isUnlimitedEmail,
+  Entitlement,
+} from "@/lib/exam-store";
 
 export const runtime = "nodejs";
 
@@ -14,9 +20,9 @@ function sameName(a: string, b: string): boolean {
  * เช็คสิทธิ์เข้าห้องสอบ — รับ { email, firstName, lastName } (พิมพ์เอง)
  * หรือ { token } (จากลิงก์/localStorage)
  *
- * กติกาตามสเปกเจ้าของร้าน: กดปุ่มทำข้อสอบแล้วต้องกรอก "ชื่อ + นามสกุล + อีเมล" ก่อน
- * ตรงกับข้อมูลตอนซื้อทั้งหมดถึงเข้าสอบได้ — ไม่ตรงอย่างใดอย่างหนึ่ง = เข้าไม่ได้
- * (โทเค็นที่เคยผ่านการเช็คแล้วฝังตัวตนไว้ในลายเซ็น จึงไม่ต้องกรอกซ้ำ)
+ * กติกา: ต้องกรอก "ชื่อ + นามสกุล + อีเมล" ให้ตรงกับคำสั่งซื้อที่ส่งของแล้วจริง
+ * ไม่ตรงอย่างใดอย่างหนึ่ง = เข้าไม่ได้ (โทเค็นที่ผ่านการเช็คแล้วฝังตัวตนไว้ในลายเซ็น
+ * จึงไม่ต้องกรอกซ้ำ)
  *
  * ตอบ state อย่างใดอย่างหนึ่ง:
  *   none        ไม่พบสิทธิ์ (ยังไม่ซื้อ / ชื่อ-นามสกุล-อีเมลไม่ตรงกับที่ซื้อ)
@@ -65,34 +71,65 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "กรุณากรอกชื่อ นามสกุล และอีเมล" }, { status: 400 });
   }
 
-  const buyer = findEntitlement(email);
-  const { state, attempt } = getAttemptState(email);
   const unlimited = isUnlimitedEmail(email); // อีเมลเจ้าของร้าน — เข้าได้เสมอ ทำซ้ำได้
+  let buyers: Entitlement[] = [];
+  try {
+    buyers = await findEntitlementByEmail(email);
+  } catch (err) {
+    console.error("ตรวจสิทธิ์เข้าสอบไม่สำเร็จ:", err);
+    return NextResponse.json(
+      { error: "ระบบขัดข้องชั่วคราว กรุณาลองใหม่อีกครั้ง" },
+      { status: 503 }
+    );
+  }
 
-  // ไม่มีสิทธิ์และไม่เคยมีการสอบค้างอยู่ → none (ไม่บอกรายละเอียดมากกว่านี้)
-  if (!buyer && state === "none" && !unlimited) {
+  let state: Awaited<ReturnType<typeof getAttemptState>>["state"];
+  let attempt: Awaited<ReturnType<typeof getAttemptState>>["attempt"];
+  try {
+    ({ state, attempt } = await getAttemptState(email));
+  } catch (err) {
+    console.error("อ่านสถานะการสอบไม่สำเร็จ:", err);
+    return NextResponse.json(
+      { error: "ระบบขัดข้องชั่วคราว กรุณาลองใหม่อีกครั้ง" },
+      { status: 503 }
+    );
+  }
+
+  // ไม่มีสิทธิ์และไม่เคยมีการสอบค้างอยู่ → none (ไม่บอกรายละเอียดมากกว่านี้ กันคนสุ่มเดา)
+  if (buyers.length === 0 && state === "none" && !unlimited) {
     return NextResponse.json({ state: "none" });
   }
 
-  // กรอกเอง: ชื่อ-นามสกุลต้องตรงกับข้อมูลตอนซื้อด้วย ไม่ใช่แค่อีเมล
-  // (อีเมลเจ้าของร้านไม่ต้องเช็ค — ไว้ทดสอบระบบ)
+  // กรอกเอง: ชื่อ-นามสกุลต้องตรงกับคำสั่งซื้อใบใดใบหนึ่ง (หรือกับการสอบที่ค้างอยู่)
+  let matched: Entitlement | null =
+    buyers.find(
+      (b) => typed && sameName(typed.firstName, b.firstName) && sameName(typed.lastName, b.lastName)
+    ) ??
+    buyers[0] ??
+    null;
+
   if (typed && !unlimited) {
-    const expectedFirst = attempt?.firstName ?? buyer?.firstName ?? "";
-    const expectedLast = attempt?.lastName ?? buyer?.lastName ?? "";
-    if (!sameName(typed.firstName, expectedFirst) || !sameName(typed.lastName, expectedLast)) {
+    const okAgainstOrder = buyers.some(
+      (b) => sameName(typed!.firstName, b.firstName) && sameName(typed!.lastName, b.lastName)
+    );
+    const okAgainstAttempt =
+      !!attempt &&
+      sameName(typed.firstName, attempt.firstName) &&
+      sameName(typed.lastName, attempt.lastName);
+    if (!okAgainstOrder && !okAgainstAttempt) {
       return NextResponse.json({ state: "none" });
     }
   }
 
   const firstName =
-    attempt?.firstName ?? buyer?.firstName ?? name?.firstName ?? typed?.firstName.trim() ?? "";
+    attempt?.firstName ?? matched?.firstName ?? name?.firstName ?? typed?.firstName.trim() ?? "";
   const lastName =
-    attempt?.lastName ?? buyer?.lastName ?? name?.lastName ?? typed?.lastName.trim() ?? "";
+    attempt?.lastName ?? matched?.lastName ?? name?.lastName ?? typed?.lastName.trim() ?? "";
   const token = createExamToken({
     email,
     firstName,
     lastName,
-    orderId: attempt?.orderId ?? buyer?.orderId ?? orderId,
+    orderId: attempt?.orderId ?? matched?.orderId ?? orderId,
   });
 
   return NextResponse.json({

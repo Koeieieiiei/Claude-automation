@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyExamToken } from "@/lib/exam-token";
 import {
-  findEntitlement,
+  findEntitlementByEmail,
   getAttemptState,
   startAttempt,
   examDeadline,
   isUnlimitedEmail,
-  deleteAttempt,
+  resetAttempt,
+  Entitlement,
 } from "@/lib/exam-store";
 
 export const runtime = "nodejs";
@@ -28,48 +29,61 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "ไม่มีสิทธิ์เข้าห้องสอบ" }, { status: 403 });
   }
 
-  const { state, attempt } = getAttemptState(payload.email);
-  if (state === "submitted") {
-    // อีเมลยกเว้น (เจ้าของร้าน): เริ่มรอบใหม่ได้ — ลบรอบเก่าทิ้งแล้วเริ่มนับหนึ่งใหม่
-    if (isUnlimitedEmail(payload.email)) {
-      deleteAttempt(payload.email);
-    } else {
-      return NextResponse.json({ error: "อีเมลนี้ทำข้อสอบครบ 1 รอบแล้ว" }, { status: 409 });
+  try {
+    const { state, attempt } = await getAttemptState(payload.email);
+
+    if (state === "submitted") {
+      // อีเมลยกเว้น (เจ้าของร้าน): เริ่มรอบใหม่ได้ — ถอนผลรอบเก่าออกจากสถิติแล้วเริ่มใหม่
+      if (isUnlimitedEmail(payload.email)) {
+        await resetAttempt(payload.email);
+      } else {
+        return NextResponse.json({ error: "อีเมลนี้ทำข้อสอบครบ 1 รอบแล้ว" }, { status: 409 });
+      }
     }
-  }
 
-  if (state === "in_progress" && attempt) {
+    if (state === "in_progress" && attempt) {
+      return NextResponse.json({
+        resumed: true,
+        startedAt: new Date(attempt.startedAt).getTime(),
+        deadline: examDeadline(attempt),
+        serverNow: Date.now(),
+        answers: attempt.answers,
+      });
+    }
+
+    // ยังไม่เคยเริ่ม — ต้องมีสิทธิ์ซื้ออยู่จริง ณ ตอนเริ่ม
+    // (อีเมลยกเว้นไม่ต้องมีคำสั่งซื้อ — ใช้ชื่อจากโทเค็นที่กรอกไว้ตอนผ่านหน้ายืนยันตัวตน)
+    const buyers = await findEntitlementByEmail(payload.email);
+    const buyer: Entitlement | null =
+      buyers.find(
+        (b) => b.firstName === payload.firstName && b.lastName === payload.lastName
+      ) ??
+      buyers[0] ??
+      (isUnlimitedEmail(payload.email)
+        ? {
+            email: payload.email,
+            firstName: payload.firstName || "เจ้าของร้าน",
+            lastName: payload.lastName || "",
+            orderId: "owner-test",
+          }
+        : null);
+    if (!buyer) {
+      return NextResponse.json({ error: "ไม่พบสิทธิ์ของอีเมลนี้" }, { status: 403 });
+    }
+
+    const created = await startAttempt(buyer);
     return NextResponse.json({
-      resumed: true,
-      startedAt: new Date(attempt.startedAt).getTime(),
-      deadline: examDeadline(attempt),
+      resumed: false,
+      startedAt: new Date(created.startedAt).getTime(),
+      deadline: examDeadline(created),
       serverNow: Date.now(),
-      answers: attempt.answers,
+      answers: created.answers,
     });
+  } catch (err) {
+    console.error("เริ่มสอบไม่สำเร็จ:", err);
+    return NextResponse.json(
+      { error: "ระบบขัดข้องชั่วคราว กรุณาลองใหม่อีกครั้ง" },
+      { status: 503 }
+    );
   }
-
-  // ยังไม่เคยเริ่ม — ต้องมีสิทธิ์ซื้ออยู่จริง ณ ตอนเริ่ม
-  // (อีเมลยกเว้นไม่ต้องมีคำสั่งซื้อ — ใช้ชื่อจากโทเค็นที่กรอกไว้ตอนผ่าน gate)
-  const buyer =
-    findEntitlement(payload.email) ??
-    (isUnlimitedEmail(payload.email)
-      ? {
-          email: payload.email,
-          firstName: payload.firstName || "เจ้าของร้าน",
-          lastName: payload.lastName || "",
-          orderId: "owner-test",
-        }
-      : null);
-  if (!buyer) {
-    return NextResponse.json({ error: "ไม่พบสิทธิ์ของอีเมลนี้" }, { status: 403 });
-  }
-
-  const created = startAttempt(buyer);
-  return NextResponse.json({
-    resumed: false,
-    startedAt: new Date(created.startedAt).getTime(),
-    deadline: examDeadline(created),
-    serverNow: Date.now(),
-    answers: created.answers,
-  });
 }

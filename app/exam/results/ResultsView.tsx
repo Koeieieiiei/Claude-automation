@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { formatExpiry } from "@/lib/format-expiry";
+import { DEFAULT_EXAM_ID } from "@/lib/exams";
 
 /**
  * หน้าผลสอบ + บทวิเคราะห์ละเอียด
@@ -14,6 +15,8 @@ import { formatExpiry } from "@/lib/format-expiry";
  */
 
 interface ResultsData {
+  examId: string;
+  examTitle: string;
   student: { firstName: string; lastName: string; email: string; submittedAt: string };
   score: {
     correctCount: number;
@@ -46,7 +49,9 @@ interface ResultsData {
   downloadExpiryHours: number; // 0 = ไม่มีวันหมดอายุ
 }
 
-const LS_TOKEN = "exam.token";
+// โทเค็นใน localStorage แยกต่อสนาม — สนามหลัก (TPAT3) ใช้ key เดิมของลูกค้าเก่า
+const lsTokenKey = (examId: string | null) =>
+  !examId || examId === DEFAULT_EXAM_ID ? "exam.token" : `exam.token.${examId}`;
 
 export default function ResultsView() {
   const params = useSearchParams();
@@ -57,7 +62,7 @@ export default function ResultsView() {
     let token = params.get("token") ?? "";
     if (!token) {
       try {
-        token = localStorage.getItem(LS_TOKEN) ?? "";
+        token = localStorage.getItem(lsTokenKey(params.get("exam"))) ?? "";
       } catch {}
     }
     if (!token) {
@@ -113,7 +118,7 @@ export default function ResultsView() {
           <div className="flex items-center gap-2.5">
             <span className="font-display text-lg font-bold text-ink">Mr.tpat3</span>
             <span className="font-label text-[11px] font-semibold uppercase tracking-[0.18em] text-maroon">
-              ผลสอบ Mock TPAT3
+              ผลสอบ {data.examTitle || "Mock TPAT3"}
             </span>
           </div>
           <a href="/" className="text-sm font-semibold text-maroon hover:underline">

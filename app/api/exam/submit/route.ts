@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyExamToken } from "@/lib/exam-token";
+import { getExam } from "@/lib/exams";
 import { getAttempt, submitAttempt } from "@/lib/exam-store";
 
 export const runtime = "nodejs";
@@ -17,12 +18,13 @@ export async function POST(req: NextRequest) {
   if (!payload) {
     return NextResponse.json({ error: "ไม่มีสิทธิ์" }, { status: 403 });
   }
+  const exam = getExam(payload.examId);
 
   try {
-    if (!(await getAttempt(payload.email))) {
+    if (!(await getAttempt(exam, payload.email))) {
       return NextResponse.json({ error: "ยังไม่ได้เริ่มสอบ" }, { status: 409 });
     }
-    const attempt = await submitAttempt(payload.email, body.answers);
+    const attempt = await submitAttempt(exam, payload.email, body.answers);
     return NextResponse.json({ ok: true, correctCount: attempt.correctCount });
   } catch (err) {
     console.error("ส่งข้อสอบไม่สำเร็จ:", err);

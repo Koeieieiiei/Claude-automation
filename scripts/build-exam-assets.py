@@ -1,28 +1,36 @@
 # -*- coding: utf-8 -*-
 """
-สร้างชุดข้อมูล "ทำข้อสอบออนไลน์" จากไฟล์ต้นฉบับ (รันครั้งเดียว หรือรันใหม่เมื่อเปลี่ยนไฟล์โจทย์/เฉลย)
+สร้างชุดข้อมูล "ทำข้อสอบออนไลน์" จากไฟล์ต้นฉบับ (รันครั้งเดียวต่อสนาม หรือรันใหม่เมื่อเปลี่ยนไฟล์)
 
-    python scripts/build-exam-assets.py
+    python scripts/build-exam-assets.py [examId]     (ไม่ระบุ = tpat3-1)
+
+⚠️ สคริปต์นี้ตั้งค่าตามชุด TPAT3 (โครงหน้า/ตอน/น้ำหนัก/ประชากร ในค่าคงที่ด้านล่าง)
+เพิ่มสนามใหม่ (เช่น A-Level) ต้องปรับค่าพวกนั้นให้ตรงกับชุดนั้นก่อนรัน
+แล้วอย่าลืมเพิ่ม entry ใน lib/exams.ts ให้ตรงกัน
 
 อ่าน:
   assets/master-questions.pdf   โจทย์ 1-70 (หน้า 1 ปก, 2-3 คำชี้แจง, 4-57 โจทย์)
   assets/master-answers.pdf     เฉลย — หน้า 1-2 มี "ตารางเฉลยรวม" (ข้อ/ตอบ/ระดับ)
 
-สร้าง:
-  assets/exam-pages/page-NN.png     รูปโจทย์รายหน้า (เสิร์ฟผ่าน API ที่เช็คสิทธิ์เท่านั้น — ห้าม commit)
-  data/exam/answer-key.json         เฉลย + ระดับความยากรายข้อ (server เท่านั้น — ห้าม commit)
-  lib/exam-manifest.json            ข้อมูลไม่ลับสำหรับหน้าเว็บ (ตำแหน่งข้อ, ตอน, ขนาดหน้า)
-  data/exam/population.json         ประชากรจำลองสำหรับสถิติ (DEMO — ดูหมายเหตุใน demo panel)
+สร้าง (แยกโฟลเดอร์ตามสนาม):
+  assets/exam-pages/<examId>/page-NN.png  รูปโจทย์รายหน้า (เสิร์ฟผ่าน API ที่เช็คสิทธิ์ — ห้าม commit)
+  data/exam/<examId>/answer-key.json      เฉลย + ระดับความยากรายข้อ (server เท่านั้น — ห้าม commit)
+  data/exam/<examId>/population.json      ประชากรอ้างอิงสำหรับสถิติ
+  lib/exam-manifests/<examId>.json        ข้อมูลไม่ลับสำหรับหน้าเว็บ (ตำแหน่งข้อ, ตอน, ขนาดหน้า)
 """
 import fitz  # PyMuPDF
 import json, os, random, re, sys
 
+EXAM_ID = sys.argv[1] if len(sys.argv) > 1 else "tpat3-1"
+if not re.fullmatch(r"[a-z0-9-]+", EXAM_ID):
+    sys.exit(f"examId ไม่ถูกต้อง: {EXAM_ID} (ใช้ a-z 0-9 และขีดกลางเท่านั้น)")
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 Q_PDF = os.path.join(ROOT, "assets", "master-questions.pdf")
 A_PDF = os.path.join(ROOT, "assets", "master-answers.pdf")
-PAGES_DIR = os.path.join(ROOT, "assets", "exam-pages")
-DATA_DIR = os.path.join(ROOT, "data", "exam")
-MANIFEST = os.path.join(ROOT, "lib", "exam-manifest.json")
+PAGES_DIR = os.path.join(ROOT, "assets", "exam-pages", EXAM_ID)
+DATA_DIR = os.path.join(ROOT, "data", "exam", EXAM_ID)
+MANIFEST = os.path.join(ROOT, "lib", "exam-manifests", f"{EXAM_ID}.json")
 
 TOTAL_Q = 70
 DPI = 150

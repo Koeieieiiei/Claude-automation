@@ -5,49 +5,56 @@ import { getSupabase } from "./supabase";
 import { getStripe } from "./stripe";
 import { config } from "./config";
 import { PRODUCTS } from "./catalog";
-import { EXAM, GRACE_MS, Difficulty, questionWeight, roundScore } from "./exam-config";
+import { GRACE_MS, Difficulty, roundScore } from "./exam-config";
+import { ExamDef, questionWeight } from "./exams";
 
 /**
- * ที่เก็บข้อมูลระบบทำข้อสอบ
+ * ที่เก็บข้อมูลระบบทำข้อสอบ — ทุกอย่างแยกตาม "สนามสอบ" (ExamDef จาก lib/exams.ts)
  *
  * production (Vercel): เก็บบน Supabase Storage ทั้งหมด — ดิสก์ของ serverless เขียนไม่ได้
  * และหายทุกครั้งที่ instance เปลี่ยน จึงห้ามพึ่งไฟล์ในเครื่อง
- *   ebooks/exam/answer-key.json      เฉลย + ระดับความยากรายข้อ
- *   ebooks/exam/population.json      ประชากรอ้างอิงสำหรับสถิติ
- *   ebooks/exam/pages/page-NN.png    รูปหน้าโจทย์ (เสิร์ฟผ่าน API ที่เช็คสิทธิ์)
- *   ebooks/exam/attempts/<hash>.json การสอบของแต่ละอีเมล (hash = sha256 ของอีเมล)
- *   ebooks/exam/aggregate.json       ผลรวมของผู้สอบจริง ไว้คิดสถิติโดยไม่ต้องอ่านทุกไฟล์
+ *   ebooks/exam/<examId>/answer-key.json      เฉลย + ระดับความยากรายข้อ
+ *   ebooks/exam/<examId>/population.json      ประชากรอ้างอิงสำหรับสถิติ
+ *   ebooks/exam/<examId>/pages/page-NN.png    รูปหน้าโจทย์ (เสิร์ฟผ่าน API ที่เช็คสิทธิ์)
+ *   ebooks/exam/<examId>/attempts/<hash>.json การสอบของแต่ละอีเมล (hash = sha256 ของอีเมล)
+ *   ebooks/exam/<examId>/aggregate.json       ผลรวมของผู้สอบจริง ไว้คิดสถิติเร็ว ๆ
  *
- * ตอนรันในเครื่องที่ยังไม่ตั้งค่า Supabase: ใช้ไฟล์ใน data/exam/ และ assets/exam-pages/ แทน
- * (สร้างด้วย `python scripts/build-exam-assets.py` แล้วอัปขึ้น Storage ด้วย
- *  `node scripts/upload-exam-assets.mjs`)
+ * ตอนรันในเครื่องที่ยังไม่ตั้งค่า Supabase: ใช้ไฟล์ data/exam/<examId>/ และ
+ * assets/exam-pages/<examId>/ แทน (สร้างด้วย scripts/build-exam-assets.py แล้วอัป
+ * ขึ้น Storage ด้วย scripts/upload-exam-assets.mjs)
  *
  * สิทธิ์เข้าสอบมาจากตาราง orders จริง — ดู findEntitlementByEmail()
+ * กติกา "1 อีเมล 1 รอบ" นับแยกต่อสนาม: สอบ TPAT3 แล้วยังสอบสนามอื่นได้
  */
 
-const DATA_DIR = path.join(process.cwd(), "data", "exam");
-const LOCAL_PAGES_DIR = path.join(process.cwd(), "assets", "exam-pages");
-const BUYERS_FILE = path.join(DATA_DIR, "demo-buyers.json");
-const ATTEMPTS_FILE = path.join(DATA_DIR, "attempts.json");
+const DATA_ROOT = path.join(process.cwd(), "data", "exam");
+const PAGES_ROOT = path.join(process.cwd(), "assets", "exam-pages");
+const BUYERS_FILE = path.join(DATA_ROOT, "demo-buyers.json"); // ผู้ซื้อจำลอง — ใช้ร่วมทุกสนาม
 
-const S_KEY = "exam/answer-key.json";
-const S_POP = "exam/population.json";
-const S_AGG = "exam/aggregate.json";
-const sAttempt = (email: string) =>
-  `exam/attempts/${createHash("sha256").update(normalizeEmail(email)).digest("hex")}.json`;
-export const storagePagePath = (pageNo: number) =>
-  `exam/pages/page-${String(pageNo).padStart(2, "0")}.png`;
+const sKey = (exam: ExamDef) => `exam/${exam.id}/answer-key.json`;
+const sPop = (exam: ExamDef) => `exam/${exam.id}/population.json`;
+const sAgg = (exam: ExamDef) => `exam/${exam.id}/aggregate.json`;
+const sAttempt = (exam: ExamDef, email: string) =>
+  `exam/${exam.id}/attempts/${createHash("sha256").update(normalizeEmail(email)).digest("hex")}.json`;
+export const storagePagePath = (exam: ExamDef, pageNo: number) =>
+  `exam/${exam.id}/pages/page-${String(pageNo).padStart(2, "0")}.png`;
+
+const localAttemptsFile = (exam: ExamDef) => path.join(DATA_ROOT, exam.id, "attempts.json");
+const localDataFile = (exam: ExamDef, name: string) => path.join(DATA_ROOT, exam.id, name);
+const localPageFile = (exam: ExamDef, pageNo: number) =>
+  path.join(PAGES_ROOT, exam.id, `page-${String(pageNo).padStart(2, "0")}.png`);
 
 export interface ExamAttempt {
+  examId?: string; // ข้อมูลรุ่นแรก (ก่อนมีหลายสนาม) ไม่มี field นี้ = สนามหลัก
   email: string; // lowercase — ใช้เป็น key
   firstName: string;
   lastName: string;
   orderId: string;
   startedAt: string; // ISO — เวลาเริ่มนับถอยหลัง (server เป็นคนกำหนด)
   submittedAt: string | null;
-  answers: number[]; // ยาว 70 — 0 = ยังไม่ตอบ, 1-5 = ช้อยส์ที่เลือก
+  answers: number[]; // 0 = ยังไม่ตอบ, 1..choices = ช้อยส์ที่เลือก
   correctCount: number | null;
-  score: number | null; // คะแนนถ่วงน้ำหนัก เต็ม 100
+  score: number | null; // คะแนนถ่วงน้ำหนัก (เต็ม exam.maxScore)
 }
 
 export interface Entitlement {
@@ -70,7 +77,7 @@ interface PopulationData {
 
 /** ผลรวมของผู้สอบจริง — อัปเดตตอนส่งข้อสอบ ไม่ต้องไล่อ่านไฟล์ทุกคนตอนคิดสถิติ */
 interface Aggregate {
-  scores: number[]; // คะแนนถ่วงน้ำหนักของผู้สอบจริงทุกคน
+  scores: number[];
   perQuestionCorrect: Record<string, number>;
 }
 
@@ -93,7 +100,7 @@ export function demoEnabled(): boolean {
   return process.env.NODE_ENV === "development" || process.env.EXAM_DEMO === "1";
 }
 
-/* ================= อ่าน/เขียน Storage (มี fallback เป็นไฟล์ local) ================= */
+/* ================= อ่าน/เขียน Storage (มี fallback เป็นไฟล์ local ตอน dev) ================= */
 
 function readLocalJson<T>(file: string, fallback: T): T {
   try {
@@ -140,67 +147,70 @@ async function storageRemove(key: string): Promise<void> {
   await supabase.storage.from(config.supabase.bucket).remove([key]);
 }
 
-/* ================= เฉลย / ประชากรอ้างอิง ================= */
+/* ================= เฉลย / ประชากรอ้างอิง / รูปหน้าโจทย์ (cache ต่อสนาม) ================= */
 
-let keyCache: Record<string, AnswerKeyEntry> | null = null;
-let popCache: PopulationData | null = null;
+const keyCache = new Map<string, Record<string, AnswerKeyEntry>>();
+const popCache = new Map<string, PopulationData>();
+const pageCache = new Map<string, Uint8Array>();
 
-export async function getAnswerKey(): Promise<Record<string, AnswerKeyEntry>> {
-  if (keyCache) return keyCache;
-  const fromStorage = await storageGetJson<Record<string, AnswerKeyEntry>>(S_KEY);
+export async function getAnswerKey(exam: ExamDef): Promise<Record<string, AnswerKeyEntry>> {
+  const cached = keyCache.get(exam.id);
+  if (cached) return cached;
   const key =
-    fromStorage ??
-    readLocalJson<Record<string, AnswerKeyEntry> | null>(path.join(DATA_DIR, "answer-key.json"), null);
-  if (!key || Object.keys(key).length !== EXAM.totalQuestions) {
+    (await storageGetJson<Record<string, AnswerKeyEntry>>(sKey(exam))) ??
+    readLocalJson<Record<string, AnswerKeyEntry> | null>(localDataFile(exam, "answer-key.json"), null);
+  if (!key || Object.keys(key).length !== exam.totalQuestions) {
     throw new Error(
-      `ไม่พบเฉลยข้อสอบ (${config.supabase.bucket}/${S_KEY}) — รัน scripts/build-exam-assets.py แล้ว scripts/upload-exam-assets.mjs`
+      `ไม่พบเฉลยของสนาม ${exam.id} (${config.supabase.bucket}/${sKey(exam)}) — ` +
+        `รัน scripts/build-exam-assets.py ${exam.id} แล้ว scripts/upload-exam-assets.mjs ${exam.id}`
     );
   }
-  keyCache = key;
+  keyCache.set(exam.id, key);
   return key;
 }
 
-async function getPopulation(): Promise<PopulationData> {
-  if (popCache) return popCache;
-  const fromStorage = await storageGetJson<PopulationData>(S_POP);
+async function getPopulation(exam: ExamDef): Promise<PopulationData> {
+  const cached = popCache.get(exam.id);
+  if (cached) return cached;
   const pop =
-    fromStorage ?? readLocalJson<PopulationData | null>(path.join(DATA_DIR, "population.json"), null);
+    (await storageGetJson<PopulationData>(sPop(exam))) ??
+    readLocalJson<PopulationData | null>(localDataFile(exam, "population.json"), null);
   if (!pop || !Array.isArray(pop.scoresWeighted)) {
     throw new Error(
-      `ไม่พบข้อมูลประชากรอ้างอิง (${config.supabase.bucket}/${S_POP}) — รัน scripts/upload-exam-assets.mjs`
+      `ไม่พบประชากรอ้างอิงของสนาม ${exam.id} (${config.supabase.bucket}/${sPop(exam)}) — ` +
+        `รัน scripts/upload-exam-assets.mjs ${exam.id}`
     );
   }
-  popCache = pop;
+  popCache.set(exam.id, pop);
   return pop;
 }
 
-/** รูปหน้าโจทย์ — cache ระดับ module เพื่อลดการดาวน์โหลดซ้ำบน instance เดียวกัน */
-const pageCache = new Map<number, Uint8Array>();
-
-export async function getExamPageImage(pageNo: number): Promise<Uint8Array> {
-  const cached = pageCache.get(pageNo);
+export async function getExamPageImage(exam: ExamDef, pageNo: number): Promise<Uint8Array> {
+  const cacheId = `${exam.id}:${pageNo}`;
+  const cached = pageCache.get(cacheId);
   if (cached) return cached;
 
   const supabase = getSupabase();
   if (supabase) {
     const { data, error } = await supabase.storage
       .from(config.supabase.bucket)
-      .download(storagePagePath(pageNo));
+      .download(storagePagePath(exam, pageNo));
     if (data && !error) {
       const bytes = new Uint8Array(await data.arrayBuffer());
-      pageCache.set(pageNo, bytes);
+      pageCache.set(cacheId, bytes);
       return bytes;
     }
   }
 
-  const local = path.join(LOCAL_PAGES_DIR, `page-${String(pageNo).padStart(2, "0")}.png`);
+  const local = localPageFile(exam, pageNo);
   if (!fs.existsSync(local)) {
     throw new Error(
-      `ไม่พบรูปหน้าโจทย์หน้า ${pageNo} — อัปโหลดขึ้น ${config.supabase.bucket}/${storagePagePath(pageNo)} ก่อน`
+      `ไม่พบรูปหน้าโจทย์หน้า ${pageNo} ของสนาม ${exam.id} — อัปโหลดขึ้น ` +
+        `${config.supabase.bucket}/${storagePagePath(exam, pageNo)} ก่อน`
     );
   }
   const bytes = new Uint8Array(fs.readFileSync(local));
-  pageCache.set(pageNo, bytes);
+  pageCache.set(cacheId, bytes);
   return bytes;
 }
 
@@ -209,6 +219,7 @@ export async function getExamPageImage(pageNo: number): Promise<Uint8Array> {
 /**
  * สินค้าที่เลิกขายไปแล้วและ "ไม่มี" ไฟล์ข้อสอบ Mock — ใช้ตัดสินคำสั่งซื้อเก่า
  * ที่ productId ยังอยู่ใน Stripe แต่ไม่มีในแคตตาล็อกปัจจุบันแล้ว (lib/catalog.ts)
+ * ⚠️ เพิ่มสินค้าใหม่ที่ไม่มีข้อสอบเมื่อไหร่ ต้องเพิ่มชื่อเข้าลิสต์นี้ด้วย
  */
 const LEGACY_PRODUCTS_WITHOUT_MOCK = new Set([
   "sum1",
@@ -237,7 +248,7 @@ async function lookupOrderProduct(order: {
 
   let result: { productId: string | null; verified: boolean };
   if (!order.stripe_session_id) {
-    // order รุ่นเก่าก่อนมีระบบหลายสินค้า — ตอนนั้นขายแต่ชุด Mock (ดู lib/fulfillment.ts)
+    // order รุ่นเก่าก่อนมีระบบหลายสินค้า — ตอนนั้นขายแต่ชุด Mock TPAT3
     result = { productId: null, verified: true };
   } else {
     const stripe = getStripe();
@@ -257,21 +268,27 @@ async function lookupOrderProduct(order: {
   return result;
 }
 
-/** คำสั่งซื้อใบนี้รวมไฟล์ข้อสอบ Mock ไหม (ตรวจไม่ได้ = ถือว่าไม่มี เพื่อไม่ให้สิทธิ์เกิน) */
-async function orderIncludesMock(order: {
-  id: string;
-  stripe_session_id: string | null;
-}): Promise<boolean> {
+/** คำสั่งซื้อใบนี้ให้สิทธิ์สอบสนามนี้ไหม (ตรวจไม่ได้ = ไม่ให้สิทธิ์ เพื่อไม่แจกเกิน) */
+async function orderGrantsExam(
+  order: { id: string; stripe_session_id: string | null },
+  exam: ExamDef
+): Promise<boolean> {
   const { productId, verified } = await lookupOrderProduct(order);
   if (!verified) return false;
-  if (!productId) return true; // order รุ่นเก่า = ชุด Mock
+  // order ยุคสินค้าเดียว (ไม่มี session id / ไม่มี productId) = ชุด Mock TPAT3 เดิม
+  if (!productId) return exam.entitlementFile === "questions";
   const product = PRODUCTS[productId as keyof typeof PRODUCTS];
-  if (product) return product.files.includes("questions");
-  return !LEGACY_PRODUCTS_WITHOUT_MOCK.has(productId);
+  if (product) return product.files.includes(exam.entitlementFile);
+  // productId เก่าที่ไม่อยู่ในแคตตาล็อกแล้ว — สมัยนั้นมีแต่สินค้าตระกูล TPAT3
+  if (LEGACY_PRODUCTS_WITHOUT_MOCK.has(productId)) return false;
+  return exam.entitlementFile === "questions";
 }
 
-/** รายชื่อผู้มีสิทธิ์สอบของอีเมลนี้ (1 อีเมลอาจมีหลายคำสั่งซื้อ) */
-export async function findEntitlementByEmail(email: string): Promise<Entitlement[]> {
+/** รายชื่อผู้มีสิทธิ์สอบ "สนามนี้" ของอีเมลนี้ (1 อีเมลอาจมีหลายคำสั่งซื้อ) */
+export async function findEntitlementByEmail(
+  exam: ExamDef,
+  email: string
+): Promise<Entitlement[]> {
   const clean = normalizeEmail(email);
   const out: Entitlement[] = [];
 
@@ -286,7 +303,7 @@ export async function findEntitlementByEmail(email: string): Promise<Entitlement
       console.error("ค้นหาคำสั่งซื้อไม่สำเร็จ:", error.message);
     } else {
       for (const o of data ?? []) {
-        if (!(await orderIncludesMock(o))) continue;
+        if (!(await orderGrantsExam(o, exam))) continue;
         out.push({
           email: clean,
           firstName: o.first_name ?? "",
@@ -297,8 +314,8 @@ export async function findEntitlementByEmail(email: string): Promise<Entitlement
     }
   }
 
-  // โหมดทดสอบในเครื่อง: รวมผู้ซื้อจำลองจากหน้า /exam/demo ด้วย
-  if (demoEnabled()) {
+  // โหมดทดสอบในเครื่อง: ผู้ซื้อจำลอง = ซื้อชุด Mock (ให้สิทธิ์สนามที่ใช้ไฟล์ questions)
+  if (demoEnabled() && exam.entitlementFile === "questions") {
     const demo = readLocalJson<Record<string, Entitlement>>(BUYERS_FILE, {})[clean];
     if (demo) out.push(demo);
   }
@@ -336,88 +353,90 @@ export function removeDemoBuyer(email: string): void {
   writeLocalJson(BUYERS_FILE, all);
 }
 
-/* ================= การสอบ ================= */
+/* ================= การสอบ (แยกต่อสนาม) ================= */
 
 /** อ่าน attempt: Storage ก่อน ถ้าไม่มี Supabase ค่อยใช้ไฟล์ local (dev) */
-export async function getAttempt(email: string): Promise<ExamAttempt | null> {
+export async function getAttempt(exam: ExamDef, email: string): Promise<ExamAttempt | null> {
   const clean = normalizeEmail(email);
   if (getSupabase()) {
-    return await storageGetJson<ExamAttempt>(sAttempt(clean));
+    return await storageGetJson<ExamAttempt>(sAttempt(exam, clean));
   }
-  return readLocalJson<Record<string, ExamAttempt>>(ATTEMPTS_FILE, {})[clean] ?? null;
+  return readLocalJson<Record<string, ExamAttempt>>(localAttemptsFile(exam), {})[clean] ?? null;
 }
 
-async function putAttempt(attempt: ExamAttempt): Promise<void> {
+async function putAttempt(exam: ExamDef, attempt: ExamAttempt): Promise<void> {
   if (getSupabase()) {
-    await storagePutJson(sAttempt(attempt.email), attempt);
+    await storagePutJson(sAttempt(exam, attempt.email), attempt);
     return;
   }
-  const all = readLocalJson<Record<string, ExamAttempt>>(ATTEMPTS_FILE, {});
+  const all = readLocalJson<Record<string, ExamAttempt>>(localAttemptsFile(exam), {});
   all[attempt.email] = attempt;
-  writeLocalJson(ATTEMPTS_FILE, all);
+  writeLocalJson(localAttemptsFile(exam), all);
 }
 
-export async function deleteAttempt(email: string): Promise<void> {
+export async function deleteAttempt(exam: ExamDef, email: string): Promise<void> {
   const clean = normalizeEmail(email);
   if (getSupabase()) {
-    await storageRemove(sAttempt(clean));
+    await storageRemove(sAttempt(exam, clean));
     return;
   }
-  const all = readLocalJson<Record<string, ExamAttempt>>(ATTEMPTS_FILE, {});
+  const all = readLocalJson<Record<string, ExamAttempt>>(localAttemptsFile(exam), {});
   delete all[clean];
-  writeLocalJson(ATTEMPTS_FILE, all);
+  writeLocalJson(localAttemptsFile(exam), all);
 }
 
-export function examDeadline(attempt: ExamAttempt): number {
-  return new Date(attempt.startedAt).getTime() + EXAM.durationMinutes * 60 * 1000;
+export function examDeadline(exam: ExamDef, attempt: ExamAttempt): number {
+  return new Date(attempt.startedAt).getTime() + exam.durationMinutes * 60 * 1000;
 }
 
 export type AttemptState = "none" | "in_progress" | "submitted";
 
 /**
- * สถานะการสอบของอีเมลนี้ — มีผลข้างเคียงโดยตั้งใจ: ถ้าหมดเวลา (เลย grace) แล้วยังไม่ส่ง
- * จะปิดการสอบให้อัตโนมัติด้วยคำตอบล่าสุดที่บันทึกไว้ (กติกาเดียวกับห้องสอบจริง)
+ * สถานะการสอบของอีเมลนี้ในสนามนี้ — มีผลข้างเคียงโดยตั้งใจ: ถ้าหมดเวลา (เลย grace)
+ * แล้วยังไม่ส่ง จะปิดการสอบให้อัตโนมัติด้วยคำตอบล่าสุดที่บันทึกไว้
  */
 export async function getAttemptState(
+  exam: ExamDef,
   email: string
 ): Promise<{ state: AttemptState; attempt: ExamAttempt | null }> {
-  const attempt = await getAttempt(email);
+  const attempt = await getAttempt(exam, email);
   if (!attempt) return { state: "none", attempt: null };
   if (attempt.submittedAt) return { state: "submitted", attempt };
-  if (Date.now() > examDeadline(attempt) + GRACE_MS) {
-    const finalized = await submitAttempt(email, attempt.answers, { auto: true });
+  if (Date.now() > examDeadline(exam, attempt) + GRACE_MS) {
+    const finalized = await submitAttempt(exam, email, attempt.answers, { auto: true });
     return { state: "submitted", attempt: finalized };
   }
   return { state: "in_progress", attempt };
 }
 
-/** เริ่มสอบ (สร้างได้ครั้งเดียวต่ออีเมล) — คืน attempt เดิมถ้าเริ่มไปแล้ว */
-export async function startAttempt(buyer: Entitlement): Promise<ExamAttempt> {
+/** เริ่มสอบ (สร้างได้ครั้งเดียวต่ออีเมลต่อสนาม) — คืน attempt เดิมถ้าเริ่มไปแล้ว */
+export async function startAttempt(exam: ExamDef, buyer: Entitlement): Promise<ExamAttempt> {
   const email = normalizeEmail(buyer.email);
-  const existing = await getAttempt(email);
+  const existing = await getAttempt(exam, email);
   if (existing) return existing;
 
   const attempt: ExamAttempt = {
+    examId: exam.id,
     email,
     firstName: buyer.firstName,
     lastName: buyer.lastName,
     orderId: buyer.orderId,
     startedAt: new Date().toISOString(),
     submittedAt: null,
-    answers: Array(EXAM.totalQuestions).fill(0),
+    answers: Array(exam.totalQuestions).fill(0),
     correctCount: null,
     score: null,
   };
-  await putAttempt(attempt);
+  await putAttempt(exam, attempt);
   return attempt;
 }
 
-function sanitizeAnswers(raw: unknown): number[] | null {
-  if (!Array.isArray(raw) || raw.length !== EXAM.totalQuestions) return null;
+function sanitizeAnswers(exam: ExamDef, raw: unknown): number[] | null {
+  if (!Array.isArray(raw) || raw.length !== exam.totalQuestions) return null;
   const out: number[] = [];
   for (const v of raw) {
     const n = Number(v);
-    if (!Number.isInteger(n) || n < 0 || n > EXAM.choices) return null;
+    if (!Number.isInteger(n) || n < 0 || n > exam.choices) return null;
     out.push(n);
   }
   return out;
@@ -425,43 +444,47 @@ function sanitizeAnswers(raw: unknown): number[] | null {
 
 /** บันทึกคำตอบระหว่างสอบ (autosave) — รับเฉพาะช่วงยังไม่หมดเวลา */
 export async function saveAnswers(
+  exam: ExamDef,
   email: string,
   rawAnswers: unknown
 ): Promise<{ ok: boolean; reason?: string }> {
-  const answers = sanitizeAnswers(rawAnswers);
+  const answers = sanitizeAnswers(exam, rawAnswers);
   if (!answers) return { ok: false, reason: "รูปแบบคำตอบไม่ถูกต้อง" };
 
-  const attempt = await getAttempt(email);
+  const attempt = await getAttempt(exam, email);
   if (!attempt) return { ok: false, reason: "ยังไม่ได้เริ่มสอบ" };
   if (attempt.submittedAt) return { ok: false, reason: "ส่งข้อสอบไปแล้ว" };
-  if (Date.now() > examDeadline(attempt) + GRACE_MS) return { ok: false, reason: "หมดเวลาสอบแล้ว" };
+  if (Date.now() > examDeadline(exam, attempt) + GRACE_MS) {
+    return { ok: false, reason: "หมดเวลาสอบแล้ว" };
+  }
 
   attempt.answers = answers;
-  await putAttempt(attempt);
+  await putAttempt(exam, attempt);
   return { ok: true };
 }
 
 /** ส่งข้อสอบ + ตรวจ — เรียกซ้ำไม่ตรวจซ้ำ (คืนผลเดิม) */
 export async function submitAttempt(
+  exam: ExamDef,
   email: string,
   rawAnswers: unknown,
   opts: { auto?: boolean } = {}
 ): Promise<ExamAttempt> {
-  const attempt = await getAttempt(email);
+  const attempt = await getAttempt(exam, email);
   if (!attempt) throw new Error("ยังไม่ได้เริ่มสอบ");
   if (attempt.submittedAt) return attempt;
 
   // ถ้าคำขอส่งมาหลังหมดเวลา (เลย grace) ให้ใช้คำตอบที่ autosave ไว้แทนชุดที่ส่งมา
-  const late = Date.now() > examDeadline(attempt) + GRACE_MS;
-  const answers = late ? attempt.answers : (sanitizeAnswers(rawAnswers) ?? attempt.answers);
+  const late = Date.now() > examDeadline(exam, attempt) + GRACE_MS;
+  const answers = late ? attempt.answers : (sanitizeAnswers(exam, rawAnswers) ?? attempt.answers);
 
-  const key = await getAnswerKey();
+  const key = await getAnswerKey(exam);
   let correct = 0;
   let score = 0;
-  for (let q = 1; q <= EXAM.totalQuestions; q++) {
+  for (let q = 1; q <= exam.totalQuestions; q++) {
     if (answers[q - 1] === key[String(q)].answer) {
       correct++;
-      score += questionWeight(q);
+      score += questionWeight(exam, q);
     }
   }
 
@@ -470,34 +493,30 @@ export async function submitAttempt(
   attempt.score = roundScore(score);
   // ปิดอัตโนมัติเพราะหมดเวลา — ประทับเวลา ณ เส้นตาย ไม่ใช่เวลาที่บังเอิญมีคนมา trigger
   attempt.submittedAt = opts.auto
-    ? new Date(examDeadline(attempt)).toISOString()
+    ? new Date(examDeadline(exam, attempt)).toISOString()
     : new Date().toISOString();
 
-  await putAttempt(attempt);
-  await addToAggregate(attempt, key);
+  await putAttempt(exam, attempt);
+  await addToAggregate(exam, attempt, key);
   return attempt;
 }
 
-/* ================= สถิติ ================= */
+/* ================= สถิติ (แยกต่อสนาม) ================= */
 
-async function readAggregate(): Promise<Aggregate> {
-  const fromStorage = getSupabase() ? await storageGetJson<Aggregate>(S_AGG) : null;
-  const local = getSupabase()
-    ? null
-    : readLocalJson<Record<string, ExamAttempt>>(ATTEMPTS_FILE, {});
-  if (fromStorage) return fromStorage;
-
+async function readAggregate(exam: ExamDef): Promise<Aggregate> {
+  if (getSupabase()) {
+    return (await storageGetJson<Aggregate>(sAgg(exam))) ?? { scores: [], perQuestionCorrect: {} };
+  }
   // dev (ไม่มี Supabase): คิดสดจากไฟล์ attempts ในเครื่อง
   const agg: Aggregate = { scores: [], perQuestionCorrect: {} };
-  if (local) {
-    const key = await getAnswerKey();
-    for (const a of Object.values(local)) {
-      if (!a.submittedAt) continue;
-      agg.scores.push(a.score ?? 0);
-      for (let q = 1; q <= EXAM.totalQuestions; q++) {
-        if (a.answers[q - 1] === key[String(q)].answer) {
-          agg.perQuestionCorrect[String(q)] = (agg.perQuestionCorrect[String(q)] ?? 0) + 1;
-        }
+  const all = readLocalJson<Record<string, ExamAttempt>>(localAttemptsFile(exam), {});
+  const key = await getAnswerKey(exam);
+  for (const a of Object.values(all)) {
+    if (!a.submittedAt) continue;
+    agg.scores.push(a.score ?? 0);
+    for (let q = 1; q <= exam.totalQuestions; q++) {
+      if (a.answers[q - 1] === key[String(q)].answer) {
+        agg.perQuestionCorrect[String(q)] = (agg.perQuestionCorrect[String(q)] ?? 0) + 1;
       }
     }
   }
@@ -509,69 +528,71 @@ async function readAggregate(): Promise<Aggregate> {
  * ถ้าเขียนไม่สำเร็จ ไม่ให้ล้มทั้งคำขอ — ผลสอบรายคนบันทึกไปแล้ว เสียแค่ตัวเลขรวม
  */
 async function addToAggregate(
+  exam: ExamDef,
   attempt: ExamAttempt,
   key: Record<string, AnswerKeyEntry>
 ): Promise<void> {
   if (!getSupabase()) return; // dev คิดสดจากไฟล์อยู่แล้ว
   try {
-    const agg = (await storageGetJson<Aggregate>(S_AGG)) ?? { scores: [], perQuestionCorrect: {} };
+    const agg =
+      (await storageGetJson<Aggregate>(sAgg(exam))) ?? { scores: [], perQuestionCorrect: {} };
     agg.scores.push(attempt.score ?? 0);
-    for (let q = 1; q <= EXAM.totalQuestions; q++) {
+    for (let q = 1; q <= exam.totalQuestions; q++) {
       if (attempt.answers[q - 1] === key[String(q)].answer) {
         agg.perQuestionCorrect[String(q)] = (agg.perQuestionCorrect[String(q)] ?? 0) + 1;
       }
     }
-    await storagePutJson(S_AGG, agg);
+    await storagePutJson(sAgg(exam), agg);
   } catch (err) {
     console.error("อัปเดตสถิติรวมไม่สำเร็จ (ผลสอบรายคนบันทึกแล้ว):", err);
   }
 }
 
 /** ลบผลของอีเมลหนึ่งออกจากผลรวม — ใช้ตอนเจ้าของร้านรีเซ็ตรอบสอบของตัวเอง */
-async function removeFromAggregate(attempt: ExamAttempt): Promise<void> {
+async function removeFromAggregate(exam: ExamDef, attempt: ExamAttempt): Promise<void> {
   if (!getSupabase() || !attempt.submittedAt) return;
   try {
-    const agg = await storageGetJson<Aggregate>(S_AGG);
+    const agg = await storageGetJson<Aggregate>(sAgg(exam));
     if (!agg) return;
     const i = agg.scores.indexOf(attempt.score ?? 0);
     if (i >= 0) agg.scores.splice(i, 1);
-    const key = await getAnswerKey();
-    for (let q = 1; q <= EXAM.totalQuestions; q++) {
+    const key = await getAnswerKey(exam);
+    for (let q = 1; q <= exam.totalQuestions; q++) {
       if (attempt.answers[q - 1] === key[String(q)].answer) {
         const cur = agg.perQuestionCorrect[String(q)] ?? 0;
         agg.perQuestionCorrect[String(q)] = Math.max(0, cur - 1);
       }
     }
-    await storagePutJson(S_AGG, agg);
+    await storagePutJson(sAgg(exam), agg);
   } catch (err) {
     console.error("ถอนผลออกจากสถิติรวมไม่สำเร็จ:", err);
   }
 }
 
 /** ลบการสอบ + ถอนผลออกจากสถิติ (ใช้กับอีเมลที่ทำซ้ำได้) */
-export async function resetAttempt(email: string): Promise<void> {
-  const attempt = await getAttempt(email);
-  if (attempt) await removeFromAggregate(attempt);
-  await deleteAttempt(email);
+export async function resetAttempt(exam: ExamDef, email: string): Promise<void> {
+  const attempt = await getAttempt(exam, email);
+  if (attempt) await removeFromAggregate(exam, attempt);
+  await deleteAttempt(exam, email);
 }
 
 export interface ExamStatistics {
   nTotal: number; // ผู้สอบทั้งหมด (ประชากรอ้างอิง + ผู้สอบจริง)
-  mean: number; // ทุกค่าอยู่บนสเกลคะแนนถ่วงน้ำหนัก เต็ม 100
+  mean: number; // ทุกค่าอยู่บนสเกลคะแนนถ่วงน้ำหนักของสนามนั้น
   sd: number;
   min: number;
   max: number;
   rank: number; // อันดับของคะแนนที่ส่งเข้ามา (1 = สูงสุด)
-  histogram: { from: number; to: number; count: number; mine: boolean }[]; // ช่วงละ 10 คะแนน
+  histogram: { from: number; to: number; count: number; mine: boolean }[];
   perQuestionPctCorrect: Record<string, number>; // % คนตอบถูกรายข้อ (0-100)
 }
 
 /**
- * สถิติเทียบกับผู้สอบทุกคน = ประชากรอ้างอิง + ผู้สอบจริงที่ส่งแล้ว
+ * สถิติเทียบกับผู้สอบทุกคนในสนามนี้ = ประชากรอ้างอิง + ผู้สอบจริงที่ส่งแล้ว
  * (ประชากรอ้างอิงจำเป็นช่วงแรกที่ผู้สอบจริงยังน้อย ไม่งั้นอันดับไม่มีความหมาย)
  */
-export async function computeStatistics(myScore: number): Promise<ExamStatistics> {
-  const [pop, agg] = await Promise.all([getPopulation(), readAggregate()]);
+export async function computeStatistics(exam: ExamDef, myScore: number): Promise<ExamStatistics> {
+  const [pop, agg] = await Promise.all([getPopulation(exam), readAggregate(exam)]);
   const scores = [...pop.scoresWeighted, ...agg.scores];
 
   const n = scores.length;
@@ -579,9 +600,10 @@ export async function computeStatistics(myScore: number): Promise<ExamStatistics
   const sd = Math.sqrt(scores.reduce((s, v) => s + (v - mean) ** 2, 0) / n);
   const rank = 1 + scores.filter((v) => v > myScore).length;
 
-  // ฮิสโตแกรม 10 ช่วง ช่วงละ 10 คะแนน (0-10, 10-20, …, 90-100)
-  const binSize = 10;
-  const binOf = (score: number) => Math.min(9, Math.max(0, Math.floor(score / binSize)));
+  // ฮิสโตแกรม 10 ช่วงเท่า ๆ กันตามคะแนนเต็มของสนาม (เต็ม 100 → ช่วงละ 10)
+  const binSize = exam.maxScore / 10;
+  const binOf = (score: number) =>
+    Math.min(9, Math.max(0, Math.floor(score / binSize)));
   const myBin = binOf(myScore);
   const histogram = Array.from({ length: 10 }, (_, i) => ({
     from: i * binSize,
@@ -593,7 +615,7 @@ export async function computeStatistics(myScore: number): Promise<ExamStatistics
 
   const nAll = pop.nStudents + agg.scores.length;
   const perQuestionPctCorrect: Record<string, number> = {};
-  for (let q = 1; q <= EXAM.totalQuestions; q++) {
+  for (let q = 1; q <= exam.totalQuestions; q++) {
     const fromPop = pop.perQuestionCorrect[String(q)] ?? 0;
     const fromReal = agg.perQuestionCorrect[String(q)] ?? 0;
     perQuestionPctCorrect[String(q)] = Math.round(((fromPop + fromReal) * 1000) / nAll) / 10;

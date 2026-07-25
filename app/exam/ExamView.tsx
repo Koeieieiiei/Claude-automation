@@ -2,10 +2,11 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { EXAM, sectionOf } from "@/lib/exam-config";
+import { getExam, DEFAULT_EXAM_ID, ExamDef } from "@/lib/exams";
 
 /**
- * ห้องสอบออนไลน์ Mock TPAT3 — 70 ข้อ จับเวลา 3 ชั่วโมง ทำได้ 1 รอบต่ออีเมลที่ซื้อ
+ * ห้องสอบออนไลน์ — เลือกสนามสอบผ่าน ?exam=<examId> (ไม่ระบุ = สนามหลัก TPAT3)
+ * นิยามรายสนาม (จำนวนข้อ เวลา หน้าโจทย์) มาจาก lib/exams.ts
  *
  * ลำดับหน้าจอ: gate (กรอกอีเมล/ลิงก์) → instructions (คำชี้แจง + กติกา) → exam → ไปหน้าผล
  * เวลาอิงนาฬิกา server เสมอ (คำนวณ offset ตอน start) — แก้นาฬิกาเครื่องเองไม่มีผล
@@ -13,8 +14,18 @@ import { EXAM, sectionOf } from "@/lib/exam-config";
 
 type Phase = "loading" | "gate" | "instructions" | "exam";
 
-const LS_TOKEN = "exam.token";
-const LS_EMAIL = "exam.email";
+// localStorage ต่อสนาม — สนามหลักใช้ key เดิม ("exam.token") ให้เครื่องของลูกค้าเก่ายังจำได้
+const lsTokenKey = (examId: string) =>
+  examId === DEFAULT_EXAM_ID ? "exam.token" : `exam.token.${examId}`;
+const lsEmailKey = (examId: string) =>
+  examId === DEFAULT_EXAM_ID ? "exam.email" : `exam.email.${examId}`;
+
+/** ข้อความระยะเวลาสอบ เช่น 180 นาที → "3 ชั่วโมง" */
+function durationText(exam: ExamDef): string {
+  return exam.durationMinutes % 60 === 0
+    ? `${exam.durationMinutes / 60} ชั่วโมง`
+    : `${exam.durationMinutes} นาที`;
+}
 
 interface AccessResponse {
   state?: "none" | "eligible" | "in_progress" | "submitted";
@@ -30,6 +41,11 @@ export default function ExamView() {
   const router = useRouter();
   const params = useSearchParams();
 
+  // สนามสอบของหน้านี้ — คงที่ตลอดอายุหน้า (เปลี่ยนสนาม = เปิด URL ใหม่)
+  const exam = getExam(params.get("exam"));
+  const LS_TOKEN = lsTokenKey(exam.id);
+  const LS_EMAIL = lsEmailKey(exam.id);
+
   const [phase, setPhase] = useState<Phase>("loading");
   const [token, setToken] = useState("");
   const [email, setEmail] = useState("");
@@ -41,7 +57,7 @@ export default function ExamView() {
   // สถานะระหว่างสอบ
   const [deadline, setDeadline] = useState(0); // server ms
   const [clockOffset, setClockOffset] = useState(0); // serverNow - clientNow
-  const [answers, setAnswers] = useState<number[]>(() => Array(EXAM.totalQuestions).fill(0));
+  const [answers, setAnswers] = useState<number[]>(() => Array(exam.totalQuestions).fill(0));
   const [savedAt, setSavedAt] = useState<Date | null>(null);
   const [confirmStart, setConfirmStart] = useState(false);
   const [confirmSubmit, setConfirmSubmit] = useState(false);
@@ -103,7 +119,8 @@ export default function ExamView() {
         const res = await fetch("/api/exam/access", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
+          // ระบุสนามเสมอ (กรณีมีโทเค็น server จะยึดสนามในโทเค็นเป็นหลักอยู่แล้ว)
+          body: JSON.stringify({ examId: exam.id, ...body }),
         });
         const data = (await res.json()) as AccessResponse;
         if (!res.ok) {
@@ -170,7 +187,7 @@ export default function ExamView() {
       setClockOffset(data.serverNow - Date.now());
       const serverAnswers: number[] = Array.isArray(data.answers)
         ? data.answers
-        : Array(EXAM.totalQuestions).fill(0);
+        : Array(exam.totalQuestions).fill(0);
       setAnswers(serverAnswers);
       setConfirmStart(false);
       setPhase("exam");
@@ -261,7 +278,7 @@ export default function ExamView() {
   }, []);
 
   const jumpTo = useCallback((no: number) => {
-    const q = EXAM.questions.find((x) => x.no === no);
+    const q = exam.questions.find((x) => x.no === no);
     if (!q) return;
     const img = pageRefs.current.get(q.page);
     if (!img) return;
@@ -287,14 +304,14 @@ export default function ExamView() {
         <div className="w-full max-w-md border border-ink bg-paper shadow-[0_25px_60px_-20px_rgba(14,26,43,0.5)]">
           <div className="border-b border-ink px-6 py-3">
             <span className="font-label text-[11px] font-semibold uppercase tracking-[0.2em] text-maroon">
-              ห้องสอบ Mock TPAT3
+              ห้องสอบ {exam.title}
             </span>
           </div>
           <div className="px-6 py-8">
             <h1 className="font-display text-2xl font-bold text-ink">ยืนยันตัวตนก่อนเข้าสอบ</h1>
             <p className="mt-2 text-sm leading-relaxed text-ink/70">
-              กรอก<strong>ชื่อ นามสกุล และอีเมลให้ตรงกับตอนสั่งซื้อ</strong>ชุด Mock TPAT3
-              จึงจะเข้าทำข้อสอบออนไลน์ได้ (70 ข้อ · จับเวลา 3 ชั่วโมง · ทำได้ 1 รอบ)
+              กรอก<strong>ชื่อ นามสกุล และอีเมลให้ตรงกับตอนสั่งซื้อ</strong>ชุด {exam.title}{" "}
+              จึงจะเข้าทำข้อสอบออนไลน์ได้ ({exam.totalQuestions} ข้อ · จับเวลา {durationText(exam)} · ทำได้ 1 รอบ)
             </p>
             <form
               className="mt-5"
@@ -376,7 +393,7 @@ export default function ExamView() {
         <div className="mx-auto w-full max-w-3xl border border-ink bg-paper shadow-[0_25px_60px_-20px_rgba(14,26,43,0.5)]">
           <div className="flex items-center justify-between border-b border-ink px-6 py-3">
             <span className="font-label text-[11px] font-semibold uppercase tracking-[0.2em] text-maroon">
-              ห้องสอบ Mock TPAT3
+              ห้องสอบ {exam.title}
             </span>
             <span className="font-label text-xs text-ink/60">{email}</span>
           </div>
@@ -402,8 +419,8 @@ export default function ExamView() {
 
             <div className="mt-6 grid gap-3 sm:grid-cols-3">
               {[
-                ["70 ข้อ", "ปรนัย 5 ตัวเลือก ครบ 5 ตอนตามสอบจริง"],
-                ["3 ชั่วโมง", "จับเวลาอัตโนมัติ หมดเวลาระบบส่งให้ทันที"],
+                [`${exam.totalQuestions} ข้อ`, `ปรนัย ${exam.choices} ตัวเลือก ครบ ${exam.sections.length} ตอนตามสอบจริง`],
+                [durationText(exam), "จับเวลาอัตโนมัติ หมดเวลาระบบส่งให้ทันที"],
                 ["1 รอบเท่านั้น", "1 อีเมลที่ซื้อ ทำได้ครั้งเดียว เหมือนสอบจริง"],
               ].map(([t, d]) => (
                 <div key={t} className="border border-grid bg-white p-4">
@@ -441,14 +458,14 @@ export default function ExamView() {
                 คำชี้แจงข้อสอบ (จากชุดข้อสอบจริง)
               </summary>
               <div className="space-y-3 border-t border-grid p-3">
-                {EXAM.instructionPages.map((n) => (
+                {exam.instructionPages.map((n) => (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     key={n}
                     src={`/api/exam/page/${n}?token=${encodeURIComponent(token)}`}
                     alt={`คำชี้แจงหน้า ${n}`}
                     className="w-full border border-grid"
-                    style={{ aspectRatio: `${EXAM.pageWidth} / ${EXAM.pageHeight}` }}
+                    style={{ aspectRatio: `${exam.pageWidth} / ${exam.pageHeight}` }}
                   />
                 ))}
               </div>
@@ -459,7 +476,7 @@ export default function ExamView() {
               disabled={busy}
               className="mt-8 w-full bg-maroon py-4 text-lg font-bold text-paper transition hover:bg-maroon-dark disabled:opacity-60"
             >
-              {busy ? "กำลังเข้าห้องสอบ…" : resumed ? "กลับเข้าห้องสอบ (เวลากำลังเดิน)" : "เริ่มทำข้อสอบ — เริ่มจับเวลา 3 ชั่วโมง"}
+              {busy ? "กำลังเข้าห้องสอบ…" : resumed ? "กลับเข้าห้องสอบ (เวลากำลังเดิน)" : `เริ่มทำข้อสอบ — เริ่มจับเวลา ${durationText(exam)}`}
             </button>
           </div>
         </div>
@@ -468,7 +485,7 @@ export default function ExamView() {
           <Modal onClose={() => setConfirmStart(false)}>
             <h2 className="font-display text-xl font-bold text-ink">เริ่มจับเวลาเลยไหม?</h2>
             <p className="mt-2 text-sm leading-relaxed text-ink/70">
-              เวลา 3 ชั่วโมงจะเริ่มนับทันทีและไม่หยุดแม้ปิดหน้าเว็บ อีเมลนี้ทำได้รอบเดียวเท่านั้น
+              เวลา {durationText(exam)} จะเริ่มนับทันทีและไม่หยุดแม้ปิดหน้าเว็บ อีเมลนี้ทำได้รอบเดียวเท่านั้น
             </p>
             <div className="mt-5 flex gap-3">
               <button
@@ -493,7 +510,7 @@ export default function ExamView() {
 
   /* ---------- phase === "exam" ---------- */
 
-  const unanswered = EXAM.totalQuestions - answeredCount;
+  const unanswered = exam.totalQuestions - answeredCount;
 
   return (
     <div className="min-h-screen bg-paper">
@@ -503,12 +520,12 @@ export default function ExamView() {
           <div className="hidden items-center gap-2.5 md:flex">
             <span className="font-display text-lg font-bold text-ink">Mr.tpat3</span>
             <span className="font-label text-[11px] font-semibold uppercase tracking-[0.18em] text-maroon">
-              ห้องสอบ Mock TPAT3
+              ห้องสอบ {exam.title}
             </span>
           </div>
           <div className="flex items-center gap-3 md:gap-5">
             <span className="font-label text-sm text-ink/70">
-              ตอบแล้ว <strong className="text-ink">{answeredCount}</strong>/{EXAM.totalQuestions}
+              ตอบแล้ว <strong className="text-ink">{answeredCount}</strong>/{exam.totalQuestions}
             </span>
             <Countdown deadline={deadline} clockOffset={clockOffset} onExpire={onExpire} />
             <button
@@ -530,7 +547,7 @@ export default function ExamView() {
             <span className="hidden lg:inline">ด้านขวา</span> — กดเลขข้อเพื่อกระโดดไปที่โจทย์ข้อนั้นได้
           </p>
           <div className="space-y-2">
-            {EXAM.questionPages.map((n) => (
+            {exam.questionPages.map((n) => (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 key={n}
@@ -538,10 +555,10 @@ export default function ExamView() {
                   if (el) pageRefs.current.set(n, el);
                 }}
                 src={`/api/exam/page/${n}?token=${encodeURIComponent(token)}`}
-                alt={`โจทย์หน้า ${n - EXAM.questionPages[0] + 1}`}
+                alt={`โจทย์หน้า ${n - exam.questionPages[0] + 1}`}
                 loading="lazy"
                 className="w-full border border-grid bg-white"
-                style={{ aspectRatio: `${EXAM.pageWidth} / ${EXAM.pageHeight}` }}
+                style={{ aspectRatio: `${exam.pageWidth} / ${exam.pageHeight}` }}
               />
             ))}
           </div>
@@ -557,7 +574,7 @@ export default function ExamView() {
               <SaveBadge savedAt={savedAt} />
             </div>
             <div className="overflow-y-auto p-3">
-              <AnswerSheet answers={answers} onPick={pick} onJump={jumpTo} />
+              <AnswerSheet exam={exam} answers={answers} onPick={pick} onJump={jumpTo} />
             </div>
           </div>
         </aside>
@@ -568,7 +585,7 @@ export default function ExamView() {
         onClick={() => setSheetOpen(true)}
         className="fixed bottom-4 right-4 z-40 bg-maroon px-5 py-3.5 font-bold text-paper shadow-[0_12px_30px_-8px_rgba(110,20,35,0.6)] transition hover:bg-maroon-dark lg:hidden"
       >
-        กระดาษคำตอบ · {answeredCount}/{EXAM.totalQuestions}
+        กระดาษคำตอบ · {answeredCount}/{exam.totalQuestions}
       </button>
       {sheetOpen && (
         <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal>
@@ -576,7 +593,7 @@ export default function ExamView() {
           <div className="absolute inset-x-0 bottom-0 flex max-h-[78vh] flex-col border-t-2 border-maroon bg-paper">
             <div className="flex items-center justify-between border-b border-grid px-4 py-3">
               <span className="font-label text-[11px] font-semibold uppercase tracking-[0.18em] text-maroon">
-                กระดาษคำตอบ · ตอบแล้ว {answeredCount}/{EXAM.totalQuestions}
+                กระดาษคำตอบ · ตอบแล้ว {answeredCount}/{exam.totalQuestions}
               </span>
               <button
                 onClick={() => setSheetOpen(false)}
@@ -586,7 +603,7 @@ export default function ExamView() {
               </button>
             </div>
             <div className="overflow-y-auto p-3">
-              <AnswerSheet answers={answers} onPick={pick} onJump={jumpTo} />
+              <AnswerSheet exam={exam} answers={answers} onPick={pick} onJump={jumpTo} />
             </div>
           </div>
         </div>
@@ -597,7 +614,7 @@ export default function ExamView() {
         <Modal onClose={() => (submitting ? null : setConfirmSubmit(false))}>
           <h2 className="font-display text-xl font-bold text-ink">ส่งกระดาษคำตอบ?</h2>
           <p className="mt-2 text-sm leading-relaxed text-ink/70">
-            ตอบแล้ว <strong className="text-ink">{answeredCount}</strong> จาก {EXAM.totalQuestions} ข้อ
+            ตอบแล้ว <strong className="text-ink">{answeredCount}</strong> จาก {exam.totalQuestions} ข้อ
             {unanswered > 0 && (
               <>
                 {" "}
@@ -631,7 +648,7 @@ export default function ExamView() {
         <Modal onClose={() => null}>
           <h2 className="font-display text-xl font-bold text-maroon">หมดเวลาสอบ</h2>
           <p className="mt-2 text-sm leading-relaxed text-ink/70">
-            ครบ 3 ชั่วโมงแล้ว — ระบบกำลังส่งคำตอบที่บันทึกไว้และตรวจให้อัตโนมัติ…
+            ครบ {durationText(exam)} แล้ว — ระบบกำลังส่งคำตอบที่บันทึกไว้และตรวจให้อัตโนมัติ…
           </p>
         </Modal>
       )}
@@ -697,17 +714,19 @@ function SaveBadge({ savedAt }: { savedAt: Date | null }) {
 
 /* ---------- กระดาษคำตอบ 70 ข้อ × 5 ช้อยส์ (ใช้ทั้งแผงข้างและลิ้นชักมือถือ) ---------- */
 function AnswerSheet({
+  exam,
   answers,
   onPick,
   onJump,
 }: {
+  exam: ExamDef;
   answers: number[];
   onPick: (no: number, choice: number) => void;
   onJump: (no: number) => void;
 }) {
   return (
     <div className="space-y-4">
-      {EXAM.sections.map((sec) => (
+      {exam.sections.map((sec) => (
         <div key={sec.no}>
           <p className="mb-1.5 font-label text-[11px] font-semibold text-maroon">
             ตอนที่ {sec.no} · ข้อ {sec.from}–{sec.to}

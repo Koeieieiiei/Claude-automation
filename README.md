@@ -192,20 +192,27 @@ npx vercel --prod --yes
 [app/exam/results/ResultsView.tsx](app/exam/results/ResultsView.tsx) (ผลวิเคราะห์) ·
 [lib/exam-store.ts](lib/exam-store.ts) (ที่เก็บข้อมูล) · [app/api/exam/](app/api/exam/) (API)
 
+### รองรับหลายสนามสอบ (ตั้งแต่ 2026-07-26)
+ทุกอย่างผูกกับ "รหัสสนามสอบ" (examId) — ทะเบียนสนามอยู่ที่ [lib/exams.ts](lib/exams.ts)
+ตอนนี้มีสนามเดียวคือ `tpat3-1` (สนามหลัก) · เข้าสนามอื่นผ่าน `/exam?exam=<examId>`
+กติกา 1 อีเมล 1 รอบนับแยกต่อสนาม — สอบ TPAT3 แล้วยังสอบสนามใหม่ (เช่น A-Level) ได้
+วิธีเพิ่มสนามใหม่ครบทุกขั้นเขียนไว้หัวไฟล์ lib/exams.ts
+
 ### ที่เก็บข้อมูล (production)
 ทุกอย่างอยู่บน **Supabase Storage** บักเก็ตเดียวกับไฟล์ ebook — ดิสก์ของ Vercel เขียนไม่ได้
-และหายทุก deploy จึงห้ามพึ่งไฟล์ในเครื่อง
+และหายทุก deploy จึงห้ามพึ่งไฟล์ในเครื่อง (แยกโฟลเดอร์ต่อสนาม)
 
 | ที่อยู่ | เก็บอะไร |
 |---|---|
-| `exam/answer-key.json` | เฉลย + ระดับความยาก 70 ข้อ |
-| `exam/population.json` | ประชากรอ้างอิง 612 คน (ค่าเฉลี่ย ~49/100) |
-| `exam/pages/page-NN.png` | รูปหน้าโจทย์ 56 หน้า (เสิร์ฟผ่าน API ที่เช็คสิทธิ์) |
-| `exam/attempts/<sha256(email)>.json` | การสอบรายคน (1 อีเมล = 1 ไฟล์ = 1 รอบ) |
-| `exam/aggregate.json` | ผลรวมผู้สอบจริง ไว้คิดสถิติโดยไม่ต้องอ่านทุกไฟล์ |
+| `exam/<examId>/answer-key.json` | เฉลย + ระดับความยากรายข้อ |
+| `exam/<examId>/population.json` | ประชากรอ้างอิง (TPAT3: 15 คน กอง 30-60 + เก่ง 1 คนที่ 76) |
+| `exam/<examId>/pages/page-NN.png` | รูปหน้าโจทย์ (เสิร์ฟผ่าน API ที่เช็คสิทธิ์) |
+| `exam/<examId>/attempts/<sha256(email)>.json` | การสอบรายคน (1 อีเมล = 1 ไฟล์ = 1 รอบต่อสนาม) |
+| `exam/<examId>/aggregate.json` | ผลรวมผู้สอบจริง ไว้คิดสถิติโดยไม่ต้องอ่านทุกไฟล์ |
 
-อัปข้อมูลข้อสอบขึ้น Storage: `node --env-file=.env.local scripts/upload-exam-assets.mjs`
-(ต้องรัน `python scripts/build-exam-assets.py` ก่อน — รันซ้ำได้ ไม่แตะไฟล์ผลสอบของลูกค้า)
+อัปข้อมูลข้อสอบขึ้น Storage: `node --env-file=.env.local scripts/upload-exam-assets.mjs <examId>`
+(ต้องรัน `python scripts/build-exam-assets.py <examId>` ก่อน — รันซ้ำได้ ไม่แตะไฟล์ผลสอบของลูกค้า)
+โทเค็น/ลิงก์ของลูกค้าที่ออกก่อนแยกสนาม ไม่มีรหัสสนามฝังอยู่ → ระบบตีความเป็น `tpat3-1` เสมอ
 
 ### สิทธิ์เข้าสอบมาจากไหน
 เทียบ **ชื่อ + นามสกุล + อีเมล** กับตาราง `orders` ที่ `status = delivered`

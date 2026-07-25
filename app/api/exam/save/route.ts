@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyExamToken } from "@/lib/exam-token";
+import { getExam } from "@/lib/exams";
 import { saveAnswers } from "@/lib/exam-store";
 
 export const runtime = "nodejs";
@@ -19,7 +20,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const result = await saveAnswers(payload.email, body.answers);
+    const result = await saveAnswers(getExam(payload.examId), payload.email, body.answers);
     if (!result.ok) {
       return NextResponse.json({ error: result.reason }, { status: 409 });
     }

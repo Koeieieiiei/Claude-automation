@@ -11,13 +11,15 @@ import {
   demoEnabled,
 } from "@/lib/exam-store";
 import { createExamToken } from "@/lib/exam-token";
-import { EXAM, Difficulty } from "@/lib/exam-config";
+import { getExam } from "@/lib/exams";
+import { Difficulty } from "@/lib/exam-config";
 
 export const runtime = "nodejs";
 
 /**
  * เครื่องมือ "แบบจำลอง" สำหรับทดสอบระบบสอบโดยไม่ต้องจ่ายเงินจริง
  * ใช้ได้เฉพาะตอน dev ในเครื่อง (หรือ EXAM_DEMO=1) — บน production ตอบ 404 เสมอ
+ * ระบุ examId ได้ทุก action (ไม่ระบุ = สนามหลัก TPAT3)
  */
 
 /** จำลองฝีมือผู้สอบ 3 ระดับ — โอกาสตอบถูกแยกตามความยากข้อ */
@@ -38,6 +40,7 @@ export async function POST(req: NextRequest) {
     firstName?: string;
     lastName?: string;
     ability?: string;
+    examId?: string;
   };
   try {
     body = await req.json();
@@ -46,6 +49,7 @@ export async function POST(req: NextRequest) {
   }
 
   const email = (body.email ?? "").trim().toLowerCase();
+  const exam = getExam(body.examId);
 
   switch (body.action) {
     // สร้าง "ผู้ซื้อจำลอง" — เทียบเท่าลูกค้าที่จ่ายเงินสำเร็จแล้ว
@@ -56,20 +60,24 @@ export async function POST(req: NextRequest) {
         firstName: body.firstName?.trim() || "นักเรียน",
         lastName: body.lastName?.trim() || "ทดสอบ",
       });
-      return NextResponse.json({ ok: true, buyer, token: createExamToken(buyer) });
+      return NextResponse.json({
+        ok: true,
+        buyer,
+        token: createExamToken({ examId: exam.id, ...buyer }),
+      });
     }
 
     // ลบการสอบของอีเมล (คงสิทธิ์ผู้ซื้อไว้) — ไว้ทดสอบทำข้อสอบซ้ำ
     case "reset": {
       if (!email) return NextResponse.json({ error: "กรุณากรอกอีเมล" }, { status: 400 });
-      await resetAttempt(email);
+      await resetAttempt(exam, email);
       return NextResponse.json({ ok: true });
     }
 
     // ลบทั้งสิทธิ์และการสอบ
     case "revoke": {
       if (!email) return NextResponse.json({ error: "กรุณากรอกอีเมล" }, { status: 400 });
-      await resetAttempt(email);
+      await resetAttempt(exam, email);
       removeDemoBuyer(email);
       return NextResponse.json({ ok: true });
     }
@@ -77,7 +85,7 @@ export async function POST(req: NextRequest) {
     // จำลอง "สอบเสร็จทั้งชุด" ทันที (สุ่มคำตอบตามระดับฝีมือ) — ไว้ดูหน้าผลสอบเร็ว ๆ
     case "simulate": {
       if (!email) return NextResponse.json({ error: "กรุณากรอกอีเมล" }, { status: 400 });
-      if (await getAttempt(email)) {
+      if (await getAttempt(exam, email)) {
         return NextResponse.json(
           { error: "อีเมลนี้มีการสอบอยู่แล้ว — กด 'รีเซ็ตการสอบ' ก่อน" },
           { status: 409 }
@@ -88,31 +96,33 @@ export async function POST(req: NextRequest) {
         firstName: body.firstName?.trim() || "นักเรียน",
         lastName: body.lastName?.trim() || "ทดสอบ",
       });
-      await startAttempt(buyer);
+      await startAttempt(exam, buyer);
 
       const probs = ABILITY[body.ability ?? "avg"] ?? ABILITY.avg;
-      const key = await getAnswerKey();
-      const answers = Array.from({ length: EXAM.totalQuestions }, (_, i) => {
+      const key = await getAnswerKey(exam);
+      const answers = Array.from({ length: exam.totalQuestions }, (_, i) => {
         const k = key[String(i + 1)];
         if (Math.random() < probs[k.difficulty]) return k.answer;
         // ตอบผิด: สุ่มช้อยส์อื่นที่ไม่ใช่คำตอบถูก
-        const wrong = [1, 2, 3, 4, 5].filter((c) => c !== k.answer);
+        const wrong = Array.from({ length: exam.choices }, (_, c) => c + 1).filter(
+          (c) => c !== k.answer
+        );
         return wrong[Math.floor(Math.random() * wrong.length)];
       });
-      const attempt = await submitAttempt(email, answers);
+      const attempt = await submitAttempt(exam, email, answers);
       return NextResponse.json({
         ok: true,
-        token: createExamToken(buyer),
+        token: createExamToken({ examId: exam.id, ...buyer }),
         correctCount: attempt.correctCount,
         scaled: attempt.score,
       });
     }
 
-    // รายชื่อผู้ซื้อจำลอง + สถานะการสอบ (ไว้โชว์บนหน้า demo)
+    // รายชื่อผู้ซื้อจำลอง + สถานะการสอบในสนามที่ระบุ (ไว้โชว์บนหน้า demo)
     case "list": {
       const buyers = await Promise.all(
         listDemoBuyers().map(async (b) => {
-          const attempt = await getAttempt(b.email);
+          const attempt = await getAttempt(exam, b.email);
           return {
             ...b,
             attemptState: attempt ? (attempt.submittedAt ? "submitted" : "in_progress") : "none",
@@ -120,7 +130,7 @@ export async function POST(req: NextRequest) {
           };
         })
       );
-      return NextResponse.json({ buyers });
+      return NextResponse.json({ buyers, examId: exam.id });
     }
 
     default:

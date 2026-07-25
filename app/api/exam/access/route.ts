@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createExamToken, verifyExamToken } from "@/lib/exam-token";
+import { getExam } from "@/lib/exams";
 import {
   findEntitlementByEmail,
   getAttemptState,
@@ -17,21 +18,27 @@ function sameName(a: string, b: string): boolean {
 }
 
 /**
- * เช็คสิทธิ์เข้าห้องสอบ — รับ { email, firstName, lastName } (พิมพ์เอง)
- * หรือ { token } (จากลิงก์/localStorage)
+ * เช็คสิทธิ์เข้าห้องสอบ — รับ { email, firstName, lastName, examId? } (พิมพ์เอง)
+ * หรือ { token } (จากลิงก์/localStorage — โทเค็นฝังสนามสอบไว้แล้ว)
+ * ไม่ระบุ examId = สนามหลัก (TPAT3)
  *
  * กติกา: ต้องกรอก "ชื่อ + นามสกุล + อีเมล" ให้ตรงกับคำสั่งซื้อที่ส่งของแล้วจริง
- * ไม่ตรงอย่างใดอย่างหนึ่ง = เข้าไม่ได้ (โทเค็นที่ผ่านการเช็คแล้วฝังตัวตนไว้ในลายเซ็น
- * จึงไม่ต้องกรอกซ้ำ)
+ * และคำสั่งซื้อนั้นต้องมีสิทธิ์ของสนามที่ขอ — ไม่ตรงอย่างใดอย่างหนึ่ง = เข้าไม่ได้
  *
- * ตอบ state อย่างใดอย่างหนึ่ง:
+ * ตอบ state อย่างใดอย่างหนึ่ง (สถานะนับแยกต่อสนาม):
  *   none        ไม่พบสิทธิ์ (ยังไม่ซื้อ / ชื่อ-นามสกุล-อีเมลไม่ตรงกับที่ซื้อ)
  *   eligible    มีสิทธิ์ ยังไม่เริ่มทำ
  *   in_progress เริ่มทำแล้ว ยังไม่หมดเวลา (ทำต่อได้)
- *   submitted   ส่งข้อสอบแล้ว (ดูผลได้ ทำซ้ำไม่ได้ — 1 อีเมลทำได้ 1 รอบ)
+ *   submitted   ส่งข้อสอบแล้ว (ดูผลได้ ทำซ้ำไม่ได้ — 1 อีเมลทำได้ 1 รอบต่อสนาม)
  */
 export async function POST(req: NextRequest) {
-  let body: { email?: string; firstName?: string; lastName?: string; token?: string };
+  let body: {
+    email?: string;
+    firstName?: string;
+    lastName?: string;
+    token?: string;
+    examId?: string;
+  };
   try {
     body = await req.json();
   } catch {
@@ -41,6 +48,7 @@ export async function POST(req: NextRequest) {
   let email = "";
   let name: { firstName: string; lastName: string } | null = null;
   let orderId = "";
+  let examId = typeof body.examId === "string" ? body.examId : undefined;
   // ชื่อ-นามสกุลที่ผู้ใช้พิมพ์เอง — ต้องเทียบกับข้อมูลตอนซื้อ (null = เข้าด้วยโทเค็น ไม่ต้องเทียบ)
   let typed: { firstName: string; lastName: string } | null = null;
 
@@ -55,6 +63,7 @@ export async function POST(req: NextRequest) {
     email = payload.email;
     name = { firstName: payload.firstName, lastName: payload.lastName };
     orderId = payload.orderId;
+    examId = payload.examId; // สนามผูกกับโทเค็น ไม่ให้ body สลับสนามของโทเค็นคนอื่น
   } else if (typeof body.email === "string" && body.email.trim()) {
     email = body.email.trim().toLowerCase();
     typed = {
@@ -71,10 +80,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "กรุณากรอกชื่อ นามสกุล และอีเมล" }, { status: 400 });
   }
 
+  const exam = getExam(examId);
   const unlimited = isUnlimitedEmail(email); // อีเมลเจ้าของร้าน — เข้าได้เสมอ ทำซ้ำได้
+
   let buyers: Entitlement[] = [];
   try {
-    buyers = await findEntitlementByEmail(email);
+    buyers = await findEntitlementByEmail(exam, email);
   } catch (err) {
     console.error("ตรวจสิทธิ์เข้าสอบไม่สำเร็จ:", err);
     return NextResponse.json(
@@ -86,7 +97,7 @@ export async function POST(req: NextRequest) {
   let state: Awaited<ReturnType<typeof getAttemptState>>["state"];
   let attempt: Awaited<ReturnType<typeof getAttemptState>>["attempt"];
   try {
-    ({ state, attempt } = await getAttemptState(email));
+    ({ state, attempt } = await getAttemptState(exam, email));
   } catch (err) {
     console.error("อ่านสถานะการสอบไม่สำเร็จ:", err);
     return NextResponse.json(
@@ -101,7 +112,7 @@ export async function POST(req: NextRequest) {
   }
 
   // กรอกเอง: ชื่อ-นามสกุลต้องตรงกับคำสั่งซื้อใบใดใบหนึ่ง (หรือกับการสอบที่ค้างอยู่)
-  let matched: Entitlement | null =
+  const matched: Entitlement | null =
     buyers.find(
       (b) => typed && sameName(typed.firstName, b.firstName) && sameName(typed.lastName, b.lastName)
     ) ??
@@ -126,6 +137,7 @@ export async function POST(req: NextRequest) {
   const lastName =
     attempt?.lastName ?? matched?.lastName ?? name?.lastName ?? typed?.lastName.trim() ?? "";
   const token = createExamToken({
+    examId: exam.id,
     email,
     firstName,
     lastName,
@@ -137,10 +149,11 @@ export async function POST(req: NextRequest) {
     token,
     email,
     firstName,
+    examId: exam.id,
     // ส่งแล้วแต่เป็นอีเมลยกเว้น → หน้าเว็บเปิดให้เริ่มรอบใหม่ได้ (ผลรอบเก่าจะถูกแทนที่)
     ...(state === "submitted" && unlimited ? { retake: true } : {}),
     ...(state === "in_progress" && attempt
-      ? { deadline: examDeadline(attempt), serverNow: Date.now() }
+      ? { deadline: examDeadline(exam, attempt), serverNow: Date.now() }
       : {}),
   });
 }

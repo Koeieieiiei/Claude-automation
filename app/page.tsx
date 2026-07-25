@@ -175,7 +175,7 @@ export default function Home() {
           ไฟล์ข้อสอบ Mock TPAT3
         </h2>
         <p className="mt-3 max-w-2xl text-[1.2rem] font-medium leading-relaxed text-ink">
-          โจทย์ + เฉลย + กระดาษคำตอบ · PDF 3 ไฟล์
+          โจทย์ + เฉลย + กระดาษคำตอบ · PDF 3 ไฟล์ · โควตาเข้าสอบ 1 ครั้ง
         </p>
 
         <div className="mt-10 grid gap-5 md:grid-cols-[1.1fr_1fr]">

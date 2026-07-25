@@ -217,10 +217,6 @@ export default function ResultsView() {
         {/* ===== วิเคราะห์รายข้อ ===== */}
         <section className="mt-10">
           <h2 className="font-display text-2xl font-bold text-ink">วิเคราะห์รายข้อทั้ง 70 ข้อ</h2>
-          <p className="mt-2 text-sm text-ink/65">
-            แต่ละข้อบอก บท (ตอน) · คำตอบของคุณเทียบเฉลย · ระดับความยาก · % ผู้สอบที่ตอบถูก
-            พร้อมคำแนะนำเฉพาะข้อ — เปิดไฟล์เฉลยละเอียดท้ายหน้าประกอบได้เลย
-          </p>
           <div className="mt-5 space-y-4">
             {data.sections.map((s) => (
               <QuestionTable

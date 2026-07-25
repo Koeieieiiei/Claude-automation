@@ -31,12 +31,12 @@
         │  กันส่งซ้ำ: ถ้า order = "delivered" แล้ว → ข้าม
         ▼
 [5] fulfillOrder() ทำงานอัตโนมัติ:
-        ├─ สร้าง "download token" เซ็นด้วย HMAC (ฝังชื่อ/อีเมล + วันหมดอายุ)
+        ├─ สร้าง "download token" เซ็นด้วย HMAC (ฝังชื่อ/อีเมล + ไฟล์ที่ซื้อ)
         ├─ ส่งอีเมลพร้อมลิงก์ดาวน์โหลด 2 ไฟล์ (โจทย์ + เฉลย) ผ่าน Resend
         └─ อัปเดต order เป็น "delivered"
         ▼
 [6] ลูกค้าเปิดอีเมล → กดลิงก์ → GET /api/download/{file}/{token}
-        │  ตรวจ token (ลายเซ็น + วันหมดอายุ) ถ้าไม่ผ่าน → 403
+        │  ตรวจ token (ลายเซ็น + สิทธิ์ไฟล์) ถ้าไม่ผ่าน → 403
         ▼
 [7] โหลด PDF ต้นฉบับจาก Supabase Storage → ฝังลายน้ำ (ชื่อ+อีเมล) แบบ on-the-fly
         ▼
@@ -69,7 +69,7 @@
 
 **[5] ส่งของอัตโนมัติ** — [lib/fulfillment.ts](lib/fulfillment.ts)
 - เช็คก่อนว่าไฟล์ต้นฉบับ (โจทย์+เฉลย) มีจริง — ถ้าไม่มีจะล้มก่อนส่งอีเมล ไม่หลอกลูกค้าด้วยลิงก์เสีย
-- `createDownloadToken()` สร้าง token เซ็น HMAC ([lib/download-token.ts](lib/download-token.ts)) — ฝังชื่อ/อีเมล + รายการไฟล์ที่ซื้อ + **เวลาที่ออกลิงก์ (iat)** · อายุลิงก์ปัจจุบัน **3 เดือน** (`DOWNLOAD_EXPIRY_HOURS=2160`, ใส่ 0 = ไม่มีวันหมดอายุ)
+- `createDownloadToken()` สร้าง token เซ็น HMAC ([lib/download-token.ts](lib/download-token.ts)) — ฝังชื่อ/อีเมล + รายการไฟล์ที่ซื้อ + **เวลาที่ออกลิงก์ (iat)** · **ลิงก์ไม่มีวันหมดอายุ** (`DOWNLOAD_EXPIRY_HOURS=0`; ใส่จำนวนบวกเมื่อไหร่ ลิงก์เก่าจะยืด/หดตามทันทีเพราะคิดจาก iat)
 - ส่งอีเมล HTML พร้อมปุ่มดาวน์โหลด 2 ไฟล์ผ่าน Resend ([lib/email.ts](lib/email.ts))
 
 **[6]-[8] ลูกค้าโหลดไฟล์** — [app/api/download/[file]/[token]/route.ts](app/api/download/%5Bfile%5D/%5Btoken%5D/route.ts)

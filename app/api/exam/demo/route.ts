@@ -10,7 +10,7 @@ import {
   getAnswerKey,
 } from "@/lib/exam-store";
 import { createExamToken } from "@/lib/exam-token";
-import { EXAM, Difficulty, scaledScore } from "@/lib/exam-config";
+import { EXAM, Difficulty } from "@/lib/exam-config";
 
 export const runtime = "nodejs";
 
@@ -108,7 +108,7 @@ export async function POST(req: NextRequest) {
         ok: true,
         token,
         correctCount: attempt.correctCount,
-        scaled: scaledScore(attempt.correctCount ?? 0),
+        scaled: attempt.score,
       });
     }
 

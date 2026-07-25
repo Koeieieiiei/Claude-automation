@@ -1,6 +1,6 @@
 import fs from "fs";
 import path from "path";
-import { EXAM, GRACE_MS, Difficulty } from "./exam-config";
+import { EXAM, GRACE_MS, Difficulty, questionWeight, roundScore } from "./exam-config";
 
 /**
  * ที่เก็บข้อมูลระบบทำข้อสอบ — เวอร์ชัน "แบบจำลอง" เก็บเป็นไฟล์ JSON ใน data/exam/
@@ -32,6 +32,7 @@ export interface ExamAttempt {
   submittedAt: string | null;
   answers: number[]; // ยาว 70 — 0 = ยังไม่ตอบ, 1-5 = ช้อยส์ที่เลือก
   correctCount: number | null; // คิดตอนส่งข้อสอบ
+  score: number | null; // คะแนนถ่วงน้ำหนัก เต็ม 100 (ข้อ 1-60 × 4/3, ข้อ 61-70 × 2)
 }
 
 export interface DemoBuyer {
@@ -50,6 +51,7 @@ interface AnswerKeyEntry {
 interface PopulationData {
   nStudents: number;
   scoresRaw: number[]; // จำนวนข้อถูก (0-70) ของนักเรียนจำลองแต่ละคน
+  scoresWeighted: number[]; // คะแนนถ่วงน้ำหนัก (เต็ม 100) ของแต่ละคน
   perQuestionCorrect: Record<string, number>;
 }
 
@@ -193,6 +195,7 @@ export function startAttempt(buyer: {
     submittedAt: null,
     answers: Array(EXAM.totalQuestions).fill(0),
     correctCount: null,
+    score: null,
   };
   all[email] = attempt;
   writeJson(ATTEMPTS_FILE, all);
@@ -243,12 +246,17 @@ export function submitAttempt(
 
   const key = getAnswerKey();
   let correct = 0;
+  let score = 0;
   for (let q = 1; q <= EXAM.totalQuestions; q++) {
-    if (answers[q - 1] === key[String(q)].answer) correct++;
+    if (answers[q - 1] === key[String(q)].answer) {
+      correct++;
+      score += questionWeight(q);
+    }
   }
 
   attempt.answers = answers;
   attempt.correctCount = correct;
+  attempt.score = roundScore(score);
   attempt.submittedAt = new Date().toISOString();
   if (opts.auto) {
     // ปิดอัตโนมัติเพราะหมดเวลา — ประทับเวลา ณ เส้นตาย ไม่ใช่เวลาที่บังเอิญมีคนมา trigger
@@ -262,47 +270,47 @@ export function submitAttempt(
 
 export interface ExamStatistics {
   nTotal: number; // จำนวนผู้สอบทั้งหมด (ประชากรจำลอง + ผู้สอบจริงที่ส่งแล้ว)
-  meanRaw: number;
-  sdRaw: number;
-  minRaw: number;
-  maxRaw: number;
-  rank: number; // อันดับของ correctCount ที่ส่งเข้ามา (1 = สูงสุด)
-  histogram: { from: number; to: number; count: number; mine: boolean }[]; // สเกล 300
+  mean: number; // ทุกค่าอยู่บนสเกลคะแนนถ่วงน้ำหนัก เต็ม 100
+  sd: number;
+  min: number;
+  max: number;
+  rank: number; // อันดับของคะแนนที่ส่งเข้ามา (1 = สูงสุด)
+  histogram: { from: number; to: number; count: number; mine: boolean }[]; // ช่วงละ 10 คะแนน
   perQuestionPctCorrect: Record<string, number>; // % คนตอบถูกรายข้อ (0-100)
 }
 
 /**
  * สถิติเทียบกับผู้สอบทุกคน = ประชากรจำลอง (DEMO) + ทุก attempt จริงที่ส่งแล้วในเครื่องนี้
+ * ทุกตัวเลขคิดบนคะแนนถ่วงน้ำหนัก (เต็ม 100)
  * หมายเหตุ: ตอนขึ้น production ต้องตัดสินใจว่าจะใช้ข้อมูลจำลองปนหรือใช้ผู้สอบจริงล้วน
  */
-export function computeStatistics(myCorrectCount: number): ExamStatistics {
+export function computeStatistics(myScore: number): ExamStatistics {
   const pop = readJson<PopulationData | null>(POPULATION_FILE, null);
-  if (!pop) {
+  if (!pop || !pop.scoresWeighted) {
     throw new Error(
-      "ไม่พบไฟล์ประชากร data/exam/population.json — รัน `python scripts/build-exam-assets.py` ก่อน"
+      "ไม่พบไฟล์ประชากร data/exam/population.json (เวอร์ชันคะแนนเต็ม 100) — รัน `python scripts/build-exam-assets.py` ก่อน"
     );
   }
 
   const realAttempts = Object.values(readAttempts()).filter((a) => a.submittedAt);
-  const scores = [...pop.scoresRaw, ...realAttempts.map((a) => a.correctCount ?? 0)];
+  const scores = [...pop.scoresWeighted, ...realAttempts.map((a) => a.score ?? 0)];
 
   const n = scores.length;
   const mean = scores.reduce((s, v) => s + v, 0) / n;
   const sd = Math.sqrt(scores.reduce((s, v) => s + (v - mean) ** 2, 0) / n);
-  const rank = 1 + scores.filter((v) => v > myCorrectCount).length;
+  const rank = 1 + scores.filter((v) => v > myScore).length;
 
-  // ฮิสโตแกรมบนสเกล 300: 10 ช่วง ช่วงละ 30 คะแนน (ช่วงสุดท้ายรวมขอบบน 300 พอดี)
-  const binSize = 30;
-  const toScaled = (c: number) => (c * EXAM.maxScore) / EXAM.totalQuestions;
-  const binOf = (scaled: number) => Math.min(9, Math.floor(scaled / binSize));
-  const myBin = binOf(toScaled(myCorrectCount));
+  // ฮิสโตแกรม 10 ช่วง ช่วงละ 10 คะแนน (0-10, 10-20, …, 90-100)
+  const binSize = 10;
+  const binOf = (score: number) => Math.min(9, Math.max(0, Math.floor(score / binSize)));
+  const myBin = binOf(myScore);
   const histogram = Array.from({ length: 10 }, (_, i) => ({
     from: i * binSize,
     to: (i + 1) * binSize,
     count: 0,
     mine: i === myBin,
   }));
-  for (const s of scores) histogram[binOf(toScaled(s))].count++;
+  for (const s of scores) histogram[binOf(s)].count++;
 
   const nAll = pop.nStudents + realAttempts.length;
   const perQuestionPctCorrect: Record<string, number> = {};
@@ -315,10 +323,10 @@ export function computeStatistics(myCorrectCount: number): ExamStatistics {
 
   return {
     nTotal: n,
-    meanRaw: mean,
-    sdRaw: sd,
-    minRaw: Math.min(...scores),
-    maxRaw: Math.max(...scores),
+    mean: roundScore(mean),
+    sd: roundScore(sd),
+    min: roundScore(Math.min(...scores)),
+    max: roundScore(Math.max(...scores)),
     rank,
     histogram,
     perQuestionPctCorrect,

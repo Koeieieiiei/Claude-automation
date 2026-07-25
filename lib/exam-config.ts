@@ -76,7 +76,16 @@ export function sectionOf(no: number): ExamSection {
   return EXAM.sections.find((s) => no >= s.from && no <= s.to) ?? EXAM.sections[0];
 }
 
-/** แปลงจำนวนข้อถูก (0-70) → คะแนนสเกล TPAT3 (เต็ม 300) ทศนิยม 1 ตำแหน่ง */
-export function scaledScore(correctCount: number): number {
-  return Math.round((correctCount * EXAM.maxScore * 10) / EXAM.totalQuestions) / 10;
+/**
+ * น้ำหนักคะแนนรายข้อ (คะแนนเต็ม 100 ตามสเปกเจ้าของร้าน):
+ * ข้อ 1-60 ข้อละ 4/3 คะแนน (รวม 80) · ข้อ 61-70 ข้อละ 2 คะแนน (รวม 20)
+ * — ต้องตรงกับ question_weight ใน scripts/build-exam-assets.py (ประชากรจำลองใช้สูตรเดียวกัน)
+ */
+export function questionWeight(no: number): number {
+  return no <= 60 ? 4 / 3 : 2;
+}
+
+/** ปัดคะแนนเป็นทศนิยม 2 ตำแหน่ง (น้ำหนัก 4/3 ทำให้เกิดเศษ .33/.67) */
+export function roundScore(v: number): number {
+  return Math.round(v * 100) / 100;
 }

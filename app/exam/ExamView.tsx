@@ -54,12 +54,14 @@ export default function ExamView() {
 
   const answeredCount = useMemo(() => answers.filter((a) => a > 0).length, [answers]);
 
-  /* ---------- เข้าห้องสอบ: เช็คสิทธิ์จากโทเค็น (ลิงก์/localStorage) หรืออีเมล ---------- */
+  /* ---------- เข้าห้องสอบ: เช็คสิทธิ์จากโทเค็น (ลิงก์/localStorage) หรือชื่อ+อีเมล ---------- */
 
   const applyAccess = useCallback(
-    (data: AccessResponse) => {
+    (data: AccessResponse, opts: { verified?: boolean } = {}) => {
       if (!data.state || data.state === "none") {
-        setGateError("ไม่พบสิทธิ์ทำข้อสอบของอีเมลนี้ — ต้องสั่งซื้อชุด Mock TPAT3 ก่อน");
+        setGateError(
+          "ชื่อหรืออีเมลไม่ตรงกับข้อมูลการสั่งซื้อ — ตรวจตัวสะกดอีกครั้ง (ต้องตรงกับที่กรอกตอนซื้อ)"
+        );
         setPhase("gate");
         return;
       }
@@ -76,6 +78,12 @@ export default function ExamView() {
         router.replace(`/exam/results?token=${encodeURIComponent(t)}`);
         return;
       }
+      // ยังไม่เริ่มสอบ + ยังไม่ได้ยืนยันชื่อ-อีเมลรอบนี้ → ให้กรอกก่อนเสมอ (กติกาห้องสอบ)
+      // ส่วนคนที่กำลังสอบค้างอยู่ ให้กลับเข้าห้องต่อได้เลย ไม่ต้องกรอกซ้ำ
+      if (data.state === "eligible" && !opts.verified) {
+        setPhase("gate");
+        return;
+      }
       setResumed(data.state === "in_progress");
       setPhase("instructions");
     },
@@ -83,7 +91,7 @@ export default function ExamView() {
   );
 
   const checkAccess = useCallback(
-    async (body: { token?: string; email?: string }) => {
+    async (body: { token?: string; email?: string; firstName?: string }, opts: { verified?: boolean } = {}) => {
       setBusy(true);
       setGateError("");
       try {
@@ -103,7 +111,7 @@ export default function ExamView() {
           setPhase("gate");
           return;
         }
-        applyAccess(data);
+        applyAccess(data, opts);
       } catch {
         setGateError("เชื่อมต่อไม่สำเร็จ ลองใหม่อีกครั้ง");
         setPhase("gate");
@@ -122,7 +130,12 @@ export default function ExamView() {
     } catch {}
     const t = fromUrl || stored;
     if (t) checkAccess({ token: t });
-    else setPhase("gate");
+    else {
+      try {
+        setEmail(localStorage.getItem(LS_EMAIL) ?? "");
+      } catch {}
+      setPhase("gate");
+    }
     // ตั้งใจให้รันครั้งเดียวตอนเปิดหน้า
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -273,25 +286,35 @@ export default function ExamView() {
             </span>
           </div>
           <div className="px-6 py-8">
-            <h1 className="font-display text-2xl font-bold text-ink">เข้าห้องสอบ</h1>
+            <h1 className="font-display text-2xl font-bold text-ink">ยืนยันตัวตนก่อนเข้าสอบ</h1>
             <p className="mt-2 text-sm leading-relaxed text-ink/70">
-              กรอก<strong>อีเมลที่ใช้สั่งซื้อ</strong>ชุด Mock TPAT3 เพื่อเข้าทำข้อสอบออนไลน์
-              (70 ข้อ · จับเวลา 3 ชั่วโมง · ทำได้ 1 รอบ)
+              กรอก<strong>ชื่อและอีเมลให้ตรงกับตอนสั่งซื้อ</strong>ชุด Mock TPAT3
+              จึงจะเข้าทำข้อสอบออนไลน์ได้ (70 ข้อ · จับเวลา 3 ชั่วโมง · ทำได้ 1 รอบ)
             </p>
             <form
               className="mt-5"
               onSubmit={(e) => {
                 e.preventDefault();
-                const v = (new FormData(e.currentTarget).get("email") as string) ?? "";
-                if (v.trim()) checkAccess({ email: v });
+                const f = new FormData(e.currentTarget);
+                const em = ((f.get("email") as string) ?? "").trim();
+                const fn = ((f.get("firstName") as string) ?? "").trim();
+                if (em && fn) checkAccess({ email: em, firstName: fn }, { verified: true });
               }}
             >
+              <input
+                name="firstName"
+                type="text"
+                required
+                placeholder="ชื่อ (ตามที่กรอกตอนสั่งซื้อ)"
+                className="w-full border border-ink/40 bg-white px-4 py-3 text-ink outline-none focus:border-maroon"
+              />
               <input
                 name="email"
                 type="email"
                 required
+                defaultValue={email}
                 placeholder="อีเมลที่ใช้สั่งซื้อ"
-                className="w-full border border-ink/40 bg-white px-4 py-3 text-ink outline-none focus:border-maroon"
+                className="mt-3 w-full border border-ink/40 bg-white px-4 py-3 text-ink outline-none focus:border-maroon"
               />
               <button
                 type="submit"

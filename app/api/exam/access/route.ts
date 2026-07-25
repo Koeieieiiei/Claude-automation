@@ -4,17 +4,27 @@ import { findEntitlement, getAttemptState, examDeadline } from "@/lib/exam-store
 
 export const runtime = "nodejs";
 
+/** เทียบชื่อแบบหลวมพอดี ๆ: ตัดช่องว่างหัวท้าย/ซ้ำ + ไม่สนตัวเล็กใหญ่ (ชื่ออังกฤษ) */
+function sameName(a: string, b: string): boolean {
+  const norm = (s: string) => s.trim().replace(/\s+/g, " ").toLowerCase();
+  return norm(a) === norm(b) && norm(a).length > 0;
+}
+
 /**
- * เช็คสิทธิ์เข้าห้องสอบ — รับ { email } (พิมพ์เอง) หรือ { token } (จากลิงก์/localStorage)
+ * เช็คสิทธิ์เข้าห้องสอบ — รับ { email, firstName } (พิมพ์เอง) หรือ { token } (จากลิงก์/localStorage)
+ *
+ * กติกาตามสเปกเจ้าของร้าน: กดปุ่มทำข้อสอบแล้วต้องกรอก "ชื่อ + อีเมล" ก่อน
+ * ตรงกับข้อมูลตอนซื้อทั้งคู่ถึงเข้าสอบได้ — ไม่ตรงอย่างใดอย่างหนึ่ง = เข้าไม่ได้
+ * (โทเค็นที่เคยผ่านการเช็คแล้วฝังตัวตนไว้ในลายเซ็น จึงไม่ต้องกรอกซ้ำ)
  *
  * ตอบ state อย่างใดอย่างหนึ่ง:
- *   none        ไม่พบสิทธิ์ (ยังไม่ซื้อ / อีเมลไม่ตรงกับที่ซื้อ)
+ *   none        ไม่พบสิทธิ์ (ยังไม่ซื้อ / ชื่อหรืออีเมลไม่ตรงกับที่ซื้อ)
  *   eligible    มีสิทธิ์ ยังไม่เริ่มทำ
  *   in_progress เริ่มทำแล้ว ยังไม่หมดเวลา (ทำต่อได้)
  *   submitted   ส่งข้อสอบแล้ว (ดูผลได้ ทำซ้ำไม่ได้ — 1 อีเมลทำได้ 1 รอบ)
  */
 export async function POST(req: NextRequest) {
-  let body: { email?: string; token?: string };
+  let body: { email?: string; firstName?: string; token?: string };
   try {
     body = await req.json();
   } catch {
@@ -24,19 +34,24 @@ export async function POST(req: NextRequest) {
   let email = "";
   let name: { firstName: string; lastName: string } | null = null;
   let orderId = "";
+  let typedFirstName: string | null = null; // ชื่อที่ผู้ใช้พิมพ์เอง — ต้องเทียบกับข้อมูลซื้อ
 
   if (typeof body.token === "string" && body.token) {
     const payload = verifyExamToken(body.token);
     if (!payload) {
-      return NextResponse.json({ error: "ลิงก์หมดอายุหรือไม่ถูกต้อง — กรอกอีเมลที่ใช้ซื้อเพื่อเข้าใหม่" }, { status: 403 });
+      return NextResponse.json({ error: "ลิงก์หมดอายุหรือไม่ถูกต้อง — กรอกชื่อและอีเมลที่ใช้ซื้อเพื่อเข้าใหม่" }, { status: 403 });
     }
     email = payload.email;
     name = { firstName: payload.firstName, lastName: payload.lastName };
     orderId = payload.orderId;
   } else if (typeof body.email === "string" && body.email.trim()) {
     email = body.email.trim().toLowerCase();
+    typedFirstName = typeof body.firstName === "string" ? body.firstName : "";
+    if (!typedFirstName.trim()) {
+      return NextResponse.json({ error: "กรุณากรอกชื่อ (ตามที่กรอกตอนสั่งซื้อ)" }, { status: 400 });
+    }
   } else {
-    return NextResponse.json({ error: "กรุณากรอกอีเมล" }, { status: 400 });
+    return NextResponse.json({ error: "กรุณากรอกชื่อและอีเมล" }, { status: 400 });
   }
 
   const buyer = findEntitlement(email);
@@ -45,6 +60,14 @@ export async function POST(req: NextRequest) {
   // ไม่มีสิทธิ์และไม่เคยมีการสอบค้างอยู่ → none (ไม่บอกรายละเอียดมากกว่านี้)
   if (!buyer && state === "none") {
     return NextResponse.json({ state: "none" });
+  }
+
+  // กรอกเอง: ชื่อต้องตรงกับข้อมูลตอนซื้อด้วย ไม่ใช่แค่อีเมล
+  if (typedFirstName !== null) {
+    const expected = attempt?.firstName ?? buyer?.firstName ?? "";
+    if (!sameName(typedFirstName, expected)) {
+      return NextResponse.json({ state: "none" });
+    }
   }
 
   const firstName = attempt?.firstName ?? buyer?.firstName ?? name?.firstName ?? "";

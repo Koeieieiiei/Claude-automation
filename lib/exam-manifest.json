@@ -2,7 +2,7 @@
   "totalQuestions": 70,
   "choices": 5,
   "durationMinutes": 180,
-  "maxScore": 300,
+  "maxScore": 100,
   "instructionPages": [
     2,
     3

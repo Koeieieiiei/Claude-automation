@@ -135,7 +135,7 @@ export default function ResultsView() {
             <div className="border-b border-ink p-8 md:border-b-0 md:border-r">
               <p className="eyebrow">คะแนนของคุณ</p>
               <p className="mt-3 font-display text-[3.6rem] font-bold leading-none text-maroon">
-                {score.scaled.toLocaleString(undefined, { minimumFractionDigits: 1 })}
+                {score.scaled.toLocaleString(undefined, { maximumFractionDigits: 2 })}
                 <span className="text-2xl text-ink/45"> / {score.maxScore}</span>
               </p>
               <p className="mt-3 text-ink/75">
@@ -179,9 +179,9 @@ export default function ResultsView() {
                 ผู้สอบ {overall.nTotal.toLocaleString()} คน · คะแนนเต็ม {score.maxScore}
               </span>
             </div>
-            <ScoreHistogram bins={overall.histogram} myScore={score.scaled} />
+            <ScoreHistogram bins={overall.histogram} myScore={score.scaled} maxScore={score.maxScore} />
             <p className="mt-2 font-label text-xs text-ink/50">
-              แท่งสีเข้ม = ช่วงคะแนนของคุณ · เส้นแนวตั้ง = ตำแหน่งคะแนนคุณ ({score.scaled.toFixed(1)})
+              แท่งสีเข้ม = ช่วงคะแนนของคุณ · เส้นแนวตั้ง = ตำแหน่งคะแนนคุณ ({score.scaled.toFixed(2)})
             </p>
           </div>
         </section>
@@ -278,21 +278,23 @@ function StatTile({ label, value }: { label: string; value: number }) {
         {label}
       </p>
       <p className="mt-1.5 font-display text-2xl font-bold text-ink">
-        {value.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
+        {value.toLocaleString(undefined, { maximumFractionDigits: 2 })}
       </p>
     </div>
   );
 }
 
-/* ---------- กราฟการแจกแจงคะแนน (แท่งช่วงละ 30 คะแนน เต็ม 300) ----------
+/* ---------- กราฟการแจกแจงคะแนน (แท่งช่วงละ 10 คะแนน เต็ม 100) ----------
    สีตามธีมร้าน ผ่านตัวตรวจ dataviz แล้ว: แท่งทั่วไป #A8727B (≥3:1 บนพื้นขาว)
    แท่งช่วงของผู้สอบ #6E1423 + เส้น marker สีหมึก — ระบุตำแหน่ง "คุณอยู่ตรงนี้" */
 function ScoreHistogram({
   bins,
   myScore,
+  maxScore,
 }: {
   bins: { from: number; to: number; count: number; mine: boolean }[];
   myScore: number;
+  maxScore: number;
 }) {
   const [hover, setHover] = useState<number | null>(null);
 
@@ -310,7 +312,7 @@ function ScoreHistogram({
   const y = (v: number) => m.top + plotH - (v / yMax) * plotH;
   const barW = plotW / bins.length;
 
-  const markerX = m.left + (Math.min(300, Math.max(0, myScore)) / 300) * plotW;
+  const markerX = m.left + (Math.min(maxScore, Math.max(0, myScore)) / maxScore) * plotW;
   const markerFlip = markerX > W - 130; // ป้ายชนขอบขวา — พลิกไปฝั่งซ้ายของเส้น
 
   return (
@@ -319,7 +321,7 @@ function ScoreHistogram({
         viewBox={`0 0 ${W} ${H}`}
         className="min-w-[480px]"
         role="img"
-        aria-label={`กราฟแท่งการแจกแจงคะแนนผู้สอบ ${total.toLocaleString()} คน คะแนนของคุณ ${myScore.toFixed(1)} จาก 300`}
+        aria-label={`กราฟแท่งการแจกแจงคะแนนผู้สอบ ${total.toLocaleString()} คน คะแนนของคุณ ${myScore.toFixed(2)} จาก ${maxScore}`}
       >
         {/* เส้นตาราง + ตัวเลขแกน y */}
         {Array.from({ length: 5 }, (_, i) => i * step).map((v) => (
@@ -335,7 +337,7 @@ function ScoreHistogram({
           จำนวนผู้สอบ (คน)
         </text>
         <text x={W - m.right} y={H - 8} textAnchor="end" fontSize={11} fill="#241016" fillOpacity={0.6}>
-          คะแนน (เต็ม 300)
+          คะแนน (เต็ม {maxScore})
         </text>
 
         {/* แท่ง — เว้นช่อง 2px ปลายบนมน (clip ให้ฐานคม) */}
@@ -382,7 +384,7 @@ function ScoreHistogram({
           </text>
         ))}
         <text x={m.left + plotW} y={m.top + plotH + 16} textAnchor="middle" fontSize={10.5} fill="#241016" fillOpacity={0.55}>
-          300
+          {maxScore}
         </text>
 
         {/* เส้น marker ตำแหน่งคะแนนของคุณ */}
@@ -394,7 +396,7 @@ function ScoreHistogram({
             fontWeight={700}
             fill="#241016"
           >
-            คุณ · {myScore.toFixed(1)}
+            คุณ · {myScore.toFixed(2)}
           </text>
         </g>
       </svg>

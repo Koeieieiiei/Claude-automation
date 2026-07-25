@@ -29,6 +29,11 @@ DPI = 150
 FIRST_Q_PAGE = 4  # หน้า PDF (1-based) ที่โจทย์ข้อ 1 เริ่ม
 INSTRUCTION_PAGES = [2, 3]  # หน้าคำชี้แจง แสดงก่อนเริ่มสอบ
 
+# น้ำหนักคะแนนรายข้อ (คะแนนเต็ม 100): ข้อ 1-60 ข้อละ 4/3 (รวม 80) · ข้อ 61-70 ข้อละ 2 (รวม 20)
+def question_weight(no: int) -> float:
+    return 4 / 3 if no <= 60 else 2.0
+
+
 SECTIONS = [
     {"no": 1, "title": "ความถนัดด้านตัวเลข", "from": 1, "to": 15},
     {"no": 2, "title": "ความถนัดด้านมิติสัมพันธ์", "from": 16, "to": 30},
@@ -106,21 +111,26 @@ def build_population(answer_key, n_students=612, seed=20260725):
     import math
 
     scores = []
+    scores_weighted = []
     per_q_correct = {q: 0 for q in answer_key}
     for _ in range(n_students):
         theta = rng.gauss(-0.6, 1.1)
         correct = 0
+        weighted = 0.0
         for q, info in answer_key.items():
             p = 1 / (1 + math.exp(-1.35 * (theta - b[info["difficulty"]])))
             p = 0.16 + 0.84 * p  # เดามั่วยังถูกได้ ~1/5
             if rng.random() < p:
                 correct += 1
+                weighted += question_weight(q)
                 per_q_correct[q] += 1
         scores.append(correct)
+        scores_weighted.append(round(weighted, 2))
     return {
         "note": "DEMO population — ประชากรจำลองเพื่อทดสอบระบบ ไม่ใช่ผู้สอบจริง",
         "nStudents": n_students,
         "scoresRaw": scores,  # จำนวนข้อถูก (0-70) ของนักเรียนจำลองแต่ละคน
+        "scoresWeighted": scores_weighted,  # คะแนนถ่วงน้ำหนัก (เต็ม 100) ของแต่ละคน
         "perQuestionCorrect": per_q_correct,  # จำนวนคนที่ตอบถูกในแต่ละข้อ
     }
 
@@ -149,7 +159,7 @@ def main():
         "totalQuestions": TOTAL_Q,
         "choices": 5,
         "durationMinutes": 180,
-        "maxScore": 300,
+        "maxScore": 100,
         "instructionPages": INSTRUCTION_PAGES,
         "questionPages": question_pages,
         "pageWidth": size[0],

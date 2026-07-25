@@ -146,23 +146,24 @@ export default function Home() {
             </p>
           )}
 
-          <div className="mt-5 flex flex-wrap items-center gap-x-7 gap-y-2">
-            <a
-              href="#mock"
-              className="inline-flex w-fit items-center gap-2 border-b border-dashed border-maroon/45 pb-0.5 text-[0.95rem] font-semibold text-maroon transition hover:border-solid"
-            >
-              <DownloadIcon className="h-4 w-4" />
-              โหลดตัวอย่างฟรีก่อนตัดสินใจ
-            </a>
-            {!examState && (
+          {/* ลิงก์เสริมมีเฉพาะคนที่ยังไม่ซื้อ — คนซื้อแล้วเห็นปุ่มทำข้อสอบอย่างเดียว ไม่รก */}
+          {!examState && (
+            <div className="mt-5 flex flex-wrap items-center gap-x-7 gap-y-2">
+              <a
+                href="#mock"
+                className="inline-flex w-fit items-center gap-2 border-b border-dashed border-maroon/45 pb-0.5 text-[0.95rem] font-semibold text-maroon transition hover:border-solid"
+              >
+                <DownloadIcon className="h-4 w-4" />
+                โหลดตัวอย่างฟรีก่อนตัดสินใจ
+              </a>
               <a
                 href="/exam"
                 className="inline-flex w-fit items-center gap-2 border-b border-dashed border-maroon/45 pb-0.5 text-[0.95rem] font-semibold text-maroon transition hover:border-solid"
               >
                 ซื้อแล้ว? เข้าห้องสอบออนไลน์ →
               </a>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </section>
 

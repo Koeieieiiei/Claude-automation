@@ -1,13 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyExamToken } from "@/lib/exam-token";
 import { getAttemptState, getAnswerKey, computeStatistics } from "@/lib/exam-store";
-import {
-  EXAM,
-  adviceFor,
-  scaledScore,
-  sectionOf,
-  DIFFICULTY_LABEL,
-} from "@/lib/exam-config";
+import { EXAM, adviceFor, sectionOf, DIFFICULTY_LABEL } from "@/lib/exam-config";
 import { PRODUCTS } from "@/lib/catalog";
 import { buildDownloadLinks } from "@/lib/downloads";
 
@@ -27,7 +21,7 @@ export async function GET(req: NextRequest) {
   }
 
   const { state, attempt } = getAttemptState(payload.email);
-  if (state !== "submitted" || !attempt || attempt.correctCount === null) {
+  if (state !== "submitted" || !attempt || attempt.correctCount === null || attempt.score === null) {
     return NextResponse.json(
       { error: "ยังไม่มีผลสอบของอีเมลนี้ — ต้องทำข้อสอบและกดส่งก่อน" },
       { status: 409 }
@@ -35,9 +29,7 @@ export async function GET(req: NextRequest) {
   }
 
   const key = getAnswerKey();
-  const stats = computeStatistics(attempt.correctCount);
-  const toScaled = (raw: number) =>
-    Math.round((raw * EXAM.maxScore * 10) / EXAM.totalQuestions) / 10;
+  const stats = computeStatistics(attempt.score);
 
   // วิเคราะห์รายข้อ: บท (ตอน) / คำตอบ / ถูก-ผิด / ความยาก / % คนตอบถูก / คำแนะนำ (6 แบบ)
   const questions = Array.from({ length: EXAM.totalQuestions }, (_, i) => {
@@ -90,17 +82,17 @@ export async function GET(req: NextRequest) {
     score: {
       correctCount: attempt.correctCount,
       totalQuestions: EXAM.totalQuestions,
-      scaled: scaledScore(attempt.correctCount),
+      scaled: attempt.score, // คะแนนถ่วงน้ำหนัก เต็ม 100 (ข้อ 1-60 × 4/3, ข้อ 61-70 × 2)
       maxScore: EXAM.maxScore,
       answered: attempt.answers.filter((a) => a > 0).length,
     },
     overall: {
       nTotal: stats.nTotal,
       rank: stats.rank,
-      mean: toScaled(stats.meanRaw),
-      sd: toScaled(stats.sdRaw),
-      min: toScaled(stats.minRaw),
-      max: toScaled(stats.maxRaw),
+      mean: stats.mean,
+      sd: stats.sd,
+      min: stats.min,
+      max: stats.max,
       histogram: stats.histogram,
     },
     sections,

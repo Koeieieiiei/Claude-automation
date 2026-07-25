@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { formatExpiry } from "@/lib/format-expiry";
 
 interface DownloadLink {
   label: string;
@@ -130,11 +131,8 @@ export default function SuccessView() {
   }
 
   if (status === "ready") {
-    // expiryHours = 0 (ค่าเริ่มต้นของร้าน) แปลว่าลิงก์ไม่มีวันหมดอายุ
-    const expiryText =
-      expiryHours > 0
-        ? `ภายใน ${expiryHours % 24 === 0 ? `${expiryHours / 24} วัน` : `${expiryHours} ชั่วโมง`}`
-        : "ได้ตลอด ไม่มีวันหมดอายุ";
+    const expiry = formatExpiry(expiryHours);
+    const expiryText = expiry ? `ได้อีก ${expiry}` : "ได้ตลอด ไม่มีวันหมดอายุ";
     return (
       <Frame badge="ชำระแล้ว ✓">
         <div className="px-8 py-10">

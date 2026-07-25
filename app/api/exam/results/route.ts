@@ -4,6 +4,7 @@ import { getAttemptState, getAnswerKey, computeStatistics } from "@/lib/exam-sto
 import { EXAM, adviceFor, sectionOf, DIFFICULTY_LABEL } from "@/lib/exam-config";
 import { PRODUCTS } from "@/lib/catalog";
 import { buildDownloadLinks } from "@/lib/downloads";
+import { config } from "@/lib/config";
 
 export const runtime = "nodejs";
 
@@ -103,6 +104,7 @@ export async function GET(req: NextRequest) {
       sections,
       questions,
       downloads,
+      downloadExpiryHours: config.download.expiryHours, // 0 = ไม่มีวันหมดอายุ
     });
   } catch (err) {
     console.error("สร้างผลสอบไม่สำเร็จ:", err);

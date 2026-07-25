@@ -1,5 +1,6 @@
 import { Resend } from "resend";
 import { config, ready } from "./config";
+import { formatExpiry } from "./format-expiry";
 
 /**
  * ส่งอีเมลพร้อมลิงก์ดาวน์โหลดให้ลูกค้า
@@ -15,15 +16,10 @@ export async function sendDownloadEmail(input: {
 }): Promise<void> {
   const subject = `ดาวน์โหลด ${input.productName} ของคุณ`;
   const fileCount = input.links.length;
-  // โชว์อายุลิงก์เป็น "วัน" ถ้าหารด้วย 24 ลงตัว (เช่น 168 ชม. → 7 วัน) อ่านง่ายกว่า
-  const footerNote =
-    input.expiryHours > 0
-      ? `ลิงก์เหล่านี้จะหมดอายุใน ${
-          input.expiryHours % 24 === 0
-            ? `${input.expiryHours / 24} วัน`
-            : `${input.expiryHours} ชั่วโมง`
-        }`
-      : "เก็บอีเมลฉบับนี้ไว้ได้เลย — ลิงก์ดาวน์โหลดไม่มีวันหมดอายุ";
+  const expiryText = formatExpiry(input.expiryHours);
+  const footerNote = expiryText
+    ? `เก็บอีเมลฉบับนี้ไว้ได้เลย — ลิงก์ดาวน์โหลดใช้ได้อีก ${expiryText}`
+    : "เก็บอีเมลฉบับนี้ไว้ได้เลย — ลิงก์ดาวน์โหลดไม่มีวันหมดอายุ";
   const buttons = input.links
     .map(
       (l) =>

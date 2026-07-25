@@ -61,35 +61,52 @@ describe("download-token", () => {
     expect(verifyDownloadToken(token)).toBeNull();
   });
 
-  it("ค่าเริ่มต้น (ไม่ตั้ง DOWNLOAD_EXPIRY_HOURS): ไม่ฝัง exp และไม่มีวันหมดอายุ", async () => {
+  it("ปิดวันหมดอายุ (0): ลิงก์ใช้ได้ตลอด และไม่ฝัง exp ตายตัว", async () => {
     const { createDownloadToken, verifyDownloadToken } = await loadTokenModule({
       NODE_ENV: "test",
       DOWNLOAD_SECRET: SECURE_SECRET,
-      DOWNLOAD_EXPIRY_HOURS: undefined,
+      DOWNLOAD_EXPIRY_HOURS: "0",
     });
     const token = createDownloadToken(buyer);
     const payload = verifyDownloadToken(token);
     expect(payload).not.toBeNull();
     expect(payload!.exp).toBeUndefined();
+    expect(typeof payload!.iat).toBe("number"); // ฝังเวลาที่ออกไว้เผื่อเปิดวันหมดอายุทีหลัง
   });
 
-  it("ปิดระบบหมดอายุ: ลิงก์เก่าที่ฝัง exp หมดอายุแล้ว กลับมาใช้ได้", async () => {
-    // ออกลิงก์ตอนระบบหมดอายุยังเปิด (exp อยู่ในอดีต)
-    const old = await loadTokenModule({
+  it("อายุ 3 เดือน: ลิงก์ที่เพิ่งออก ยังใช้ได้", async () => {
+    const { createDownloadToken, verifyDownloadToken } = await loadTokenModule({
+      NODE_ENV: "test",
+      DOWNLOAD_SECRET: SECURE_SECRET,
+      DOWNLOAD_EXPIRY_HOURS: "2160", // 90 วัน
+    });
+    expect(verifyDownloadToken(createDownloadToken(buyer))).not.toBeNull();
+  });
+
+  it("เปลี่ยนนโยบายแล้วมีผลย้อนหลัง: ลิงก์เดิมยืด/หดตามค่าใหม่", async () => {
+    // ออกลิงก์ตอนนโยบาย 3 เดือน
+    const issued = await loadTokenModule({
+      NODE_ENV: "test",
+      DOWNLOAD_SECRET: SECURE_SECRET,
+      DOWNLOAD_EXPIRY_HOURS: "2160",
+    });
+    const token = issued.createDownloadToken(buyer);
+
+    // หดนโยบายเหลือ -1 ชม. → ลิงก์ใบเดิมหมดอายุทันที
+    const shortened = await loadTokenModule({
       NODE_ENV: "test",
       DOWNLOAD_SECRET: SECURE_SECRET,
       DOWNLOAD_EXPIRY_HOURS: "-1",
     });
-    const token = old.createDownloadToken(buyer);
-    expect(old.verifyDownloadToken(token)).toBeNull();
+    expect(shortened.verifyDownloadToken(token)).toBeNull();
 
-    // ปิดระบบหมดอายุ (ค่าเริ่มต้นปัจจุบัน) → ลิงก์ใบเดิมใช้ได้อีกครั้ง
-    const now = await loadTokenModule({
+    // ปิดวันหมดอายุ → ลิงก์ใบเดิมกลับมาใช้ได้
+    const off = await loadTokenModule({
       NODE_ENV: "test",
       DOWNLOAD_SECRET: SECURE_SECRET,
       DOWNLOAD_EXPIRY_HOURS: "0",
     });
-    expect(now.verifyDownloadToken(token)).not.toBeNull();
+    expect(off.verifyDownloadToken(token)).not.toBeNull();
   });
 
   it("garbage: string ที่ไม่ใช่ token → verify คืน null (ไม่ throw)", async () => {

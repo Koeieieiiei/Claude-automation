@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { formatExpiry } from "@/lib/format-expiry";
 
 /**
  * หน้าผลสอบ + บทวิเคราะห์ละเอียด
@@ -42,6 +43,7 @@ interface ResultsData {
     advice: string;
   }[];
   downloads: { label: string; downloadName: string; url: string }[];
+  downloadExpiryHours: number; // 0 = ไม่มีวันหมดอายุ
 }
 
 const LS_TOKEN = "exam.token";
@@ -242,7 +244,10 @@ export default function ResultsView() {
             ))}
           </div>
           <p className="mt-3 font-label text-[12px] text-ink/50">
-            ระบบเตรียมไฟล์ตอนกดดาวน์โหลด อาจใช้เวลา 2–3 วินาทีต่อไฟล์ · ลิงก์ไม่มีวันหมดอายุ
+            ระบบเตรียมไฟล์ตอนกดดาวน์โหลด อาจใช้เวลา 2–3 วินาทีต่อไฟล์ ·{" "}
+            {formatExpiry(data.downloadExpiryHours)
+              ? `ลิงก์ใช้ได้อีก ${formatExpiry(data.downloadExpiryHours)}`
+              : "ลิงก์ไม่มีวันหมดอายุ"}
           </p>
         </section>
 

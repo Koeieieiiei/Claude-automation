@@ -19,7 +19,16 @@ export interface DownloadPayload {
    * โทเค็นรุ่นเก่าไม่มี field นี้ — ฝั่งตรวจสิทธิ์จะถือว่าเป็นชุด Mock เดิม (โจทย์+เฉลย)
    */
   files?: string[];
-  /** unix ms — ไม่มี = ไม่หมดอายุ */
+  /**
+   * เวลาที่ออกลิงก์ (unix ms) — ฝั่งตรวจคำนวณวันหมดอายุจาก iat + ค่าปัจจุบันของร้าน
+   * ทำแบบนี้เพื่อให้ "เปลี่ยนนโยบายอายุลิงก์" มีผลกับลิงก์ที่ออกไปแล้วด้วย
+   * (เช่น ขยายจาก 3 เดือนเป็น 6 เดือน ลูกค้าเดิมได้ตามด้วยทันที ไม่ต้องขอลิงก์ใหม่)
+   */
+  iat?: number;
+  /**
+   * unix ms — วันหมดอายุแบบตายตัวของลิงก์รุ่นเก่า (ออกก่อนมี iat)
+   * เก็บไว้อ่านอย่างเดียวเพื่อความเข้ากันได้ย้อนหลัง ลิงก์ใหม่ไม่ใช้แล้ว
+   */
   exp?: number;
 }
 
@@ -57,12 +66,12 @@ function expiryEnabled(): boolean {
   return config.download.expiryHours !== 0;
 }
 
-export function createDownloadToken(payload: Omit<DownloadPayload, "exp">): string {
+export function createDownloadToken(
+  payload: Omit<DownloadPayload, "exp" | "iat">
+): string {
   assertSecureSecret();
-  const full: DownloadPayload = { ...payload };
-  if (expiryEnabled()) {
-    full.exp = Date.now() + config.download.expiryHours * 3600 * 1000;
-  }
+  // ฝังเวลาที่ออกลิงก์เสมอ (แม้ตอนนี้ปิดวันหมดอายุอยู่) เผื่อวันหลังเปิดใช้
+  const full: DownloadPayload = { ...payload, iat: Date.now() };
   const body = b64url(Buffer.from(JSON.stringify(full)));
   return `${body}.${sign(body)}`;
 }
@@ -79,11 +88,17 @@ export function verifyDownloadToken(token: string): DownloadPayload | null {
 
   try {
     const payload = JSON.parse(fromB64url(body).toString()) as DownloadPayload;
-    // เช็ควันหมดอายุเฉพาะตอนเปิดใช้ระบบหมดอายุเท่านั้น — ปิดอยู่ (ค่าเริ่มต้น) แปลว่า
-    // ลิงก์เก่าที่เคยฝัง exp ไว้ก็กลับมาใช้ได้ ลูกค้าเดิมไม่ต้องขอลิงก์ใหม่
-    if (expiryEnabled() && typeof payload.exp === "number" && Date.now() > payload.exp) {
-      return null;
+    // ปิดวันหมดอายุอยู่ (DOWNLOAD_EXPIRY_HOURS=0) → ลิงก์ทุกใบใช้ได้ตลอด
+    if (!expiryEnabled()) return payload;
+
+    // ลิงก์ยุคใหม่: คิดวันหมดอายุจาก "เวลาที่ออก + นโยบายปัจจุบัน"
+    // เปลี่ยนนโยบายเมื่อไหร่ ลิงก์ที่ออกไปแล้วได้ตามทันที
+    if (typeof payload.iat === "number") {
+      const expiresAt = payload.iat + config.download.expiryHours * 3600 * 1000;
+      return Date.now() > expiresAt ? null : payload;
     }
+    // ลิงก์รุ่นเก่าที่ฝังวันหมดอายุตายตัวไว้
+    if (typeof payload.exp === "number" && Date.now() > payload.exp) return null;
     return payload;
   } catch {
     return null;

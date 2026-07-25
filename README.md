@@ -69,7 +69,7 @@
 
 **[5] ส่งของอัตโนมัติ** — [lib/fulfillment.ts](lib/fulfillment.ts)
 - เช็คก่อนว่าไฟล์ต้นฉบับ (โจทย์+เฉลย) มีจริง — ถ้าไม่มีจะล้มก่อนส่งอีเมล ไม่หลอกลูกค้าด้วยลิงก์เสีย
-- `createDownloadToken()` สร้าง token เซ็น HMAC ([lib/download-token.ts](lib/download-token.ts)) — ฝังชื่อ/อีเมล + รายการไฟล์ที่ซื้อ · **ลิงก์ไม่มีวันหมดอายุ** (ตั้ง `DOWNLOAD_EXPIRY_HOURS` เป็นจำนวนบวกถ้าอยากให้หมดอายุอีกครั้ง)
+- `createDownloadToken()` สร้าง token เซ็น HMAC ([lib/download-token.ts](lib/download-token.ts)) — ฝังชื่อ/อีเมล + รายการไฟล์ที่ซื้อ + **เวลาที่ออกลิงก์ (iat)** · อายุลิงก์ปัจจุบัน **3 เดือน** (`DOWNLOAD_EXPIRY_HOURS=2160`, ใส่ 0 = ไม่มีวันหมดอายุ)
 - ส่งอีเมล HTML พร้อมปุ่มดาวน์โหลด 2 ไฟล์ผ่าน Resend ([lib/email.ts](lib/email.ts))
 
 **[6]-[8] ลูกค้าโหลดไฟล์** — [app/api/download/[file]/[token]/route.ts](app/api/download/%5Bfile%5D/%5Btoken%5D/route.ts)

@@ -21,6 +21,8 @@ interface AccessResponse {
   token?: string;
   email?: string;
   firstName?: string;
+  /** อีเมลยกเว้น (เจ้าของร้าน): ส่งแล้วแต่เริ่มรอบใหม่ได้ */
+  retake?: boolean;
   error?: string;
 }
 
@@ -33,6 +35,7 @@ export default function ExamView() {
   const [email, setEmail] = useState("");
   const [firstName, setFirstName] = useState("");
   const [resumed, setResumed] = useState(false);
+  const [retakeMode, setRetakeMode] = useState(false); // อีเมลยกเว้น เริ่มรอบใหม่ทับรอบเก่า
   const [gateError, setGateError] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -74,16 +77,17 @@ export default function ExamView() {
         localStorage.setItem(LS_EMAIL, data.email ?? "");
       } catch {}
 
-      if (data.state === "submitted") {
+      if (data.state === "submitted" && !data.retake) {
         router.replace(`/exam/results?token=${encodeURIComponent(t)}`);
         return;
       }
       // ยังไม่เริ่มสอบ + ยังไม่ได้ยืนยันชื่อ-อีเมลรอบนี้ → ให้กรอกก่อนเสมอ (กติกาห้องสอบ)
       // ส่วนคนที่กำลังสอบค้างอยู่ ให้กลับเข้าห้องต่อได้เลย ไม่ต้องกรอกซ้ำ
-      if (data.state === "eligible" && !opts.verified) {
+      if (data.state !== "in_progress" && !opts.verified) {
         setPhase("gate");
         return;
       }
+      setRetakeMode(Boolean(data.state === "submitted" && data.retake));
       setResumed(data.state === "in_progress");
       setPhase("instructions");
     },
@@ -354,11 +358,24 @@ export default function ExamView() {
 
           <div className="px-6 py-8 md:px-10">
             <h1 className="font-display text-3xl font-bold text-ink">
-              {resumed ? "ทำข้อสอบต่อ" : "พร้อมสอบหรือยัง?"}
+              {resumed ? "ทำข้อสอบต่อ" : retakeMode ? "เริ่มรอบใหม่" : "พร้อมสอบหรือยัง?"}
             </h1>
             <p className="mt-2 text-ink/70">
               สวัสดี{firstName ? ` คุณ${firstName}` : ""} — อ่านกติกาสั้น ๆ ก่อนเริ่มนะ
             </p>
+
+            {retakeMode && (
+              <p className="mt-4 border border-dashed border-maroon/50 bg-maroon/[0.05] px-4 py-3 text-sm leading-relaxed text-ink/75">
+                🔧 อีเมลนี้อยู่ในโหมดทดสอบ (ทำได้ไม่จำกัด) — ถ้าเริ่มรอบใหม่
+                ผลสอบรอบก่อนจะถูกแทนที่{" "}
+                <a
+                  href={`/exam/results?token=${encodeURIComponent(token)}`}
+                  className="font-semibold text-maroon underline underline-offset-2"
+                >
+                  ดูผลรอบล่าสุดก่อน →
+                </a>
+              </p>
+            )}
 
             <div className="mt-6 grid gap-3 sm:grid-cols-3">
               {[

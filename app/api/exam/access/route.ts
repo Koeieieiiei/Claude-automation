@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createExamToken, verifyExamToken } from "@/lib/exam-token";
-import { findEntitlement, getAttemptState, examDeadline } from "@/lib/exam-store";
+import { findEntitlement, getAttemptState, examDeadline, isUnlimitedEmail } from "@/lib/exam-store";
 
 export const runtime = "nodejs";
 
@@ -56,21 +56,23 @@ export async function POST(req: NextRequest) {
 
   const buyer = findEntitlement(email);
   const { state, attempt } = getAttemptState(email);
+  const unlimited = isUnlimitedEmail(email); // อีเมลเจ้าของร้าน — เข้าได้เสมอ ทำซ้ำได้
 
   // ไม่มีสิทธิ์และไม่เคยมีการสอบค้างอยู่ → none (ไม่บอกรายละเอียดมากกว่านี้)
-  if (!buyer && state === "none") {
+  if (!buyer && state === "none" && !unlimited) {
     return NextResponse.json({ state: "none" });
   }
 
-  // กรอกเอง: ชื่อต้องตรงกับข้อมูลตอนซื้อด้วย ไม่ใช่แค่อีเมล
-  if (typedFirstName !== null) {
+  // กรอกเอง: ชื่อต้องตรงกับข้อมูลตอนซื้อด้วย ไม่ใช่แค่อีเมล (อีเมลเจ้าของร้านไม่ต้องเช็ค)
+  if (typedFirstName !== null && !unlimited) {
     const expected = attempt?.firstName ?? buyer?.firstName ?? "";
     if (!sameName(typedFirstName, expected)) {
       return NextResponse.json({ state: "none" });
     }
   }
 
-  const firstName = attempt?.firstName ?? buyer?.firstName ?? name?.firstName ?? "";
+  const firstName =
+    attempt?.firstName ?? buyer?.firstName ?? name?.firstName ?? typedFirstName?.trim() ?? "";
   const lastName = attempt?.lastName ?? buyer?.lastName ?? name?.lastName ?? "";
   const token = createExamToken({
     email,
@@ -84,6 +86,8 @@ export async function POST(req: NextRequest) {
     token,
     email,
     firstName,
+    // ส่งแล้วแต่เป็นอีเมลยกเว้น → หน้าเว็บเปิดให้เริ่มรอบใหม่ได้ (ผลรอบเก่าจะถูกแทนที่)
+    ...(state === "submitted" && unlimited ? { retake: true } : {}),
     ...(state === "in_progress" && attempt
       ? { deadline: examDeadline(attempt), serverNow: Date.now() }
       : {}),

@@ -76,6 +76,16 @@ function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
 }
 
+/**
+ * อีเมลเจ้าของร้าน — ยกเว้นกติกาปกติเพื่อใช้ทดสอบระบบได้ตลอด:
+ * เข้าสอบได้เสมอ (ไม่ต้องมีคำสั่งซื้อ) + ทำซ้ำได้ไม่จำกัด (เริ่มรอบใหม่ = แทนที่รอบเก่า)
+ */
+const UNLIMITED_ATTEMPT_EMAILS = new Set(["marcoco9no.1@gmail.com"]);
+
+export function isUnlimitedEmail(email: string): boolean {
+  return UNLIMITED_ATTEMPT_EMAILS.has(normalizeEmail(email));
+}
+
 /* ---------- เฉลย ---------- */
 
 let keyCache: Record<string, AnswerKeyEntry> | null = null;

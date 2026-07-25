@@ -236,8 +236,8 @@ export default function ResultsView() {
         <section className="mt-10 border-2 border-maroon bg-white p-6 md:p-8">
           <h2 className="font-display text-2xl font-bold text-ink">ไฟล์แนบท้ายผลสอบ</h2>
           <p className="mt-2 text-sm leading-relaxed text-ink/70">
-            ทำข้อสอบเสร็จแล้ว รับ<strong>ไฟล์โจทย์</strong>และ<strong>ไฟล์เฉลยละเอียด</strong>ไว้ทบทวนได้เลย
-            (PDF มีลายน้ำชื่อผู้ซื้อ) — แนะนำเปิดในคอมพิวเตอร์หรือ iPad
+            ดาวน์โหลด<strong>ไฟล์โจทย์</strong>และ<strong>ไฟล์เฉลยละเอียด</strong>ไว้ทบทวนคู่กับผลวิเคราะห์ด้านบน
+            (ชุดเดียวกับที่ได้รับตอนซื้อ · PDF มีลายน้ำชื่อผู้ซื้อ) — แนะนำเปิดในคอมพิวเตอร์หรือ iPad
           </p>
           <div className="mt-5 grid gap-3 sm:grid-cols-2">
             {data.downloads.map((d) => (

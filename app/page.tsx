@@ -132,7 +132,7 @@ export default function Home() {
             >
               {examState === "eligible" && "ทำข้อสอบ Mock TPAT3 · 70 ข้อ · 3 ชม."}
               {examState === "in_progress" && "ทำข้อสอบต่อ — เวลากำลังเดิน"}
-              {examState === "submitted" && "ดูผลสอบ + บทวิเคราะห์ของคุณ"}
+              {examState === "submitted" && "ดูผลสอบ + บทวิเคราะห์"}
               {!examState && <>ดูชุดสุดคุ้ม · เริ่ม ฿{PRODUCTS.sum4.price.toLocaleString()}</>}
               <svg className="h-4 w-4 transition group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />

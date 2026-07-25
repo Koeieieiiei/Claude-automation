@@ -103,33 +103,47 @@ def render_pages(doc, page_numbers):
     return size
 
 
-def build_population(answer_key, n_students=612, seed=20260725):
-    """จำลองประชากรผู้สอบ (DEMO): นักเรียนแต่ละคนมีความสามารถ theta,
-    โอกาสตอบถูกรายข้อขึ้นกับความยากข้อ → ได้ทั้งการแจกแจงคะแนนและ % ตอบถูกรายข้อที่สอดคล้องกัน"""
+# คะแนนเป้าหมายของประชากรอ้างอิง (เต็ม 100) — เจ้าของร้านกำหนด 2026-07-25:
+# ผู้สอบ 15 คน กองกันช่วง 30-60 และมีคนเก่งหลุดกลุ่ม 1 คนที่ราว 76
+TARGET_SCORES = [32, 35, 38, 40, 42, 44, 46, 47, 49, 51, 53, 55, 58, 60, 76]
+
+
+def build_population(answer_key, seed=20260725):
+    """สร้างประชากรอ้างอิงให้ได้คะแนนตามที่กำหนดใน TARGET_SCORES
+
+    วิธี: เรียงข้อตาม "ความน่าจะทำได้" (ง่ายมาก่อน + สุ่มรบกวนรายคน)
+    แล้วไล่เก็บคะแนนจนใกล้เป้าหมาย — ได้ทั้งคะแนนรวมตามต้องการ และ
+    % ตอบถูกรายข้อที่สมเหตุสมผล (ข้อง่ายคนตอบถูกเยอะ ข้อยากคนตอบถูกน้อย)
+    """
     rng = random.Random(seed)
-    b = {"easy": -0.9, "medium": 0.35, "hard": 1.6}  # ความยากมาตรฐาน
-    import math
+    base = {"easy": 0.0, "medium": 1.0, "hard": 2.0}
 
     scores = []
     scores_weighted = []
     per_q_correct = {q: 0 for q in answer_key}
-    for _ in range(n_students):
-        theta = rng.gauss(-0.6, 1.1)
-        correct = 0
+
+    for target in TARGET_SCORES:
+        # ลำดับการเก็บข้อของนักเรียนคนนี้ — จิตเตอร์ทำให้แต่ละคนพลาดคนละข้อ
+        order = sorted(
+            answer_key.keys(),
+            key=lambda q: base[answer_key[q]["difficulty"]] + rng.gauss(0, 0.9),
+        )
         weighted = 0.0
-        for q, info in answer_key.items():
-            p = 1 / (1 + math.exp(-1.35 * (theta - b[info["difficulty"]])))
-            p = 0.16 + 0.84 * p  # เดามั่วยังถูกได้ ~1/5
-            if rng.random() < p:
-                correct += 1
-                weighted += question_weight(q)
-                per_q_correct[q] += 1
+        correct = 0
+        for q in order:
+            w = question_weight(q)
+            if weighted + w > target + 0.01:
+                continue  # ข้อนี้ทำให้เกินเป้า ข้ามไปหาข้อที่พอดีกว่า
+            weighted += w
+            correct += 1
+            per_q_correct[q] += 1
         scores.append(correct)
         scores_weighted.append(round(weighted, 2))
+
     return {
-        "note": "DEMO population — ประชากรจำลองเพื่อทดสอบระบบ ไม่ใช่ผู้สอบจริง",
-        "nStudents": n_students,
-        "scoresRaw": scores,  # จำนวนข้อถูก (0-70) ของนักเรียนจำลองแต่ละคน
+        "note": "ประชากรอ้างอิงสำหรับคิดสถิติช่วงที่ผู้สอบจริงยังน้อย (ไม่ใช่ผู้สอบจริง)",
+        "nStudents": len(TARGET_SCORES),
+        "scoresRaw": scores,  # จำนวนข้อถูก (0-70) ของแต่ละคน
         "scoresWeighted": scores_weighted,  # คะแนนถ่วงน้ำหนัก (เต็ม 100) ของแต่ละคน
         "perQuestionCorrect": per_q_correct,  # จำนวนคนที่ตอบถูกในแต่ละข้อ
     }

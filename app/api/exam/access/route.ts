@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
     const payload = verifyExamToken(body.token);
     if (!payload) {
       return NextResponse.json(
-        { error: "ลิงก์หมดอายุหรือไม่ถูกต้อง — กรอกชื่อ นามสกุล และอีเมลที่ใช้ซื้อเพื่อเข้าใหม่" },
+        { error: "ลิงก์เข้าห้องสอบหมดอายุแล้ว — กรอกชื่อ นามสกุล และอีเมลที่ใช้ซื้อเพื่อเข้าใหม่ได้เลย" },
         { status: 403 }
       );
     }

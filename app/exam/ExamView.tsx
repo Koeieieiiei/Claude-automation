@@ -62,7 +62,7 @@ export default function ExamView() {
     (data: AccessResponse, opts: { verified?: boolean } = {}) => {
       if (!data.state || data.state === "none") {
         setGateError(
-          "ชื่อ นามสกุล หรืออีเมลไม่ตรงกับข้อมูลการสั่งซื้อ — ตรวจตัวสะกดอีกครั้ง (ต้องตรงกับที่กรอกตอนซื้อ)"
+          "ไม่พบสิทธิ์ทำข้อสอบของชื่อและอีเมลนี้ — ถ้าซื้อแล้ว ลองตรวจตัวสะกดให้ตรงกับตอนสั่งซื้ออีกครั้ง"
         );
         setPhase("gate");
         return;
@@ -345,12 +345,18 @@ export default function ExamView() {
               </button>
             </form>
             {gateError && (
-              <p className="mt-4 border border-maroon/40 bg-maroon/[0.06] px-4 py-3 text-sm text-maroon">
-                {gateError}{" "}
-                <a href="/#mock" className="font-semibold underline underline-offset-2">
-                  ดูชุดข้อสอบ →
-                </a>
-              </p>
+              <div className="mt-4 border border-maroon/40 bg-maroon/[0.06] px-4 py-3.5">
+                <p className="text-sm leading-relaxed text-maroon">{gateError}</p>
+                <p className="mt-2.5 border-t border-maroon/25 pt-2.5 text-sm leading-relaxed text-ink/75">
+                  ยังไม่ได้ซื้อชุดข้อสอบ?{" "}
+                  <a
+                    href="/?buy=mock1"
+                    className="font-bold text-maroon underline underline-offset-2 hover:no-underline"
+                  >
+                    สั่งซื้อชุดข้อสอบ Mock TPAT3 →
+                  </a>
+                </p>
+              </div>
             )}
             <p className="mt-5 font-label text-xs leading-relaxed text-ink/50">
               💻 แนะนำให้ทำข้อสอบในคอมพิวเตอร์หรือ iPad เพื่อเห็นโจทย์ชัดเต็มตา

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import BuyModal from "@/components/BuyModal";
-import { PRODUCTS, Product } from "@/lib/catalog";
+import { getProduct, PRODUCTS, Product } from "@/lib/catalog";
 
 /* ---------- เฟืองเกียร์ (SVG) ---------- */
 function gearPath(teeth: number, rOut: number, rIn: number, rHub: number, c = 50) {
@@ -55,6 +55,17 @@ export default function Home() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ path: "/", referrer: document.referrer }),
     }).catch(() => {});
+  }, []);
+
+  // มาจากลิงก์ "สั่งซื้อชุดข้อสอบ" (เช่น จากหน้าห้องสอบ) — เปิดฟอร์มสั่งซื้อให้เลย
+  // อ่านจาก window แทน useSearchParams เพื่อไม่ต้องครอบหน้าแรกด้วย Suspense
+  useEffect(() => {
+    const id = new URLSearchParams(window.location.search).get("buy");
+    const product = id ? getProduct(id) : null;
+    if (product) {
+      setBuying(product);
+      window.history.replaceState(null, "", "/"); // เก็บ URL ให้สะอาด กันเปิดซ้ำตอนรีเฟรช
+    }
   }, []);
 
   // ผู้ซื้อชุด Mock ที่เคยเข้าห้องสอบจากเครื่องนี้ จะมีโทเค็นใน localStorage —

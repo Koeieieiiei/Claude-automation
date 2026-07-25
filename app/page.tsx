@@ -165,7 +165,7 @@ export default function Home() {
       {/* ===== Spec strip ===== */}
       <section className="border-b border-maroon-dark bg-maroon text-paper">
         <div className="mx-auto max-w-6xl px-5 py-[15px] text-center text-[15px] font-medium">
-          จ่ายเงินเสร็จ ดาวน์โหลดได้ทันที · ส่งลิงก์เข้าอีเมลไว้เปิดย้อนหลังด้วย
+          จ่ายเงินเสร็จ เข้าสอบได้ทันที
         </div>
       </section>
 

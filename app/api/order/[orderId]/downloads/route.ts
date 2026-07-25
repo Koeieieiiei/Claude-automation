@@ -81,6 +81,8 @@ export async function GET(
       productName: product.name,
       expiryHours: config.download.expiryHours,
       email: order.email,
+      // ชุดที่มีไฟล์โจทย์ = มีสิทธิ์ทำข้อสอบออนไลน์ → หน้า success ชูปุ่ม "เริ่มสอบ" แทนปุ่มโหลดไฟล์
+      hasExam: product.files.includes("questions"),
       links: links.map((l) => ({ label: l.label, downloadName: l.downloadName, url: l.url })),
     },
     { headers: { "Cache-Control": "no-store" } }

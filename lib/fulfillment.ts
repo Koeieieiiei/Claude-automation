@@ -49,6 +49,7 @@ export async function fulfillOrder(order: {
     productName: product.name,
     links,
     expiryHours: config.download.expiryHours,
+    hasExam: product.files.includes("questions"),
   });
 
   await logSale({ ...order, productName: product.name });

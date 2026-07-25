@@ -43,6 +43,7 @@ export default function SuccessView() {
   const [links, setLinks] = useState<DownloadLink[]>([]);
   const [email, setEmail] = useState("");
   const [expiryHours, setExpiryHours] = useState(0); // 0 = ไม่มีวันหมดอายุ
+  const [hasExam, setHasExam] = useState(false); // ชุดที่ซื้อมีข้อสอบให้ทำออนไลน์ไหม
 
   useEffect(() => {
     if (!order) {
@@ -72,6 +73,7 @@ export default function SuccessView() {
         if (data.status === "ready") {
           setLinks(Array.isArray(data.links) ? data.links : []);
           setEmail(typeof data.email === "string" ? data.email : "");
+          setHasExam(data.hasExam === true);
           if (typeof data.expiryHours === "number") setExpiryHours(data.expiryHours);
           setStatus("ready");
           return; // จบ — ไม่ต้อง poll ต่อ
@@ -139,37 +141,76 @@ export default function SuccessView() {
           <div className="text-center">
             <div className="mx-auto grid h-14 w-14 place-items-center border border-ink bg-white text-2xl">🎉</div>
             <h1 className="mt-5 font-display text-2xl font-bold text-ink">ชำระเงินสำเร็จ</h1>
-            <p className="mt-2 text-ink/70">ดาวน์โหลดไฟล์ของคุณได้เลยด้านล่าง</p>
+            <p className="mt-2 text-ink/70">
+              {hasExam ? "เข้าห้องสอบออนไลน์ได้เลย" : "ดาวน์โหลดไฟล์ของคุณได้เลยด้านล่าง"}
+            </p>
           </div>
 
-          <div className="mt-7 space-y-3">
-            {links.map((l) => (
+          {hasExam ? (
+            /* ชุดที่มีข้อสอบ: ชูปุ่มเข้าห้องสอบเป็นหลัก ไม่โชว์ปุ่มโหลดไฟล์ตรงนี้
+               (ไฟล์ทั้งหมดส่งเข้าอีเมลแล้ว และเปิดให้โหลดอีกครั้งท้ายหน้าผลสอบ)
+               เพราะถ้าเปิดเฉลยก่อนสอบ ผลวิเคราะห์จะไม่ตรงกับฝีมือจริง */
+            <>
               <a
-                key={l.url}
-                href={l.url}
-                download={l.downloadName}
-                className="flex w-full items-center justify-between gap-3 border border-ink bg-maroon px-5 py-3.5 font-semibold text-paper transition hover:bg-maroon-dark"
+                href="/exam"
+                className="mt-7 flex w-full items-center justify-center gap-3 border border-ink bg-maroon px-5 py-4 text-[1.05rem] font-bold text-paper transition hover:bg-maroon-dark"
               >
-                <span className="text-left text-[0.95rem] leading-snug">{l.label}</span>
-                <DownloadIcon className="h-5 w-5 shrink-0" />
+                เริ่มสอบ · 70 ข้อ · จับเวลา 3 ชม.
+                <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} aria-hidden>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                </svg>
               </a>
-            ))}
-          </div>
+              <p className="mt-3 text-center font-label text-xs leading-relaxed text-ink/55">
+                💻 แนะนำให้ทำในคอมพิวเตอร์ หรือ iPad · 1 อีเมลมีสิทธิ์สอบ 1 รอบ
+              </p>
 
-          <p className="mt-4 font-label text-[12px] leading-snug text-ink/50">
-            ระบบเตรียมไฟล์ให้ตอนกดดาวน์โหลด จึงอาจใช้เวลา 2–3 วินาทีต่อไฟล์
-          </p>
+              <div className="mt-6 border border-maroon/40 bg-maroon/[0.04] px-5 py-4">
+                <p className="font-label text-[11px] font-semibold uppercase tracking-[0.18em] text-maroon">
+                  ไฟล์ส่งเข้าอีเมลแล้ว
+                </p>
+                <p className="mt-1.5 text-sm leading-relaxed text-ink/75">
+                  ไฟล์โจทย์ เฉลยละเอียด และกระดาษคำตอบ ส่งไปที่
+                  {email ? <> <strong>{email}</strong></> : "อีเมลของคุณ"} เรียบร้อยแล้ว
+                  เปิดดาวน์โหลด{expiryText} — <strong>แนะนำให้เปิดเฉลยหลังทำข้อสอบเสร็จ</strong>{" "}
+                  ผลวิเคราะห์จะได้ตรงกับฝีมือจริง (ท้ายหน้าผลสอบมีลิงก์โหลดไฟล์ให้อีกครั้ง)
+                </p>
+                <p className="mt-2 text-sm leading-relaxed text-ink/60">
+                  หากไม่พบอีเมล ลองเช็กกล่อง Junk / Spam แล้วค้นคำว่า <strong>tpat3mock</strong>
+                </p>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="mt-7 space-y-3">
+                {links.map((l) => (
+                  <a
+                    key={l.url}
+                    href={l.url}
+                    download={l.downloadName}
+                    className="flex w-full items-center justify-between gap-3 border border-ink bg-maroon px-5 py-3.5 font-semibold text-paper transition hover:bg-maroon-dark"
+                  >
+                    <span className="text-left text-[0.95rem] leading-snug">{l.label}</span>
+                    <DownloadIcon className="h-5 w-5 shrink-0" />
+                  </a>
+                ))}
+              </div>
 
-          <div className="mt-6 border border-maroon/40 bg-maroon/[0.04] px-5 py-4">
-            <p className="font-label text-[11px] font-semibold uppercase tracking-[0.18em] text-maroon">
-              เปิดย้อนหลังได้
-            </p>
-            <p className="mt-1.5 text-sm leading-relaxed text-ink/75">
-              เราส่งลิงก์ชุดเดียวกันนี้ไปที่อีเมล{email ? <> <strong>{email}</strong></> : ""} ไว้ด้วย
-              เปิดดาวน์โหลดย้อนหลัง{expiryText} — หากไม่พบ ลองเช็กกล่อง Junk / Spam แล้วค้นคำว่า{" "}
-              <strong>tpat3mock</strong>
-            </p>
-          </div>
+              <p className="mt-4 font-label text-[12px] leading-snug text-ink/50">
+                ระบบเตรียมไฟล์ให้ตอนกดดาวน์โหลด จึงอาจใช้เวลา 2–3 วินาทีต่อไฟล์
+              </p>
+
+              <div className="mt-6 border border-maroon/40 bg-maroon/[0.04] px-5 py-4">
+                <p className="font-label text-[11px] font-semibold uppercase tracking-[0.18em] text-maroon">
+                  เปิดย้อนหลังได้
+                </p>
+                <p className="mt-1.5 text-sm leading-relaxed text-ink/75">
+                  เราส่งลิงก์ชุดเดียวกันนี้ไปที่อีเมล{email ? <> <strong>{email}</strong></> : ""} ไว้ด้วย
+                  เปิดดาวน์โหลดย้อนหลัง{expiryText} — หากไม่พบ ลองเช็กกล่อง Junk / Spam แล้วค้นคำว่า{" "}
+                  <strong>tpat3mock</strong>
+                </p>
+              </div>
+            </>
+          )}
 
           <a
             href="/"

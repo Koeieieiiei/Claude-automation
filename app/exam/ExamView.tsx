@@ -345,20 +345,23 @@ export default function ExamView() {
               </button>
             </form>
             {gateError && (
-              <div className="mt-4 border border-maroon/40 bg-maroon/[0.06] px-4 py-3.5">
-                <p className="text-sm leading-relaxed text-maroon">{gateError}</p>
-                <p className="mt-2.5 border-t border-maroon/25 pt-2.5 text-sm leading-relaxed text-ink/75">
-                  ยังไม่ได้ซื้อชุดข้อสอบ?{" "}
-                  <a
-                    href="/?buy=mock1"
-                    className="font-bold text-maroon underline underline-offset-2 hover:no-underline"
-                  >
-                    สั่งซื้อชุดข้อสอบ Mock TPAT3 →
-                  </a>
-                </p>
-              </div>
+              <p className="mt-4 border border-maroon/40 bg-maroon/[0.06] px-4 py-3 text-sm leading-relaxed text-maroon">
+                {gateError}
+              </p>
             )}
-            <p className="mt-5 font-label text-xs leading-relaxed text-ink/50">
+
+            {/* ทางไปซื้อ — โชว์ตั้งแต่เปิดหน้า ไม่ต้องรอให้กรอกผิดก่อน */}
+            <p className="mt-5 border-t border-dashed border-grid pt-4 text-sm leading-relaxed text-ink/75">
+              ยังไม่ได้ซื้อชุดข้อสอบ?{" "}
+              <a
+                href="/?buy=mock1"
+                className="font-bold text-maroon underline underline-offset-2 hover:no-underline"
+              >
+                สั่งซื้อชุดข้อสอบ Mock TPAT3 →
+              </a>
+            </p>
+
+            <p className="mt-4 font-label text-xs leading-relaxed text-ink/50">
               💻 แนะนำให้ทำข้อสอบในคอมพิวเตอร์หรือ iPad เพื่อเห็นโจทย์ชัดเต็มตา
             </p>
           </div>

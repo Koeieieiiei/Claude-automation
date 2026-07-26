@@ -231,6 +231,121 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
+/* ================= แผนภูมิวงกลม: รายได้มาจากสินค้าอะไร ================= */
+
+/**
+ * สีประจำสินค้า (ตายตัวต่อสินค้า ไม่ไล่ตามอันดับ — สินค้าเดิมต้องได้สีเดิมเสมอ)
+ * ชุดสีผ่าน validate_palette.js ครบทุกเช็ค รวม CVD (คนตาบอดสีแยกได้) บนพื้นขาว
+ */
+const PRODUCT_COLORS: Record<string, string> = {
+  mock1: "#A63248",
+  sum4: "#2E6FA3",
+  "bundle-all": "#B07818",
+};
+const OTHER_COLOR = "#7A5EA8";
+
+function polar(cx: number, cy: number, r: number, deg: number): [number, number] {
+  const rad = ((deg - 90) * Math.PI) / 180; // เริ่มที่ 12 นาฬิกา วนตามเข็ม
+  return [cx + r * Math.cos(rad), cy + r * Math.sin(rad)];
+}
+
+/** path วงแหวนหนึ่งชิ้น จากมุม a0 → a1 (องศา) */
+function arcPath(cx: number, cy: number, rOut: number, rIn: number, a0: number, a1: number): string {
+  const [x0, y0] = polar(cx, cy, rOut, a0);
+  const [x1, y1] = polar(cx, cy, rOut, a1);
+  const [x2, y2] = polar(cx, cy, rIn, a1);
+  const [x3, y3] = polar(cx, cy, rIn, a0);
+  const large = a1 - a0 > 180 ? 1 : 0;
+  return [
+    `M ${x0.toFixed(2)} ${y0.toFixed(2)}`,
+    `A ${rOut} ${rOut} 0 ${large} 1 ${x1.toFixed(2)} ${y1.toFixed(2)}`,
+    `L ${x2.toFixed(2)} ${y2.toFixed(2)}`,
+    `A ${rIn} ${rIn} 0 ${large} 0 ${x3.toFixed(2)} ${y3.toFixed(2)}`,
+    "Z",
+  ].join(" ");
+}
+
+function RevenueDonut({ products, total }: { products: ProductStats[]; total: number }) {
+  // รวมสินค้าที่ไม่มีสีประจำ (เลิกขาย/อื่น ๆ) เป็นชิ้นเดียว "อื่น ๆ"
+  const known = products.filter((p) => p.revenue > 0 && PRODUCT_COLORS[p.id]);
+  const otherRevenue = products
+    .filter((p) => p.revenue > 0 && !PRODUCT_COLORS[p.id])
+    .reduce((s, p) => s + p.revenue, 0);
+  const slices = [
+    ...known.map((p) => ({ id: p.id, label: p.name, value: p.revenue, color: PRODUCT_COLORS[p.id] })),
+    ...(otherRevenue > 0
+      ? [{ id: "other", label: "อื่น ๆ", value: otherRevenue, color: OTHER_COLOR }]
+      : []),
+  ];
+  const sum = slices.reduce((s, x) => s + x.value, 0);
+  if (!sum) return null;
+
+  let angle = 0;
+  const arcs = slices.map((sl) => {
+    const a0 = angle;
+    const a1 = (angle += (sl.value / sum) * 360);
+    return { ...sl, a0, a1: Math.min(a1, 359.999) };
+  });
+
+  return (
+    <Card>
+      <p className="mb-3 text-sm font-semibold">รายได้ส่วนใหญ่มาจากสินค้าอะไร</p>
+      <div className="flex flex-col items-center gap-5 sm:flex-row sm:items-center">
+        <div className="relative h-44 w-44 shrink-0">
+          <svg viewBox="0 0 200 200" className="h-full w-full" role="img" aria-label="สัดส่วนรายได้แยกตามสินค้า">
+            {arcs.map((a) => (
+              <path
+                key={a.id}
+                d={arcPath(100, 100, 96, 58, a.a0, a.a1)}
+                fill={a.color}
+                stroke="#fff"
+                strokeWidth="2"
+                className="transition-opacity hover:opacity-80"
+              >
+                <title>{`${a.label} · ${baht(a.value)} (${pct((a.value / sum) * 100)})`}</title>
+              </path>
+            ))}
+          </svg>
+          {/* ตัวเลขรวมกลางวง */}
+          <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+            <span className="text-lg font-bold tabular-nums">{baht(total)}</span>
+            <span className="text-[10px] text-ink/50">รายได้ทั้งหมด</span>
+          </div>
+        </div>
+
+        {/* คำอธิบายสี + ตัวเลขจริง (ทำหน้าที่เป็นตารางไปในตัว) */}
+        <ul className="w-full space-y-2">
+          {arcs.map((a) => (
+            <li key={a.id}>
+              <div className="flex items-baseline justify-between gap-3 text-sm">
+                <span className="flex min-w-0 items-center gap-2 text-ink/80">
+                  <span
+                    className="h-3 w-3 shrink-0 rounded-[3px]"
+                    style={{ backgroundColor: a.color }}
+                    aria-hidden
+                  />
+                  <span className="truncate">{a.label}</span>
+                </span>
+                <span className="shrink-0 font-semibold tabular-nums">
+                  {baht(a.value)}{" "}
+                  <span className="font-normal text-ink/50">({pct((a.value / sum) * 100)})</span>
+                </span>
+              </div>
+              {/* แถบสัดส่วนใช้สีเดียวกับชิ้นในวงกลม (สีตามสินค้า ไม่ใช่สีธีม) */}
+              <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-paper">
+                <div
+                  className="h-full rounded-full"
+                  style={{ width: `${(a.value / sum) * 100}%`, backgroundColor: a.color }}
+                />
+              </div>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </Card>
+  );
+}
+
 /* ================= การ์ดสินค้าแต่ละตัว (หัวใจของหน้านี้) ================= */
 
 function ProductCard({ p, rank }: { p: ProductStats; rank: number }) {
@@ -1078,7 +1193,9 @@ export default function AdminDashboard() {
               title="แจกแจงรายสินค้า"
               hint="เรียงตามรายได้มากไปน้อย · นับเฉพาะออเดอร์ที่จ่ายเงินแล้ว"
             >
-              <div className="grid gap-4 lg:grid-cols-2">
+              <RevenueDonut products={s.products} total={s.totals.all.revenue} />
+
+              <div className="mt-4 grid gap-4 lg:grid-cols-2">
                 {s.products.map((p, i) => (
                   <ProductCard key={p.id} p={p} rank={i + 1} />
                 ))}

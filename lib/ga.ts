@@ -1,4 +1,5 @@
 import { google } from "googleapis";
+import { bkkDayKey } from "./admin-stats";
 import { config, ready } from "./config";
 
 /**
@@ -149,20 +150,28 @@ export async function fetchGaSummary(days = 30): Promise<GaSummary | null> {
     let sessions = 0;
     let pageViews = 0;
     let engagementSec = 0;
-    const daily = rowsOf(0).map((r) => {
+    // GA คืนเฉพาะวันที่มีข้อมูล — เก็บใส่ map ก่อน แล้วค่อยเติมวันว่างให้ครบช่วง
+    // (ไม่งั้นกราฟรายวันจะเหลือแค่แท่งเดียวเต็มความกว้าง)
+    const byDay = new Map<string, { users: number; sessions: number }>();
+    for (const r of rowsOf(0)) {
       const m = r.metricValues ?? [];
       newUsers += num(m[1]?.value);
       sessions += num(m[2]?.value);
       pageViews += num(m[3]?.value);
       engagementSec += num(m[4]?.value);
-      return {
-        date: isoDate(r.dimensionValues?.[0]?.value ?? ""),
+      byDay.set(isoDate(r.dimensionValues?.[0]?.value ?? ""), {
         users: num(m[0]?.value),
         sessions: num(m[2]?.value),
-      };
+      });
+    }
+    const DAY_MS = 24 * 60 * 60 * 1000;
+    const daily = Array.from({ length: days }, (_, i) => {
+      const date = bkkDayKey(Date.now() - (days - 1 - i) * DAY_MS);
+      const d = byDay.get(date);
+      return { date, users: d?.users ?? 0, sessions: d?.sessions ?? 0 };
     });
     // ผู้ใช้รวมของทั้งช่วงต้องไม่เอารายวันมาบวกกัน (คนเดิมกลับมาจะถูกนับซ้ำ)
-    // — ใช้ค่ารวมจาก report totals ถ้ามี ไม่มีค่อย fallback เป็นผลบวก
+    // — ใช้ค่ารวมจาก report totals (metricAggregations) ถ้ามี ไม่มีค่อย fallback เป็นผลบวก
     activeUsers = num(reports[0]?.totals?.[0]?.metricValues?.[0]?.value);
     if (!activeUsers) activeUsers = daily.reduce((s, d) => s + d.users, 0);
 

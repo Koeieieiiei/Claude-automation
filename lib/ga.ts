@@ -70,8 +70,9 @@ export async function fetchGaSummary(days = 30): Promise<GaSummary | null> {
   const client = getClient();
 
   try {
-    // ยิงทีเดียวหลายรายงาน (batchRunReports) เร็วกว่าเรียกทีละอัน
-    const { data } = await client.properties.batchRunReports({
+    // ยิงหลายรายงานพร้อมกันด้วย batchRunReports (GA จำกัด batch ละ 5 รายงาน
+    // — เรามี 6 จึงแยกรายงานอีเวนต์ไปยิงคู่ขนานต่างหาก)
+    const batchPromise = client.properties.batchRunReports({
       property,
       requestBody: {
         requests: [
@@ -88,6 +89,9 @@ export async function fetchGaSummary(days = 30): Promise<GaSummary | null> {
             ],
             orderBys: [{ dimension: { dimensionName: "date" } }],
             limit: "400",
+            // ขอยอดรวมทั้งช่วงมาด้วย — ผู้ใช้รวมต้องนับแบบไม่ซ้ำคน
+            // (เอารายวันมาบวกกันจะนับคนที่กลับมาหลายวันซ้ำ)
+            metricAggregations: ["TOTAL"],
           },
           // 1) ช่องทางที่มา (กลุ่มใหญ่ เช่น Organic Social / Direct)
           {
@@ -121,17 +125,22 @@ export async function fetchGaSummary(days = 30): Promise<GaSummary | null> {
             orderBys: [{ metric: { metricName: "activeUsers" }, desc: true }],
             limit: "5",
           },
-          // 5) เหตุการณ์กรวยการขายที่ฝังไว้ใน lib/analytics.ts
-          {
-            dateRanges,
-            dimensions: [{ name: "eventName" }],
-            metrics: [{ name: "eventCount" }],
-            limit: "100",
-          },
         ],
       },
     });
 
+    // 5) เหตุการณ์กรวยการขายที่ฝังไว้ใน lib/analytics.ts — รายงานที่ 6 เกินโควตา batch
+    const eventsPromise = client.properties.runReport({
+      property,
+      requestBody: {
+        dateRanges,
+        dimensions: [{ name: "eventName" }],
+        metrics: [{ name: "eventCount" }],
+        limit: "100",
+      },
+    });
+
+    const [{ data }, { data: eventsData }] = await Promise.all([batchPromise, eventsPromise]);
     const reports = data.reports ?? [];
     const rowsOf = (i: number) => reports[i]?.rows ?? [];
 
@@ -165,7 +174,7 @@ export async function fetchGaSummary(days = 30): Promise<GaSummary | null> {
       }));
 
     const eventCounts = new Map<string, number>();
-    for (const r of rowsOf(5)) {
+    for (const r of eventsData.rows ?? []) {
       eventCounts.set(r.dimensionValues?.[0]?.value ?? "", num(r.metricValues?.[0]?.value));
     }
 

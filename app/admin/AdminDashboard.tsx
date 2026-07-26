@@ -375,9 +375,12 @@ function RatioCard({
 
 /**
  * อัตราส่วนการเปลี่ยนผู้เข้าชมเป็นลูกค้า (เจ้าของขอ 2026-07-26)
- * ทุกตัวใช้กรอบเวลาเดียวกัน 30 วัน: ผู้เข้าชม/อีเวนต์จาก GA · ยอดซื้อจากตาราง orders
+ *
+ * ทุกตัวเลขมาจาก GA ทั้งเศษและส่วน — ห้ามผสมยอดซื้อจากตาราง orders เพราะ GA
+ * เพิ่งเริ่มเก็บ 26 ก.ค. กรอบเวลาไม่ตรงกัน (เคยได้ 400% หลอกตามาแล้ว)
+ * จำนวน "ซื้อ" จึงนับจากอีเวนต์ purchase_success ที่ยิงตอนถึงหน้าชำระเงินสำเร็จ
  */
-function RatiosBlock({ ga, sales }: { ga: GaSummary | null; sales: SalesSummary }) {
+function RatiosBlock({ ga }: { ga: GaSummary | null }) {
   if (!ga) {
     return (
       <p className="rounded-xl border border-grid bg-white px-3 py-2 text-sm text-ink/50">
@@ -385,7 +388,7 @@ function RatiosBlock({ ga, sales }: { ga: GaSummary | null; sales: SalesSummary 
       </p>
     );
   }
-  const buys = sales.totals.d30.units;
+  const buys = ga.events.find((e) => e.event === "purchase_success")?.count ?? 0;
   const demo = ga.events.find((e) => e.event === "download_sample")?.count ?? 0;
   return (
     <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -393,7 +396,7 @@ function RatiosBlock({ ga, sales }: { ga: GaSummary | null; sales: SalesSummary 
         title="คนเข้าเว็บ → ซื้อ"
         numerator={buys}
         denominator={ga.activeUsers}
-        numLabel="ซื้อ"
+        numLabel="ซื้อสำเร็จ"
         denLabel="ผู้เข้าชม"
       />
       <RatioCard
@@ -1057,9 +1060,9 @@ export default function AdminDashboard() {
             {/* ===== อัตราส่วนสำคัญ ===== */}
             <Section
               title="อัตราส่วนสำคัญ"
-              hint="กรอบเวลาเดียวกัน 30 วันล่าสุด · ผู้เข้าชมจาก GA (เริ่มเก็บ 26 ก.ค.) · ยอดซื้อจากระบบร้าน"
+              hint="นับจาก Google Analytics ทั้งหมด กรอบเดียวกัน 30 วัน (เริ่มเก็บ 26 ก.ค. — ตัวเลขจะนิ่งขึ้นเมื่อสะสมได้หลายวัน)"
             >
-              <RatiosBlock ga={data.ga} sales={s} />
+              <RatiosBlock ga={data.ga} />
             </Section>
 
             {/* ===== บัญชีรายรับรายจ่าย ===== */}

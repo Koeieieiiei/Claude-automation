@@ -57,6 +57,14 @@ describe("รู้ว่าออเดอร์ไหนคือสินค�
     expect(resolveProduct(order({ amount: 649 })).id).toBe("other");
   });
 
+  it("สินค้าที่เลิกขายแล้ว (sum1/bundle-sum) ยังรู้จักชื่อ ไม่ถูกเหมารวมเป็น 'อื่น ๆ'", () => {
+    const sum1 = resolveProduct(order({ product_id: "sum1", amount: 189 }));
+    expect(sum1.id).toBe("sum1");
+    expect(sum1.name).toContain("เลิกขายแล้ว");
+    expect(sum1.price).toBeNull();
+    expect(resolveProduct(order({ product_id: "bundle-sum", amount: 449 })).id).toBe("bundle-sum");
+  });
+
   it("product_id มั่ว ๆ ไม่ทำให้พัง — ตกไปใช้ราคาแทน", () => {
     expect(resolveProduct(order({ product_id: "ของปลอม", amount: 99 })).id).toBe("sum4");
   });

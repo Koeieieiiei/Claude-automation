@@ -56,6 +56,17 @@ const LEGACY_PRICE_TO_PRODUCT: Record<number, ProductId> = {
   299: "mock1",
 };
 
+/**
+ * สินค้าที่เคยขายแล้วเลิกไปแล้ว (ถูกลบออกจาก lib/catalog.ts)
+ * ยังต้องรู้จักชื่อไว้ ไม่งั้นออเดอร์เก่าจะถูกเหมารวมเป็น "อื่น ๆ" หมด
+ */
+const RETIRED_PRODUCTS: Record<string, string> = {
+  sum1: "สรุปเนื้อหา ชุดที่ 1 (เลิกขายแล้ว)",
+  sum2: "สรุปเนื้อหา ชุดที่ 2 (เลิกขายแล้ว)",
+  sum3: "สรุปเนื้อหา ชุดที่ 3 (เลิกขายแล้ว)",
+  "bundle-sum": "เซ็ตสรุปเนื้อหา (เลิกขายแล้ว)",
+};
+
 export const OTHER_PRODUCT_ID = "other";
 const OTHER_PRODUCT_NAME = "อื่น ๆ (ราคาเก่า / เลิกขายแล้ว)";
 
@@ -72,6 +83,9 @@ export function resolveProduct(order: OrderRow): ResolvedProduct {
   if (explicit && Object.prototype.hasOwnProperty.call(PRODUCTS, explicit)) {
     const p = PRODUCTS[explicit as ProductId];
     return { id: p.id, name: p.name, price: p.price };
+  }
+  if (explicit && RETIRED_PRODUCTS[explicit]) {
+    return { id: explicit, name: RETIRED_PRODUCTS[explicit], price: null };
   }
   const guessed = LEGACY_PRICE_TO_PRODUCT[order.amount];
   if (guessed) {

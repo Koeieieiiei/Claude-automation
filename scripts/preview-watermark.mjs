@@ -46,10 +46,11 @@ pdfDoc.getPages().forEach((page, index) => {
 
   const maxSpan = width * 0.62;
   const nameSize = fitSize(fullName, Math.max(13, Math.min(23, width / 26)), 9, maxSpan);
-  const noticeSize = fitSize(PERMISSION_LINE, nameSize * 0.72, 8, maxSpan);
+  const subSize = nameSize * 0.72;
   const lines = [
     ...(fullName ? [{ text: fullName, size: nameSize }] : []),
-    { text: PERMISSION_LINE, size: noticeSize },
+    { text: buyer.email, size: fitSize(buyer.email, subSize, 8, maxSpan) },
+    { text: PERMISSION_LINE, size: fitSize(PERMISSION_LINE, subSize, 8, maxSpan) },
   ];
   const gap = nameSize * 1.5;
 

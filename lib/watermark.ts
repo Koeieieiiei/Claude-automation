@@ -117,10 +117,9 @@ const PERMISSION_LINE = "อนุญาตให้ใช้เฉพาะบ�
 
 /**
  * ใส่ลายน้ำระบุตัวผู้ซื้อลงทุกหน้าของ PDF
- * - ลายน้ำทแยงมุมจางๆ กลางหน้า 2 บรรทัด (ชื่อ-นามสกุล / ข้อความเตือนสิทธิ์)
+ * - ลายน้ำทแยงมุมจางๆ กลางหน้า 3 บรรทัด (ชื่อ-นามสกุล / อีเมล / ข้อความเตือนสิทธิ์)
  *   เยื้องซ้าย-ขวาสลับกันทุกหน้า
- * - แถบข้อมูลเล็กๆ ที่ขอบล่างทุกหน้า — ยังมีอีเมลอยู่ เพราะเป็นตัวระบุตัวตนที่ไม่ซ้ำ
- *   (ชื่อซ้ำกันได้ ถ้าไฟล์หลุดต้องสืบย้อนได้ว่าเป็นของใคร)
+ * - ไม่มีแถบข้อความที่ขอบล่างแล้ว (เจ้าของขอเอาออก 2026-07-26)
  * - opts.skipFirstPage = เว้นหน้าแรก (ใช้กับไฟล์ที่หน้าแรกเป็นหน้าปก)
  */
 export async function watermarkPdf(
@@ -153,14 +152,15 @@ export async function watermarkPdf(
 
     const { width, height } = page.getSize();
 
-    // ลายน้ำทแยงมุมกลางหน้า: ชื่อบรรทัดบน ข้อความเตือนสิทธิ์ขึ้นบรรทัดใหม่ข้างล่าง
-    // ขนาดตัวอักษรตั้งไว้ให้เล็กพอไม่บังโจทย์ แต่ยังอ่านออกชัดถ้าไฟล์หลุด
+    // ลายน้ำทแยงมุมกลางหน้า 3 บรรทัด: ชื่อ-นามสกุล / อีเมล / ข้อความเตือนสิทธิ์
+    // ชื่อตัวใหญ่สุด อีก 2 บรรทัดเล็กลง — ให้อ่านออกชัดถ้าไฟล์หลุด แต่ไม่บังโจทย์
     const maxSpan = width * 0.62;
     const nameSize = fitSize(font, fullName, Math.max(13, Math.min(23, width / 26)), 9, maxSpan);
-    const noticeSize = fitSize(font, PERMISSION_LINE, nameSize * 0.72, 8, maxSpan);
+    const subSize = nameSize * 0.72;
     const lines = [
       ...(fullName ? [{ text: fullName, size: nameSize }] : []),
-      { text: PERMISSION_LINE, size: noticeSize },
+      ...(buyer.email ? [{ text: buyer.email, size: fitSize(font, buyer.email, subSize, 8, maxSpan) }] : []),
+      { text: PERMISSION_LINE, size: fitSize(font, PERMISSION_LINE, subSize, 8, maxSpan) },
     ];
     const gap = nameSize * 1.5;
 

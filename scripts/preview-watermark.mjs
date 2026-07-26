@@ -21,7 +21,11 @@ const font = existsSync(THAI_FONT)
   : await pdfDoc.embedFont(StandardFonts.Helvetica);
 
 const fullName = `${buyer.firstName} ${buyer.lastName}`.trim();
-const footerText = `เอกสารลิขสิทธิ์เฉพาะ ${fullName} (${buyer.email}) • ห้ามเผยแพร่ต่อ`;
+const PERMISSION_LINE = "อนุญาตให้ใช้เฉพาะบุคคลนี้";
+
+// ไม่มีแถบขอบล่างแล้ว — ฝังตัวตนผู้ซื้อไว้ใน metadata แทน (ต้องตรงกับ lib/watermark.ts)
+pdfDoc.setSubject(`เอกสารลิขสิทธิ์เฉพาะ ${fullName} (${buyer.email}) • ห้ามเผยแพร่ต่อ`);
+pdfDoc.setKeywords([fullName, buyer.email, "ห้ามเผยแพร่ต่อ"]);
 
 // ต้องตรงกับ lib/watermark.ts (สคริปต์นี้เป็นตัวพรีวิวหน้าตาเท่านั้น)
 const DIAG_ANGLE = 35;
@@ -41,11 +45,11 @@ pdfDoc.getPages().forEach((page, index) => {
   const { width, height } = page.getSize();
 
   const maxSpan = width * 0.62;
-  const nameSize = fitSize(fullName, Math.max(18, Math.min(34, width / 18)), 10, maxSpan);
-  const emailSize = fitSize(buyer.email, nameSize * 0.8, 8, maxSpan);
+  const nameSize = fitSize(fullName, Math.max(13, Math.min(23, width / 26)), 9, maxSpan);
+  const noticeSize = fitSize(PERMISSION_LINE, nameSize * 0.72, 8, maxSpan);
   const lines = [
     ...(fullName ? [{ text: fullName, size: nameSize }] : []),
-    { text: buyer.email, size: emailSize },
+    { text: PERMISSION_LINE, size: noticeSize },
   ];
   const gap = nameSize * 1.5;
 
@@ -63,9 +67,6 @@ pdfDoc.getPages().forEach((page, index) => {
     });
   });
 
-  page.drawText(footerText, {
-    x: 24, y: 16, size: 9, font, color: rgb(0.35, 0.35, 0.35), opacity: 0.6,
-  });
 });
 
 await writeFile("watermark-preview.pdf", await pdfDoc.save());

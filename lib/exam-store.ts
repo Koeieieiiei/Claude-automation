@@ -129,6 +129,13 @@ async function storageGetJson<T>(key: string): Promise<T | null> {
   }
 }
 
+/**
+ * เขียนข้อมูลที่ "เปลี่ยนได้ตลอด" (ผลสอบ/สถิติรวม) ลง Storage
+ *
+ * ⚠️ ต้องสั่ง cacheControl: "0" เสมอ — ค่าเริ่มต้นของ Supabase คือแคช 1 ชั่วโมง
+ * ซึ่งทำให้อ่านค่าเก่ากลับมาได้ (เคยเจอจริง: ลบไฟล์ผลสอบแล้วยังดาวน์โหลดเจอ
+ * ทำให้ "เริ่มสอบรอบใหม่" ไม่ทำงาน และผลรวมสถิติมีสิทธิ์ตกหล่น)
+ */
 async function storagePutJson(key: string, value: unknown): Promise<void> {
   const supabase = getSupabase();
   if (!supabase) throw new Error("ยังไม่ได้ตั้งค่า Supabase — บันทึกข้อมูลสอบไม่ได้");
@@ -137,14 +144,30 @@ async function storagePutJson(key: string, value: unknown): Promise<void> {
     .upload(key, JSON.stringify(value), {
       contentType: "application/json",
       upsert: true,
+      cacheControl: "0",
     });
   if (error) throw new Error(`บันทึกข้อมูลสอบไม่สำเร็จ: ${error.message}`);
 }
 
+/** ค่าที่เขียนทับก่อนลบไฟล์ — กันกรณีแคชยังจ่ายไฟล์เก่าหลังลบ (ดูหมายเหตุใน storagePutJson) */
+const TOMBSTONE = { deleted: true } as const;
+
 async function storageRemove(key: string): Promise<void> {
   const supabase = getSupabase();
   if (!supabase) return;
+  // เขียนทับด้วย tombstone (ไม่แคช) ก่อน แล้วค่อยลบจริง — ถ้าแคชยังจ่ายของเก่า
+  // สิ่งที่ได้จะเป็น tombstone ซึ่งฝั่งอ่านตีความว่า "ไม่มีข้อมูล" อยู่แล้ว
+  try {
+    await storagePutJson(key, TOMBSTONE);
+  } catch {
+    // เขียน tombstone ไม่สำเร็จก็ลบต่อไป ไม่ต้องล้มทั้งคำขอ
+  }
   await supabase.storage.from(config.supabase.bucket).remove([key]);
+}
+
+/** ไฟล์ที่ถูกลบไปแล้ว (หรือแคชค้าง) — ถือว่าไม่มีข้อมูล */
+function isTombstone(v: unknown): boolean {
+  return typeof v === "object" && v !== null && (v as { deleted?: unknown }).deleted === true;
 }
 
 /* ================= เฉลย / ประชากรอ้างอิง / รูปหน้าโจทย์ (cache ต่อสนาม) ================= */
@@ -359,7 +382,8 @@ export function removeDemoBuyer(email: string): void {
 export async function getAttempt(exam: ExamDef, email: string): Promise<ExamAttempt | null> {
   const clean = normalizeEmail(email);
   if (getSupabase()) {
-    return await storageGetJson<ExamAttempt>(sAttempt(exam, clean));
+    const found = await storageGetJson<ExamAttempt>(sAttempt(exam, clean));
+    return found && !isTombstone(found) ? found : null;
   }
   return readLocalJson<Record<string, ExamAttempt>>(localAttemptsFile(exam), {})[clean] ?? null;
 }

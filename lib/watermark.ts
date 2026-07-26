@@ -112,10 +112,15 @@ export async function buildDeliverablePdf(
   return watermarkPdf(master, buyer, { skipFirstPage: SKIP_COVER_PAGE.has(file) });
 }
 
+/** บรรทัดที่ 2 ของลายน้ำทแยง — ข้อความเตือนสิทธิ์ (แทนอีเมลที่เคยโชว์กลางหน้า) */
+const PERMISSION_LINE = "อนุญาตให้ใช้เฉพาะบุคคลนี้";
+
 /**
- * ใส่ลายน้ำชื่อ-นามสกุล-อีเมล ลงทุกหน้าของ PDF
- * - ลายน้ำทแยงมุมจางๆ กลางหน้า 2 บรรทัด (ชื่อ / อีเมล) เยื้องซ้าย-ขวาสลับกันทุกหน้า
- * - แถบข้อมูลเล็กๆ ที่ขอบล่างทุกหน้า
+ * ใส่ลายน้ำระบุตัวผู้ซื้อลงทุกหน้าของ PDF
+ * - ลายน้ำทแยงมุมจางๆ กลางหน้า 2 บรรทัด (ชื่อ-นามสกุล / ข้อความเตือนสิทธิ์)
+ *   เยื้องซ้าย-ขวาสลับกันทุกหน้า
+ * - แถบข้อมูลเล็กๆ ที่ขอบล่างทุกหน้า — ยังมีอีเมลอยู่ เพราะเป็นตัวระบุตัวตนที่ไม่ซ้ำ
+ *   (ชื่อซ้ำกันได้ ถ้าไฟล์หลุดต้องสืบย้อนได้ว่าเป็นของใคร)
  * - opts.skipFirstPage = เว้นหน้าแรก (ใช้กับไฟล์ที่หน้าแรกเป็นหน้าปก)
  */
 export async function watermarkPdf(
@@ -136,20 +141,26 @@ export async function watermarkPdf(
   }
 
   const fullName = `${buyer.firstName} ${buyer.lastName}`.trim();
-  const footerText = `เอกสารลิขสิทธิ์เฉพาะ ${fullName} (${buyer.email}) • ห้ามเผยแพร่ต่อ`;
+
+  // เจ้าของร้านขอเอาแถบข้อความขอบล่างออก (2026-07-26) — หน้ากระดาษจะได้สะอาด
+  // แต่ยังต้องสืบย้อนได้ถ้าไฟล์หลุด จึงฝังตัวตนผู้ซื้อไว้ใน metadata ของ PDF แทน
+  // (มองไม่เห็นตอนอ่าน แต่เปิดดูคุณสมบัติไฟล์แล้วรู้ว่าเป็นของใคร — ชื่อซ้ำกันได้ อีเมลไม่ซ้ำ)
+  pdfDoc.setSubject(`เอกสารลิขสิทธิ์เฉพาะ ${fullName} (${buyer.email}) • ห้ามเผยแพร่ต่อ`);
+  pdfDoc.setKeywords([fullName, buyer.email, "ห้ามเผยแพร่ต่อ"]);
 
   pdfDoc.getPages().forEach((page, index) => {
     if (opts.skipFirstPage && index === 0) return; // หน้าปก — ปล่อยสะอาด
 
     const { width, height } = page.getSize();
 
-    // ลายน้ำทแยงมุมกลางหน้า: ชื่อบรรทัดบน อีเมลขึ้นบรรทัดใหม่ข้างล่าง
+    // ลายน้ำทแยงมุมกลางหน้า: ชื่อบรรทัดบน ข้อความเตือนสิทธิ์ขึ้นบรรทัดใหม่ข้างล่าง
+    // ขนาดตัวอักษรตั้งไว้ให้เล็กพอไม่บังโจทย์ แต่ยังอ่านออกชัดถ้าไฟล์หลุด
     const maxSpan = width * 0.62;
-    const nameSize = fitSize(font, fullName, Math.max(18, Math.min(34, width / 18)), 10, maxSpan);
-    const emailSize = fitSize(font, buyer.email, nameSize * 0.8, 8, maxSpan);
+    const nameSize = fitSize(font, fullName, Math.max(13, Math.min(23, width / 26)), 9, maxSpan);
+    const noticeSize = fitSize(font, PERMISSION_LINE, nameSize * 0.72, 8, maxSpan);
     const lines = [
       ...(fullName ? [{ text: fullName, size: nameSize }] : []),
-      { text: buyer.email, size: emailSize },
+      { text: PERMISSION_LINE, size: noticeSize },
     ];
     const gap = nameSize * 1.5;
 
@@ -171,15 +182,6 @@ export async function watermarkPdf(
       });
     });
 
-    // แถบข้อมูลที่ขอบล่าง
-    page.drawText(footerText, {
-      x: 24,
-      y: 16,
-      size: 9,
-      font,
-      color: rgb(0.35, 0.35, 0.35),
-      opacity: 0.6,
-    });
   });
 
   return pdfDoc.save();

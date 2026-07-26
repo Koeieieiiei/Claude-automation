@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import Analytics from "@/components/Analytics";
 
 const SITE_URL = "https://tpat3mock.com";
 const TITLE = "ข้อสอบ Mock TPAT3 พร้อมเฉลยละเอียด | Mr.tpat3";
@@ -48,7 +49,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           rel="stylesheet"
         />
       </head>
-      <body>{children}</body>
+      <body>
+        {children}
+        {/* สถิติผู้เข้าเว็บ — ไม่ตั้ง NEXT_PUBLIC_GA_ID ก็ไม่โหลดอะไรเลย */}
+        <Analytics gaId={process.env.NEXT_PUBLIC_GA_ID} />
+      </body>
     </html>
   );
 }

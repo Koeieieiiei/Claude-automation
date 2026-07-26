@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { formatExpiry } from "@/lib/format-expiry";
+import { trackEvent } from "@/lib/analytics";
 
 interface DownloadLink {
   label: string;
@@ -76,6 +77,12 @@ export default function SuccessView() {
           setHasExam(data.hasExam === true);
           if (typeof data.expiryHours === "number") setExpiryHours(data.expiryHours);
           setStatus("ready");
+          // ยืนยันแล้วว่าจ่ายเงินสำเร็จจริง — ตัวชี้วัดสำคัญที่สุดของร้าน
+          trackEvent("purchase_success", {
+            transaction_id: order ?? "",
+            item_name: typeof data.productName === "string" ? data.productName : "",
+            currency: "THB",
+          });
           return; // จบ — ไม่ต้อง poll ต่อ
         }
 

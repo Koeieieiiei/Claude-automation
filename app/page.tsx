@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import BuyModal from "@/components/BuyModal";
 import { getProduct, PRODUCTS, Product } from "@/lib/catalog";
+import { trackEvent } from "@/lib/analytics";
 
 /* ---------- เฟืองเกียร์ (SVG) ---------- */
 function gearPath(teeth: number, rOut: number, rIn: number, rHub: number, c = 50) {
@@ -63,6 +64,13 @@ export default function Home() {
     const id = new URLSearchParams(window.location.search).get("buy");
     const product = id ? getProduct(id) : null;
     if (product) {
+      // นับเหมือนกดปุ่มสั่งซื้อ (มาจากลิงก์ในหน้าห้องสอบ) ไม่งั้นกรวยการขายจะขาดช่วงนี้ไป
+      trackEvent("open_buy_form", {
+        product_id: product.id,
+        value: product.price,
+        currency: "THB",
+        source: "exam_gate_link",
+      });
       setBuying(product);
       window.history.replaceState(null, "", "/"); // เก็บ URL ให้สะอาด กันเปิดซ้ำตอนรีเฟรช
     }
@@ -96,7 +104,11 @@ export default function Home() {
       .catch(() => {});
   }, []);
 
-  const buy = (p: Product) => setBuying(p);
+  // ทุกปุ่มสั่งซื้อบนหน้านี้เรียกผ่านตัวนี้ — นับเป็นเหตุการณ์ "เปิดฟอร์มสั่งซื้อ" ที่เดียวจบ
+  const buy = (p: Product) => {
+    trackEvent("open_buy_form", { product_id: p.id, value: p.price, currency: "THB" });
+    setBuying(p);
+  };
 
   return (
     <div className="min-h-screen">
@@ -141,6 +153,7 @@ export default function Home() {
                 ถ้าเครื่องนี้เคยสอบแล้ว ปุ่มจะเปลี่ยนเป็นทำต่อ/ดูผลอัตโนมัติ */}
             <a
               href={examState === "submitted" ? "/exam/results" : "/exam"}
+              onClick={() => trackEvent("click_exam_cta", { state: examState ?? "visitor" })}
               className="group inline-flex items-center gap-3 bg-maroon px-[42px] py-[23px] text-[19px] font-bold text-white transition hover:bg-maroon-dark"
             >
               {examState === "in_progress"

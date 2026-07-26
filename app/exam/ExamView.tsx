@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getExam, DEFAULT_EXAM_ID, ExamDef } from "@/lib/exams";
+import { trackEvent } from "@/lib/analytics";
 
 /**
  * ห้องสอบออนไลน์ — เลือกสนามสอบผ่าน ?exam=<examId> (ไม่ระบุ = สนามหลัก TPAT3)
@@ -80,6 +81,8 @@ export default function ExamView() {
         setGateError(
           "ไม่พบสิทธิ์ทำข้อสอบของชื่อและอีเมลนี้ — ถ้าซื้อแล้ว ลองตรวจตัวสะกดให้ตรงกับตอนสั่งซื้ออีกครั้ง"
         );
+        // นับเฉพาะตอนผู้ใช้กรอกเองแล้วไม่ผ่าน (ไม่นับตอนเช็คโทเค็นเงียบ ๆ ตอนเปิดหน้า)
+        if (opts.verified) trackEvent("exam_access_denied", { exam_id: exam.id });
         setPhase("gate");
         return;
       }
@@ -185,6 +188,8 @@ export default function ExamView() {
       }
       setDeadline(data.deadline);
       setClockOffset(data.serverNow - Date.now());
+      // นับเฉพาะรอบที่ "เริ่มใหม่จริง" ไม่นับตอนกลับเข้ามาทำต่อ
+      if (!data.resumed) trackEvent("exam_start", { exam_id: exam.id });
       const serverAnswers: number[] = Array.isArray(data.answers)
         ? data.answers
         : Array(exam.totalQuestions).fill(0);
@@ -254,6 +259,10 @@ export default function ExamView() {
         alert("ส่งไม่สำเร็จ ลองกดส่งอีกครั้ง");
         return;
       }
+      trackEvent("exam_submit", {
+        exam_id: exam.id,
+        answered: answersRef.current.filter((a) => a > 0).length,
+      });
       router.replace(`/exam/results?token=${encodeURIComponent(token)}`);
     } catch {
       setSubmitting(false);

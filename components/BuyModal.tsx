@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { Product } from "@/lib/catalog";
+import { trackEvent } from "@/lib/analytics";
 
 interface Props {
   product: Product;
@@ -33,6 +34,12 @@ export default function BuyModal({ product, onClose }: Props) {
       if (!res.ok) throw new Error(data.error || "เกิดข้อผิดพลาด");
       // กันเคส server ตอบ ok แต่ไม่มี url — อย่าพาผู้ใช้ไปหน้า "/null"
       if (!data.url) throw new Error("ไม่ได้รับลิงก์หน้าชำระเงิน กรุณาลองใหม่อีกครั้ง");
+      // นับตอนกำลังพาไปหน้าจ่ายเงินจริง (ไม่ใช่ตอนกดปุ่ม) — สะท้อนความตั้งใจซื้อจริง
+      trackEvent("begin_checkout", {
+        product_id: product.id,
+        value: product.price,
+        currency: "THB",
+      });
       window.location.href = data.url;
     } catch (err) {
       setError(err instanceof Error ? err.message : "เกิดข้อผิดพลาด");

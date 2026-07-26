@@ -343,6 +343,9 @@ export function summarizeSales(orders: OrderRow[], nowMs: number = Date.now()): 
   const totalRevenue = totals.all.revenue;
 
   const products: ProductStats[] = [...perProduct.values()]
+    // สินค้าที่เลิกขายแล้วและ "ไม่เคยขายได้เลย" (มีแต่คนกดสั่งแล้วไม่จ่าย) ไม่ต้องโชว์
+    // — เจ้าของสั่งเอาออก 2026-07-26; ยอดกดสั่ง/อัตราปิดการขายรวมของร้านยังนับครบอยู่
+    .filter((a) => a.units > 0 || Object.prototype.hasOwnProperty.call(PRODUCTS, a.info.id))
     .map((a) => ({
       id: a.info.id,
       name: a.info.name,

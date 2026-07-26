@@ -119,6 +119,22 @@ describe("summarizeSales", () => {
     expect(s.products.find((p) => p.id === "sum4")!.units).toBe(0);
   });
 
+  it("สินค้าเลิกขายที่ไม่เคยขายได้ (มีแต่กดสั่งไม่จ่าย) ถูกซ่อนจากรายการ แต่ถ้าเคยขายได้ต้องยังโชว์", () => {
+    const s = summarizeSales(
+      [
+        order({ product_id: "mock1" }),
+        order({ product_id: "sum1", amount: 189, status: "pending" }), // เลิกขาย + ไม่เคยจ่าย → ซ่อน
+        order({ product_id: "bundle-sum", amount: 449 }), // เลิกขายแต่เคยขายได้ → ต้องโชว์
+      ],
+      NOW
+    );
+    const ids = s.products.map((p) => p.id);
+    expect(ids).not.toContain("sum1");
+    expect(ids).toContain("bundle-sum");
+    // ยอดรวมของร้านยังนับออเดอร์ pending ของสินค้าที่ถูกซ่อนอยู่ (อัตราปิดการขายไม่เพี้ยน)
+    expect(s.pendingOrders).toBe(1);
+  });
+
   it("แบ่งช่วงเวลา วันนี้ / 7 วัน / 30 วัน ถูกต้อง", () => {
     const s = summarizeSales(
       [

@@ -23,8 +23,8 @@ interface StatsPayload {
     productColumnReady: boolean;
     ledgerReady: boolean;
     orderCount: number;
-    /** ยอดสุทธิที่เข้าบัญชี Stripe จริง (null = ดึงไม่ได้) */
-    stripeNet: number | null;
+    /** ตัวเลขฝั่ง Stripe ไว้กระทบยอด (null = ดึงไม่ได้) */
+    stripe: { gross: number; net: number; saleCount: number } | null;
     categories: { expense: string[]; income: string[] };
   };
 }
@@ -489,9 +489,40 @@ function FinanceBlock({
         <Kpi
           label="กำไรต่อ 1 ชุด"
           value={baht(f.profitPerUnit)}
-          sub={meta.stripeNet !== null ? `เงินเข้า Stripe จริง ${baht(meta.stripeNet)}` : undefined}
+          sub={meta.stripe ? `เงินสุทธิจากการขาย ${baht(meta.stripe.net)}` : undefined}
         />
       </div>
+
+      {meta.stripe && (
+        <Card>
+          <p className="text-sm font-semibold">กระทบยอดกับ Stripe</p>
+          <div className="mt-2 grid gap-2 text-sm sm:grid-cols-3">
+            <div className="flex justify-between gap-2 sm:block">
+              <span className="text-ink/50">ยอดขายที่บันทึกในเว็บ</span>
+              <span className="block font-semibold tabular-nums">{baht(f.income.shop)}</span>
+            </div>
+            <div className="flex justify-between gap-2 sm:block">
+              <span className="text-ink/50">
+                ยอดที่ Stripe รับจริง <span className="text-xs">({num(meta.stripe.saleCount)} รายการ)</span>
+              </span>
+              <span className="block font-semibold tabular-nums">{baht(meta.stripe.gross)}</span>
+            </div>
+            <div className="flex justify-between gap-2 sm:block">
+              <span className="text-ink/50">ส่วนต่าง</span>
+              <span
+                className={`block font-semibold tabular-nums ${
+                  Math.abs(meta.stripe.gross - f.income.shop) > 1 ? "text-maroon" : "text-emerald-700"
+                }`}
+              >
+                {baht(meta.stripe.gross - f.income.shop)}
+              </span>
+            </div>
+          </div>
+          <p className="mt-2 text-xs text-ink/40">
+            ตัวเลขสองฝั่งควรตรงกัน ถ้าต่างกันมากแปลว่ามีออเดอร์ที่สถานะในเว็บไม่ตรงกับเงินที่เข้าจริง
+          </p>
+        </Card>
+      )}
 
       <div className="grid gap-4 md:grid-cols-2">
         <Card>

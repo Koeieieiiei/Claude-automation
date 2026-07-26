@@ -79,7 +79,14 @@ export async function GET(req: NextRequest) {
         productColumnReady: orders.length === 0 || orders.some((o) => "product_id" in o),
         ledgerReady: ledger.ready,
         orderCount: orders.length,
-        stripeNet: stripeFees ? stripeFees.net : null,
+        // ตัวเลขฝั่ง Stripe ไว้กระทบยอดกับที่บันทึกในเว็บ (ควรใกล้เคียงกัน)
+        stripe: stripeFees
+          ? {
+              gross: stripeFees.grossFromSales,
+              net: stripeFees.netFromSales,
+              saleCount: stripeFees.saleCount,
+            }
+          : null,
         categories: { expense: EXPENSE_CATEGORIES, income: INCOME_CATEGORIES },
       },
     });

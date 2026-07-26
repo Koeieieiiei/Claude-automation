@@ -185,12 +185,23 @@ npx vercel --prod --yes
 เปลี่ยนรหัสผ่านแล้วคุกกี้เก่าใช้ไม่ได้ทันที) · จำกัดการเดารหัส 10 ครั้ง/10 นาทีต่อ IP ·
 `robots.txt` กัน `/admin` · API คืน 401 ถ้าไม่มีคุกกี้
 
+### บัญชีรายรับรายจ่าย (ในหน้า /admin)
+นับตั้งแต่ **24 ก.ค. 2026** (วันแรกที่ขาย Mock ราคา ฿159 — เปลี่ยนได้ที่ env `LEDGER_START_DATE`)
+- **รายรับ** = ยอดขายบนเว็บ (อ่านจาก `orders` อัตโนมัติ) + รายรับนอกเว็บที่กรอกเอง
+- **รายจ่าย** = ค่าธรรมเนียม Stripe (ดึงจาก Balance Transactions อัตโนมัติ = ตัวเลขที่หักจริง
+  ไม่ใช่ประมาณจาก %) + รายจ่ายที่กรอกเอง (ค่าโฆษณา/โดเมน/โฮสต์/ฯลฯ)
+- โชว์ กำไรสุทธิ · อัตรากำไร · กำไรต่อ 1 ชุด · รายจ่ายแยกหมวด · กำไรรายเดือน · ตารางรายการ (ลบได้)
+- เก็บในตาราง `ledger` — เพิ่ม/ลบผ่านหน้าเว็บได้เลย ไม่ต้องแตะฐานข้อมูล
+
 **ตั้งค่า 3 ขั้น**
-1. Supabase → SQL Editor → รัน [supabase/migration-product-id.sql](supabase/migration-product-id.sql)
-   (เพิ่มคอลัมน์ `product_id` — ไม่รันก็ใช้ได้ ระบบจะเดาสินค้าจากราคาให้ก่อน)
+1. Supabase → SQL Editor → รัน [supabase/migration-admin.sql](supabase/migration-admin.sql)
+   (เพิ่มคอลัมน์ `product_id` + สร้างตาราง `ledger` — รันครั้งเดียวจบ ปลอดภัย รันซ้ำได้)
 2. เติมข้อมูลย้อนหลัง: `node --env-file=.env.local scripts/backfill-product-id.mjs` (ดูผลก่อน)
    แล้วเติม `--write` เมื่อพร้อมเขียนจริง
 3. ตั้ง `ADMIN_PASSWORD` ใน `.env.local` และใน Vercel → Settings → Environment Variables → deploy ใหม่
+
+> ⚠️ `.env.local` ในเครื่องใช้คีย์ Stripe **โหมดทดสอบ** ค่าธรรมเนียมจึงขึ้น ฿0 ตอนรัน local —
+> บนเว็บจริง (คีย์ live) ตัวเลขเป็นของจริง
 
 **เชื่อม Google Analytics (ไม่บังคับ)**: สร้าง Service Account ใน Google Cloud → เปิด
 "Google Analytics Data API" → เพิ่มอีเมล service account เป็น **Viewer** ใน GA4 →

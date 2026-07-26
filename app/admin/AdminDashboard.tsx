@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import type { ProductStats, SalesSummary } from "@/lib/admin-stats";
+import type { FinanceSummary } from "@/lib/finance";
 import type { GaSummary } from "@/lib/ga";
 
 interface ExamStat {
@@ -14,9 +15,18 @@ interface ExamStat {
 
 interface StatsPayload {
   sales: SalesSummary;
+  finance: FinanceSummary;
   exams: ExamStat[];
   ga: GaSummary | null;
-  meta: { gaConfigured: boolean; productColumnReady: boolean; orderCount: number };
+  meta: {
+    gaConfigured: boolean;
+    productColumnReady: boolean;
+    ledgerReady: boolean;
+    orderCount: number;
+    /** ยอดสุทธิที่เข้าบัญชี Stripe จริง (null = ดึงไม่ได้) */
+    stripeNet: number | null;
+    categories: { expense: string[]; income: string[] };
+  };
 }
 
 /* ================= ตัวช่วยจัดรูปแบบ ================= */
@@ -295,6 +305,345 @@ function ProductCard({ p, rank }: { p: ProductStats; rank: number }) {
   );
 }
 
+/* ================= บัญชีรายรับรายจ่าย ================= */
+
+/** วันนี้ตามเวลาไทยในรูปแบบ YYYY-MM-DD (ค่าเริ่มต้นของช่องวันที่) */
+const todayBkk = () => new Date().toLocaleDateString("en-CA", TH_DATE);
+
+const monthLabel = (ym: string) =>
+  new Date(`${ym}-01T00:00:00+07:00`).toLocaleDateString("th-TH", {
+    ...TH_DATE,
+    month: "long",
+    year: "numeric",
+  });
+
+function LedgerForm({
+  categories,
+  onSaved,
+}: {
+  categories: { expense: string[]; income: string[] };
+  onSaved: () => void;
+}) {
+  const [kind, setKind] = useState<"expense" | "income">("expense");
+  const [category, setCategory] = useState(categories.expense[0] ?? "อื่น ๆ");
+  const [customCategory, setCustomCategory] = useState("");
+  const [occurredOn, setOccurredOn] = useState(todayBkk());
+  const [note, setNote] = useState("");
+  const [amount, setAmount] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState("");
+
+  const list = kind === "expense" ? categories.expense : categories.income;
+
+  function switchKind(next: "expense" | "income") {
+    setKind(next);
+    setCategory((next === "expense" ? categories.expense : categories.income)[0] ?? "อื่น ๆ");
+  }
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    const value = Number(amount);
+    if (!Number.isFinite(value) || value <= 0) {
+      setMsg("กรอกจำนวนเงินให้ถูกต้อง");
+      return;
+    }
+    setBusy(true);
+    setMsg("");
+    try {
+      const res = await fetch("/api/admin/ledger", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          occurredOn,
+          kind,
+          category: category === "อื่น ๆ" && customCategory.trim() ? customCategory.trim() : category,
+          note,
+          amount: value,
+        }),
+      });
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      if (!res.ok) {
+        setMsg(data.error ?? "บันทึกไม่สำเร็จ");
+        return;
+      }
+      setAmount("");
+      setNote("");
+      setCustomCategory("");
+      setMsg("บันทึกแล้ว");
+      onSaved();
+    } catch {
+      setMsg("เชื่อมต่อไม่สำเร็จ");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const field = "w-full rounded-xl border border-grid bg-paper px-3 py-2 text-sm outline-none focus:border-maroon";
+
+  return (
+    <form onSubmit={submit} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
+      <div className="lg:col-span-1">
+        <label className="text-xs text-ink/50">ประเภท</label>
+        <select
+          value={kind}
+          onChange={(e) => switchKind(e.target.value as "expense" | "income")}
+          className={field}
+        >
+          <option value="expense">รายจ่าย</option>
+          <option value="income">รายรับ (นอกเว็บ)</option>
+        </select>
+      </div>
+      <div className="lg:col-span-1">
+        <label className="text-xs text-ink/50">วันที่</label>
+        <input
+          type="date"
+          value={occurredOn}
+          onChange={(e) => setOccurredOn(e.target.value)}
+          className={field}
+        />
+      </div>
+      <div className="lg:col-span-1">
+        <label className="text-xs text-ink/50">หมวด</label>
+        <select value={category} onChange={(e) => setCategory(e.target.value)} className={field}>
+          {list.map((c) => (
+            <option key={c} value={c}>
+              {c}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="lg:col-span-1">
+        <label className="text-xs text-ink/50">
+          {category === "อื่น ๆ" ? "ตั้งชื่อหมวดเอง" : "รายละเอียด"}
+        </label>
+        {category === "อื่น ๆ" ? (
+          <input
+            value={customCategory}
+            onChange={(e) => setCustomCategory(e.target.value)}
+            placeholder="เช่น ค่าพิมพ์เอกสาร"
+            className={field}
+          />
+        ) : (
+          <input
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            placeholder="ไม่ใส่ก็ได้"
+            className={field}
+          />
+        )}
+      </div>
+      <div className="lg:col-span-1">
+        <label className="text-xs text-ink/50">จำนวนเงิน (บาท)</label>
+        <input
+          type="number"
+          inputMode="decimal"
+          min="0"
+          step="0.01"
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
+          className={field}
+        />
+      </div>
+      <div className="flex items-end gap-2 lg:col-span-1">
+        <button
+          type="submit"
+          disabled={busy}
+          className="w-full rounded-xl bg-maroon px-4 py-2 text-sm font-semibold text-white hover:bg-maroon-dark disabled:opacity-50"
+        >
+          {busy ? "กำลังบันทึก…" : "เพิ่มรายการ"}
+        </button>
+      </div>
+      {msg && <p className="text-xs text-maroon sm:col-span-2 lg:col-span-6">{msg}</p>}
+    </form>
+  );
+}
+
+function FinanceBlock({
+  f,
+  meta,
+  onChanged,
+}: {
+  f: FinanceSummary;
+  meta: StatsPayload["meta"];
+  onChanged: () => void;
+}) {
+  async function remove(id: string, label: string) {
+    if (!window.confirm(`ลบรายการ "${label}" ออกจากบัญชี?`)) return;
+    await fetch(`/api/admin/ledger?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+    onChanged();
+  }
+
+  return (
+    <div className="space-y-4">
+      {!meta.ledgerReady && (
+        <p className="rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+          ยังสร้างตารางบัญชีไม่ได้ — รันไฟล์ <code>supabase/migration-admin.sql</code> ใน Supabase ก่อน
+          จึงจะบันทึกรายจ่ายได้ (ตัวเลขรายรับกับค่าธรรมเนียมด้านล่างยังถูกต้องอยู่)
+        </p>
+      )}
+
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <Kpi label="รายรับรวม" value={baht(f.income.total)} sub={`ขายได้ ${num(f.income.shopUnits)} ชุด`} />
+        <Kpi label="รายจ่ายรวม" value={baht(f.expense.total)} sub={`ค่าธรรมเนียม ${baht(f.expense.stripeFees)}`} />
+        <Kpi label="กำไรสุทธิ" value={baht(f.profit)} sub={`อัตรากำไร ${pct(f.margin)}`} accent />
+        <Kpi
+          label="กำไรต่อ 1 ชุด"
+          value={baht(f.profitPerUnit)}
+          sub={meta.stripeNet !== null ? `เงินเข้า Stripe จริง ${baht(meta.stripeNet)}` : undefined}
+        />
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card>
+          <p className="mb-2 text-sm font-semibold">รายรับมาจากไหน</p>
+          <ul className="space-y-2 text-sm">
+            <li className="flex justify-between border-b border-grid/60 pb-2">
+              <span className="text-ink/70">
+                ขายบนเว็บ <span className="text-xs text-ink/40">({num(f.income.shopUnits)} ชุด)</span>
+              </span>
+              <span className="font-semibold tabular-nums">{baht(f.income.shop)}</span>
+            </li>
+            <li className="flex justify-between border-b border-grid/60 pb-2">
+              <span className="text-ink/70">รายรับนอกเว็บ (กรอกเอง)</span>
+              <span className="font-semibold tabular-nums">{baht(f.income.manual)}</span>
+            </li>
+            <li className="flex justify-between pt-1 font-bold">
+              <span>รวม</span>
+              <span className="tabular-nums">{baht(f.income.total)}</span>
+            </li>
+          </ul>
+        </Card>
+
+        <Card>
+          <p className="mb-2 text-sm font-semibold">รายจ่ายแยกหมวด</p>
+          {f.expense.byCategory.length ? (
+            <ul className="space-y-2">
+              {f.expense.byCategory.map((c) => (
+                <li key={c.label}>
+                  <div className="flex items-baseline justify-between gap-2 text-sm">
+                    <span className="truncate text-ink/70">
+                      {c.label}
+                      {c.auto && <span className="ml-1 text-[10px] text-ink/40">(อัตโนมัติ)</span>}
+                    </span>
+                    <span className="shrink-0 font-semibold tabular-nums">{baht(c.amount)}</span>
+                  </div>
+                  <Meter value={c.share} className="mt-1 h-1.5" />
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-ink/40">ยังไม่มีรายจ่ายในระบบ</p>
+          )}
+          {!f.expense.stripeFeesAvailable && (
+            <p className="mt-3 text-xs text-ink/50">
+              * ยังดึงค่าธรรมเนียมจาก Stripe ไม่ได้ ตัวเลขรายจ่ายจึงยังไม่รวมส่วนนี้
+            </p>
+          )}
+        </Card>
+      </div>
+
+      <Card>
+        <p className="mb-3 text-sm font-semibold">บันทึกรายการใหม่</p>
+        <LedgerForm categories={meta.categories} onSaved={onChanged} />
+      </Card>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card>
+          <p className="mb-2 text-sm font-semibold">กำไรรายเดือน</p>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[380px] text-sm">
+              <thead>
+                <tr className="border-b border-grid text-left text-xs text-ink/50">
+                  <th className="pb-2 font-medium">เดือน</th>
+                  <th className="pb-2 text-right font-medium">รายรับ</th>
+                  <th className="pb-2 text-right font-medium">รายจ่าย</th>
+                  <th className="pb-2 text-right font-medium">กำไร</th>
+                </tr>
+              </thead>
+              <tbody>
+                {f.monthly.map((m) => (
+                  <tr key={m.month} className="border-b border-grid/60 last:border-0">
+                    <td className="py-2">{monthLabel(m.month)}</td>
+                    <td className="py-2 text-right tabular-nums">{baht(m.income)}</td>
+                    <td className="py-2 text-right tabular-nums text-ink/60">{baht(m.expense)}</td>
+                    <td
+                      className={`py-2 text-right font-semibold tabular-nums ${
+                        m.profit < 0 ? "text-maroon" : ""
+                      }`}
+                    >
+                      {baht(m.profit)}
+                    </td>
+                  </tr>
+                ))}
+                {!f.monthly.length && (
+                  <tr>
+                    <td colSpan={4} className="py-3 text-center text-ink/40">
+                      ยังไม่มีข้อมูลในช่วงที่นับ
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+
+        <Card>
+          <p className="mb-2 text-sm font-semibold">รายการที่บันทึกเอง</p>
+          <div className="max-h-80 overflow-auto">
+            <table className="w-full min-w-[420px] text-sm">
+              <thead>
+                <tr className="border-b border-grid text-left text-xs text-ink/50">
+                  <th className="pb-2 font-medium">วันที่</th>
+                  <th className="pb-2 font-medium">หมวด</th>
+                  <th className="pb-2 text-right font-medium">จำนวน</th>
+                  <th className="pb-2"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {f.entries.map((e) => (
+                  <tr key={e.id} className="border-b border-grid/60 last:border-0">
+                    <td className="whitespace-nowrap py-2 pr-2 text-ink/60">
+                      {dateOnly(`${e.occurred_on}T00:00:00+07:00`)}
+                    </td>
+                    <td className="py-2 pr-2">
+                      {e.category}
+                      {e.note && <span className="block text-xs text-ink/40">{e.note}</span>}
+                    </td>
+                    <td
+                      className={`py-2 text-right font-semibold tabular-nums ${
+                        e.kind === "income" ? "text-emerald-700" : ""
+                      }`}
+                    >
+                      {e.kind === "income" ? "+" : "−"}
+                      {baht(e.amount)}
+                    </td>
+                    <td className="py-2 pl-2 text-right">
+                      <button
+                        onClick={() => remove(e.id, `${e.category} ${baht(e.amount)}`)}
+                        className="text-xs text-ink/40 hover:text-maroon"
+                        title="ลบรายการนี้"
+                      >
+                        ลบ
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+                {!f.entries.length && (
+                  <tr>
+                    <td colSpan={4} className="py-3 text-center text-ink/40">
+                      ยังไม่มีรายการที่บันทึกเอง
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
 /* ================= ส่วน Google Analytics ================= */
 
 function GaBlock({ ga, configured }: { ga: GaSummary | null; configured: boolean }) {
@@ -501,7 +850,7 @@ export default function AdminDashboard() {
         {data && !data.meta.productColumnReady && (
           <p className="mt-4 rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800">
             ยังไม่ได้เพิ่มคอลัมน์ <code>product_id</code> ในตาราง orders — ตอนนี้ระบบ<b>เดาสินค้าจากราคา</b>ให้ก่อน
-            (แม่นสำหรับราคาปัจจุบัน) รันไฟล์ <code>supabase/migration-product-id.sql</code> ใน Supabase เพื่อให้แม่นยำ 100%
+            (แม่นสำหรับราคาปัจจุบัน) รันไฟล์ <code>supabase/migration-admin.sql</code> ใน Supabase เพื่อให้แม่นยำ 100%
           </p>
         )}
 
@@ -554,6 +903,14 @@ export default function AdminDashboard() {
                   )}
                 </Card>
               </div>
+            </Section>
+
+            {/* ===== บัญชีรายรับรายจ่าย ===== */}
+            <Section
+              title="บัญชีรายรับรายจ่าย"
+              hint={`นับตั้งแต่ ${dateOnly(`${data.finance.startDate}T00:00:00+07:00`)} (วันแรกที่ขาย Mock ราคา ฿159) · ค่าธรรมเนียม Stripe ดึงอัตโนมัติ`}
+            >
+              <FinanceBlock f={data.finance} meta={data.meta} onChanged={load} />
             </Section>
 
             {/* ===== แจกแจงรายสินค้า ===== */}

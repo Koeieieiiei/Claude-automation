@@ -5,8 +5,9 @@ const base = config.baseUrl.startsWith("http") ? config.baseUrl : "https://tpat3
 
 export default function robots(): MetadataRoute.Robots {
   return {
-    // อนุญาตให้เก็บหน้าสาธารณะได้ แต่กันหน้า API (มีลิงก์ดาวน์โหลดฝังโทเค็น) และหน้าขอบคุณ
-    rules: { userAgent: "*", allow: "/", disallow: ["/api/", "/success"] },
+    // อนุญาตให้เก็บหน้าสาธารณะได้ แต่กันหน้า API (มีลิงก์ดาวน์โหลดฝังโทเค็น)
+    // หน้าขอบคุณ และหน้าสรุปยอดขายหลังร้าน
+    rules: { userAgent: "*", allow: "/", disallow: ["/api/", "/success", "/admin"] },
     sitemap: `${base}/sitemap.xml`,
   };
 }

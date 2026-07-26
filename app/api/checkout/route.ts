@@ -36,7 +36,13 @@ export async function POST(req: NextRequest) {
 
   try {
     // 1) สร้าง order (สถานะ pending)
-    const order = await createOrder({ firstName, lastName, email, amount: product.price });
+    const order = await createOrder({
+      firstName,
+      lastName,
+      email,
+      amount: product.price,
+      productId: product.id,
+    });
 
     const stripe = getStripe();
 

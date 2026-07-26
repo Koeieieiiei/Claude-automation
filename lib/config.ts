@@ -49,6 +49,22 @@ export const config = {
     privateKey: env("GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY").replace(/\\n/g, "\n"),
   },
 
+  /** หน้าสรุปยอดขาย /admin — เข้าได้เฉพาะคนที่รู้รหัสผ่านนี้ */
+  admin: {
+    password: env("ADMIN_PASSWORD"),
+    /** อายุการล็อกอิน (วัน) */
+    sessionDays: Number(env("ADMIN_SESSION_DAYS", "7")) || 7,
+  },
+
+  /** Google Analytics 4 — Data API (ดึงสถิติผู้เข้าชมมาโชว์บนหน้า /admin) */
+  ga: {
+    // Property ID เป็น "ตัวเลขล้วน" (คนละตัวกับ Measurement ID G-XXXX)
+    propertyId: env("GA4_PROPERTY_ID"),
+    // ใช้ service account ตัวเดียวกับ Google Sheets ได้ (แค่เพิ่มสิทธิ์ Viewer ใน GA4)
+    clientEmail: env("GOOGLE_SERVICE_ACCOUNT_EMAIL"),
+    privateKey: env("GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY").replace(/\\n/g, "\n"),
+  },
+
   download: {
     secret: downloadSecret || "dev-insecure-secret",
     /**
@@ -76,4 +92,7 @@ export const ready = {
   stripeWebhook: Boolean(config.stripe.webhookSecret),
   resend: Boolean(config.resend.apiKey),
   sheets: Boolean(config.sheets.id && config.sheets.clientEmail && config.sheets.privateKey),
+  // หน้า /admin ต้องมีทั้งรหัสผ่านและ secret สำหรับเซ็นคุกกี้ ไม่งั้นถือว่ายังไม่เปิดใช้
+  admin: Boolean(config.admin.password && config.download.secret),
+  ga: Boolean(config.ga.propertyId && config.ga.clientEmail && config.ga.privateKey),
 };

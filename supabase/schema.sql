@@ -12,11 +12,16 @@ create table if not exists public.orders (
   amount numeric not null,
   status text not null default 'pending',          -- pending | paid | delivered
   stripe_session_id text,
+  product_id text,                                 -- สินค้าที่สั่ง (ProductId ใน lib/catalog.ts)
   created_at timestamptz not null default now()
 );
 
 create index if not exists orders_email_idx on public.orders (email);
 create index if not exists orders_status_idx on public.orders (status);
+create index if not exists orders_product_id_idx on public.orders (product_id);
+create index if not exists orders_created_at_idx on public.orders (created_at desc);
+
+-- ⚠️ ร้านที่สร้างตารางไว้ก่อนมีคอลัมน์ product_id ให้รัน supabase/migration-product-id.sql
 
 -- เปิด Row Level Security (RLS) — เราเข้าถึงผ่าน service role key ฝั่ง server เท่านั้น
 -- จึงไม่ต้องสร้าง policy สำหรับ anon (service role ข้าม RLS อยู่แล้ว)

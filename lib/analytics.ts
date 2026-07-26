@@ -16,6 +16,8 @@ declare global {
 }
 
 export type ExamEvent =
+  /** กดโหลดไฟล์ตัวอย่างฟรี (เดโม) */
+  | "download_sample"
   /** กดปุ่มใหญ่หน้าแรก "ทำข้อสอบ Mock TPAT3" */
   | "click_exam_cta"
   /** เปิดฟอร์มสั่งซื้อ (กดปุ่มสั่งซื้อใบใดก็ได้) */

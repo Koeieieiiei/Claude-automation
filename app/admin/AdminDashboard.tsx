@@ -101,6 +101,41 @@ function Section({
   );
 }
 
+/** หัวข้อแบบพับเก็บได้ — เริ่มต้นพับไว้ กดที่หัวข้อเพื่อกาง (เจ้าของขอ 2026-07-26) */
+function FoldSection({
+  title,
+  hint,
+  children,
+}: {
+  title: string;
+  hint?: string;
+  children: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <section className="mt-8">
+      <button
+        onClick={() => setOpen(!open)}
+        className="flex w-full flex-wrap items-baseline gap-x-3 gap-y-1 text-left"
+        aria-expanded={open}
+      >
+        <h2 className="text-lg font-bold">
+          <span
+            className={`mr-2 inline-block text-sm text-maroon transition-transform ${open ? "rotate-90" : ""}`}
+            aria-hidden
+          >
+            ▶
+          </span>
+          {title}
+        </h2>
+        {hint && <p className="text-xs text-ink/50">{hint}</p>}
+        <span className="ml-auto text-xs text-ink/40">{open ? "ซ่อน" : "กดเพื่อดู"}</span>
+      </button>
+      {open && <div className="mt-3">{children}</div>}
+    </section>
+  );
+}
+
 function Kpi({
   label,
   value,
@@ -302,6 +337,89 @@ function ProductCard({ p, rank }: { p: ProductStats; rank: number }) {
         </div>
       </dl>
     </Card>
+  );
+}
+
+/* ================= อัตราส่วนสำคัญ (Conversion Ratios) ================= */
+
+function RatioCard({
+  title,
+  numerator,
+  denominator,
+  numLabel,
+  denLabel,
+  hint,
+}: {
+  title: string;
+  numerator: number;
+  denominator: number;
+  numLabel: string;
+  denLabel: string;
+  hint?: string;
+}) {
+  const ok = denominator > 0;
+  const ratio = ok ? (numerator / denominator) * 100 : 0;
+  return (
+    <Card>
+      <p className="text-xs font-semibold text-ink/50">{title}</p>
+      <p className="mt-1 text-2xl font-bold tabular-nums">{ok ? pct(ratio) : "—"}</p>
+      <p className="mt-0.5 text-xs text-ink/50">
+        {ok
+          ? `${numLabel} ${num(numerator)} ÷ ${denLabel} ${num(denominator)}`
+          : hint ?? `ยังไม่มีข้อมูล${denLabel}`}
+      </p>
+      {ok && <Meter value={Math.min(ratio, 100)} className="mt-2 h-1.5" />}
+    </Card>
+  );
+}
+
+/**
+ * อัตราส่วนการเปลี่ยนผู้เข้าชมเป็นลูกค้า (เจ้าของขอ 2026-07-26)
+ * ทุกตัวใช้กรอบเวลาเดียวกัน 30 วัน: ผู้เข้าชม/อีเวนต์จาก GA · ยอดซื้อจากตาราง orders
+ */
+function RatiosBlock({ ga, sales }: { ga: GaSummary | null; sales: SalesSummary }) {
+  if (!ga) {
+    return (
+      <p className="rounded-xl border border-grid bg-white px-3 py-2 text-sm text-ink/50">
+        อัตราส่วนต่าง ๆ (ยอดขายต่อคนเข้าเว็บ ฯลฯ) จะคำนวณให้เมื่อเชื่อม Google Analytics แล้ว
+      </p>
+    );
+  }
+  const buys = sales.totals.d30.units;
+  const demo = ga.events.find((e) => e.event === "download_sample")?.count ?? 0;
+  return (
+    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <RatioCard
+        title="คนเข้าเว็บ → ซื้อ"
+        numerator={buys}
+        denominator={ga.activeUsers}
+        numLabel="ซื้อ"
+        denLabel="ผู้เข้าชม"
+      />
+      <RatioCard
+        title="คนเข้าเว็บ → โหลดเดโม"
+        numerator={demo}
+        denominator={ga.activeUsers}
+        numLabel="โหลดเดโม"
+        denLabel="ผู้เข้าชม"
+        hint="เพิ่งเริ่มนับการโหลดเดโมวันนี้ — รอคนกดครั้งแรก"
+      />
+      <RatioCard
+        title="โหลดเดโม → ซื้อ"
+        numerator={buys}
+        denominator={demo}
+        numLabel="ซื้อ"
+        denLabel="คนโหลดเดโม"
+        hint="เพิ่งเริ่มนับการโหลดเดโมวันนี้ — รอคนกดครั้งแรก"
+      />
+      <RatioCard
+        title="เปิดฟอร์ม → จ่ายจริง"
+        numerator={ga.events.find((e) => e.event === "purchase_success")?.count ?? 0}
+        denominator={ga.events.find((e) => e.event === "open_buy_form")?.count ?? 0}
+        numLabel="จ่ายสำเร็จ"
+        denLabel="เปิดฟอร์ม"
+      />
+    </div>
   );
 }
 
@@ -936,6 +1054,14 @@ export default function AdminDashboard() {
               </div>
             </Section>
 
+            {/* ===== อัตราส่วนสำคัญ ===== */}
+            <Section
+              title="อัตราส่วนสำคัญ"
+              hint="กรอบเวลาเดียวกัน 30 วันล่าสุด · ผู้เข้าชมจาก GA (เริ่มเก็บ 26 ก.ค.) · ยอดซื้อจากระบบร้าน"
+            >
+              <RatiosBlock ga={data.ga} sales={s} />
+            </Section>
+
             {/* ===== บัญชีรายรับรายจ่าย ===== */}
             <Section
               title="บัญชีรายรับรายจ่าย"
@@ -1055,7 +1181,10 @@ export default function AdminDashboard() {
 
             {/* ===== ลูกค้าซื้อซ้ำ ===== */}
             {s.repeatCustomers.length > 0 && (
-              <Section title="ลูกค้าที่ซื้อซ้ำ" hint="ซื้อมากกว่า 1 ครั้ง">
+              <FoldSection
+                title="ลูกค้าที่ซื้อซ้ำ"
+                hint={`${num(s.repeatCustomerCount)} คน · ซื้อมากกว่า 1 ครั้ง`}
+              >
                 <Card className="overflow-x-auto">
                   <table className="w-full min-w-[520px] text-sm">
                     <thead>
@@ -1080,11 +1209,14 @@ export default function AdminDashboard() {
                     </tbody>
                   </table>
                 </Card>
-              </Section>
+              </FoldSection>
             )}
 
             {/* ===== ออเดอร์ล่าสุด ===== */}
-            <Section title="ออเดอร์ล่าสุด" hint="รวมรายการที่กดสั่งแล้วยังไม่จ่ายด้วย">
+            <FoldSection
+              title="ออเดอร์ล่าสุด"
+              hint={`${num(Math.min(s.recent.length, 40))} รายการ · รวมที่กดสั่งแล้วยังไม่จ่ายด้วย`}
+            >
               <Card className="overflow-x-auto">
                 <table className="w-full min-w-[700px] text-sm">
                   <thead>
@@ -1113,7 +1245,7 @@ export default function AdminDashboard() {
                   </tbody>
                 </table>
               </Card>
-            </Section>
+            </FoldSection>
 
             {/* ===== Google Analytics ===== */}
             <Section title="ผู้เข้าชมเว็บ (Google Analytics)" hint="30 วันล่าสุด">

@@ -419,6 +419,8 @@ function SampleButton({ href, label, downloadName }: { href: string; label: stri
     <a
       href={href}
       download={downloadName}
+      // นับเข้า GA เพื่อคำนวณอัตราส่วน "คนเข้าเว็บ → โหลดเดโม → ซื้อ" บนหน้า /admin
+      onClick={() => trackEvent("download_sample", { file: downloadName })}
       className="mt-4 inline-flex w-full items-center justify-center gap-2.5 bg-[#3D4854] px-4 py-3.5 text-[0.95rem] font-bold text-white transition hover:-translate-y-0.5 hover:bg-[#2E3742]"
     >
       <DownloadIcon className="h-[17px] w-[17px]" />

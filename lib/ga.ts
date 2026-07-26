@@ -13,6 +13,7 @@ import { config, ready } from "./config";
  */
 
 const FUNNEL_EVENTS = [
+  { event: "download_sample", label: "โหลดไฟล์ตัวอย่าง (เดโม)" },
   { event: "open_buy_form", label: "เปิดฟอร์มสั่งซื้อ" },
   { event: "begin_checkout", label: "ไปหน้าชำระเงิน" },
   { event: "purchase_success", label: "ชำระเงินสำเร็จ" },

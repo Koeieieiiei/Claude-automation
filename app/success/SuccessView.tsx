@@ -9,6 +9,8 @@ interface DownloadLink {
   label: string;
   downloadName: string;
   url: string;
+  /** ไฟล์ชุด Mock (โจทย์/เฉลย/กระดาษคำตอบ) — ไม่โชว์ปุ่มโหลดก่อนสอบ กันเปิดเฉลยก่อน */
+  examFile?: boolean;
 }
 
 type Status = "loading" | "pending" | "ready" | "not_found" | "error";
@@ -142,6 +144,8 @@ export default function SuccessView() {
   if (status === "ready") {
     const expiry = formatExpiry(expiryHours);
     const expiryText = expiry ? `ได้อีก ${expiry}` : "ได้ตลอด ไม่มีวันหมดอายุ";
+    // ไฟล์ที่ไม่ใช่ชุดข้อสอบ (เช่น สรุปเนื้อหา/สูตรล้วนใน bundle) — โหลดได้ทันทีไม่ต้องรอสอบ
+    const instantLinks = links.filter((l) => !l.examFile);
     return (
       <Frame badge="ชำระแล้ว ✓">
         <div className="px-8 py-10">
@@ -170,6 +174,32 @@ export default function SuccessView() {
               <p className="mt-3 text-center font-label text-xs leading-relaxed text-ink/55">
                 💻 แนะนำให้ทำในคอมพิวเตอร์ หรือ iPad · 1 อีเมลมีสิทธิ์สอบ 1 รอบ
               </p>
+
+              {/* ไฟล์อื่นในชุด (เช่น สรุปเนื้อหา/สูตรล้วนของ bundle) ไม่ใช่สปอยล์ข้อสอบ
+                  — เปิดให้โหลดได้ทันที ไม่ต้องรอสอบเสร็จ */}
+              {instantLinks.length > 0 && (
+                <div className="mt-6">
+                  <p className="font-label text-[11px] font-semibold uppercase tracking-[0.18em] text-maroon">
+                    ไฟล์ในชุดที่โหลดได้เลย
+                  </p>
+                  <div className="mt-2.5 space-y-3">
+                    {instantLinks.map((l) => (
+                      <a
+                        key={l.url}
+                        href={l.url}
+                        download={l.downloadName}
+                        className="flex w-full items-center justify-between gap-3 border border-ink bg-white px-5 py-3.5 font-semibold text-ink transition hover:bg-ink hover:text-paper"
+                      >
+                        <span className="text-left text-[0.95rem] leading-snug">{l.label}</span>
+                        <DownloadIcon className="h-5 w-5 shrink-0" />
+                      </a>
+                    ))}
+                  </div>
+                  <p className="mt-2 font-label text-[12px] leading-snug text-ink/50">
+                    ระบบเตรียมไฟล์ให้ตอนกดดาวน์โหลด จึงอาจใช้เวลา 2–3 วินาทีต่อไฟล์
+                  </p>
+                </div>
+              )}
 
               <div className="mt-6 border border-maroon/40 bg-maroon/[0.04] px-5 py-4">
                 <p className="font-label text-[11px] font-semibold uppercase tracking-[0.18em] text-maroon">

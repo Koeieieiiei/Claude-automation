@@ -75,15 +75,25 @@ export async function GET(
     product,
   });
 
+  // ไฟล์ชุด Mock (โจทย์/เฉลย/กระดาษคำตอบ) ผูกกับการสอบออนไลน์ — หน้า success จะไม่โชว์
+  // ปุ่มโหลดไฟล์กลุ่มนี้ก่อนสอบ (เปิดเฉลยก่อน ผลวิเคราะห์จะไม่ตรงฝีมือจริง)
+  // ไฟล์อื่นของชุด เช่น สรุปเนื้อหา/สูตรล้วนใน bundle ไม่ใช่สปอยล์ข้อสอบ โหลดได้ทันที
+  const examFiles = new Set<string>(PRODUCTS.mock1.files);
+
   return NextResponse.json(
     {
       status: "ready",
       productName: product.name,
       expiryHours: config.download.expiryHours,
       email: order.email,
-      // ชุดที่มีไฟล์โจทย์ = มีสิทธิ์ทำข้อสอบออนไลน์ → หน้า success ชูปุ่ม "เริ่มสอบ" แทนปุ่มโหลดไฟล์
+      // ชุดที่มีไฟล์โจทย์ = มีสิทธิ์ทำข้อสอบออนไลน์ → หน้า success ชูปุ่ม "เริ่มสอบ" เป็นหลัก
       hasExam: product.files.includes("questions"),
-      links: links.map((l) => ({ label: l.label, downloadName: l.downloadName, url: l.url })),
+      links: links.map((l) => ({
+        label: l.label,
+        downloadName: l.downloadName,
+        url: l.url,
+        examFile: examFiles.has(l.file),
+      })),
     },
     { headers: { "Cache-Control": "no-store" } }
   );

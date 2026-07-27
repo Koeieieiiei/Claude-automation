@@ -231,8 +231,8 @@ export default function Home() {
       {/* ===== ไฟล์สรุปเนื้อหา ===== */}
       <section id="summaries" className="mx-auto max-w-6xl scroll-mt-20 px-5 pb-16">
         <h2 className="max-w-3xl font-display text-3xl font-bold leading-snug text-ink md:text-4xl">
-          ไฟล์สรุปเนื้อหาสำหรับสอบ TPAT3{" "}
-          <span className="text-lg font-medium text-ink/60 md:text-xl">
+          ไฟล์สรุปเนื้อหาสำหรับสอบ TPAT3
+          <span className="mt-2 block text-lg font-medium leading-relaxed text-ink/60 md:text-xl">
             — เป็นไฟล์ที่เน้น tricks ในการทำโจทย์ให้เก่งขึ้น เหมาะสำหรับผู้ที่มีพื้นฐานอยู่แล้ว
           </span>
         </h2>

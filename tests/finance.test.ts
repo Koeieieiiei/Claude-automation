@@ -134,6 +134,25 @@ describe("summarizeFinance", () => {
     expect(byMonth["2026-09"].income).toBe(99);
   });
 
+  it("ค่าธรรมเนียมรายเดือนกระจายตามยอดขายบนเว็บเท่านั้น (รายรับนอกเว็บไม่ถูกนับฐาน)", () => {
+    const f = summarizeFinance({
+      orders: [
+        order({ amount: 100, created_at: "2026-07-25T03:00:00.000Z" }),
+        order({ amount: 300, created_at: "2026-08-02T03:00:00.000Z" }),
+      ],
+      // รายรับนอกเว็บก้อนใหญ่ในเดือน ก.ค. — ต้องไม่ทำให้ ก.ค. โดนค่าธรรมเนียมเกินจริง
+      entries: [entry({ kind: "income", category: "ขายนอกเว็บ (โอนตรง)", amount: 500, occurred_on: "2026-07-26" })],
+      stripeFees: 40,
+      startDate: START,
+    });
+    const byMonth = Object.fromEntries(f.monthly.map((m) => [m.month, m]));
+    // ก.ค. ขายบนเว็บ 100 จาก 400 → ได้ค่าธรรมเนียม 10 · ส.ค. 300 จาก 400 → 30
+    expect(byMonth["2026-07"].expense).toBe(10);
+    expect(byMonth["2026-08"].expense).toBe(30);
+    // ผลรวมรายเดือนต้องเท่ากับค่าธรรมเนียมที่หักจริงพอดี
+    expect(f.monthly.reduce((s, m) => s + m.expense, 0)).toBeCloseTo(40, 2);
+  });
+
   it("ไม่มีข้อมูลเลยก็ไม่พัง", () => {
     const f = summarizeFinance({ orders: [], entries: [], stripeFees: null, startDate: START });
     expect(f.income.total).toBe(0);

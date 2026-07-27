@@ -84,6 +84,9 @@ export function summarizeFinance(input: {
   // ---- รายรับจากการขายบนเว็บ ----
   let shop = 0;
   let shopUnits = 0;
+  // ยอดขายบนเว็บแยกรายเดือน — ใช้เป็นฐานกระจายค่าธรรมเนียม Stripe
+  // (ต้องไม่ปนรายรับนอกเว็บ เพราะค่าธรรมเนียมเกิดจากการขายผ่าน Stripe เท่านั้น)
+  const shopByMonth = new Map<string, number>();
   for (const o of input.orders) {
     if (!isPaid(o)) continue;
     const day = bkkDayKey(o.created_at);
@@ -91,7 +94,9 @@ export function summarizeFinance(input: {
     const amount = Number(o.amount) || 0;
     shop += amount;
     shopUnits += 1;
-    month(day.slice(0, 7)).income += amount;
+    const monthKey = day.slice(0, 7);
+    month(monthKey).income += amount;
+    shopByMonth.set(monthKey, (shopByMonth.get(monthKey) ?? 0) + amount);
   }
 
   // ---- รายการที่กรอกเอง ----
@@ -120,11 +125,14 @@ export function summarizeFinance(input: {
   const stripeFees = input.stripeFees ?? 0;
   if (stripeFees > 0) {
     byCategory.set(STRIPE_FEE_CATEGORY, (byCategory.get(STRIPE_FEE_CATEGORY) ?? 0) + stripeFees);
-    // ค่าธรรมเนียมเกิดคู่กับการขาย จึงลงเดือนตามสัดส่วนรายรับของแต่ละเดือน
+    // ค่าธรรมเนียมเกิดคู่กับการขาย จึงลงเดือนตามสัดส่วน "ยอดขายบนเว็บ" ของแต่ละเดือน
+    // (ห้ามใช้ m.income ซึ่งรวมรายรับนอกเว็บ — จะทำให้เดือนนั้นโดนค่าธรรมเนียมเกินจริง
+    //  และผลรวมรายเดือนไม่เท่ากับค่าธรรมเนียมที่หักจริง)
     const totalShop = shop;
     if (totalShop > 0) {
-      for (const m of monthMap.values()) {
-        m.expense += round2((m.income / totalShop) * stripeFees);
+      for (const [key, m] of monthMap) {
+        const shopIncome = shopByMonth.get(key) ?? 0;
+        if (shopIncome > 0) m.expense += round2((shopIncome / totalShop) * stripeFees);
       }
     }
   }

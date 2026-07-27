@@ -70,6 +70,9 @@ export default function ExamView() {
   const answersRef = useRef(answers);
   answersRef.current = answers;
   const dirtyRef = useRef(false);
+  // กดส่งแล้วหรือยัง — ใช้ปิด autosave ทันที ไม่ให้คำขอบันทึกที่ค้างอยู่ตามไป
+  // เขียนทับผลที่ตรวจแล้ว (เคยทำให้หน้าผลบอกว่า "ยังไม่มีผลสอบ")
+  const submittedRef = useRef(false);
 
   const answeredCount = useMemo(() => answers.filter((a) => a > 0).length, [answers]);
 
@@ -207,6 +210,7 @@ export default function ExamView() {
   /* ---------- autosave: หน่วง 1.5 วิหลังแก้คำตอบ + ทุก 30 วิ กันพลาด ---------- */
 
   const saveNow = useCallback(async () => {
+    if (submittedRef.current) return; // กดส่งไปแล้ว — ห้ามบันทึกทับอีก
     if (!dirtyRef.current) return;
     dirtyRef.current = false;
     try {
@@ -245,30 +249,45 @@ export default function ExamView() {
 
   /* ---------- ส่งกระดาษคำตอบ ---------- */
 
+  /**
+   * ส่งกระดาษคำตอบ — ต้องได้ 200 จาก server ก่อนถึงจะพาไปหน้าผล
+   *
+   * ของเดิมนับ 409 เป็นสำเร็จด้วย ทั้งที่ 409 แปลว่า "server หาการสอบไม่เจอ" (ยังไม่ได้ตรวจ)
+   * ผลคือพาผู้สอบไปหน้าผลที่ไม่มีผล แล้วขึ้นว่า "ยังไม่มีผลสอบของอีเมลนี้"
+   * ตอนนี้: เน็ต/เซิร์ฟเวอร์สะดุด → ลองส่งซ้ำเองอีก 2 ครั้ง ยังไม่ได้ค่อยบอกให้กดใหม่
+   * (คำตอบถูก autosave ไว้แล้ว กดส่งใหม่ได้เสมอ ไม่มีอะไรหาย)
+   */
   const submitExam = useCallback(async () => {
     if (submitting) return;
     setSubmitting(true);
-    try {
-      const res = await fetch("/api/exam/submit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token, answers: answersRef.current }),
-      });
-      if (!res.ok && res.status !== 409) {
-        setSubmitting(false);
-        alert("ส่งไม่สำเร็จ ลองกดส่งอีกครั้ง");
-        return;
+    submittedRef.current = true; // ปิด autosave ทันที กันเขียนทับผลที่กำลังจะตรวจ
+
+    for (let round = 1; round <= 3; round++) {
+      try {
+        const res = await fetch("/api/exam/submit", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token, answers: answersRef.current }),
+        });
+        if (res.ok) {
+          trackEvent("exam_submit", {
+            exam_id: exam.id,
+            answered: answersRef.current.filter((a) => a > 0).length,
+          });
+          router.replace(`/exam/results?token=${encodeURIComponent(token)}`);
+          return;
+        }
+        if (res.status === 409) break; // server ยืนยันว่าไม่มีการสอบค้างอยู่ — ลองซ้ำไม่ช่วย
+      } catch {
+        /* เน็ตสะดุด — ลองใหม่ */
       }
-      trackEvent("exam_submit", {
-        exam_id: exam.id,
-        answered: answersRef.current.filter((a) => a > 0).length,
-      });
-      router.replace(`/exam/results?token=${encodeURIComponent(token)}`);
-    } catch {
-      setSubmitting(false);
-      alert("เชื่อมต่อไม่สำเร็จ ลองกดส่งอีกครั้ง");
+      if (round < 3) await new Promise((r) => setTimeout(r, 1500));
     }
-  }, [token, router, submitting]);
+
+    submittedRef.current = false; // ยังส่งไม่สำเร็จ — เปิด autosave กลับมาตามเดิม
+    setSubmitting(false);
+    alert("ส่งไม่สำเร็จ กรุณากดส่งอีกครั้ง (คำตอบของคุณถูกบันทึกไว้แล้ว ไม่หาย)");
+  }, [token, router, submitting, exam.id]);
 
   const onExpire = useCallback(() => {
     setTimeUp(true);
@@ -721,7 +740,7 @@ function SaveBadge({ savedAt }: { savedAt: Date | null }) {
   );
 }
 
-/* ---------- กระดาษคำตอบ 70 ข้อ × 5 ช้อยส์ (ใช้ทั้งแผงข้างและลิ้นชักมือถือ) ---------- */
+/* ---------- กระดาษคำตอบ (จำนวนข้อ/ช้อยส์ตามนิยามสนามสอบ — ใช้ทั้งแผงข้างและลิ้นชักมือถือ) ---------- */
 function AnswerSheet({
   exam,
   answers,
@@ -755,7 +774,7 @@ function AnswerSheet({
                   {no}
                 </button>
                 <div className="flex gap-1.5">
-                  {[1, 2, 3, 4, 5].map((c) => (
+                  {Array.from({ length: exam.choices }, (_, i) => i + 1).map((c) => (
                     <button
                       key={c}
                       onClick={() => onPick(no, c)}

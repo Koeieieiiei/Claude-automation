@@ -31,8 +31,14 @@ export async function GET(req: NextRequest) {
       attempt.correctCount === null ||
       attempt.score === null
     ) {
+      // บอกอีเมลที่กำลังตรวจไปด้วย — เดิมข้อความนี้เป็นทางตัน ผู้สอบไม่รู้ว่า
+      // ระบบกำลังดูผลของใครอยู่ (เช่น เครื่องยังจำสิทธิ์ของอีเมลอื่นค้างไว้)
       return NextResponse.json(
-        { error: "ยังไม่มีผลสอบของอีเมลนี้ — ต้องทำข้อสอบและกดส่งก่อน" },
+        {
+          error: `ยังไม่มีผลสอบของอีเมล ${payload.email} — ต้องทำข้อสอบและกดส่งก่อน`,
+          email: payload.email,
+          state,
+        },
         { status: 409 }
       );
     }
@@ -74,13 +80,26 @@ export async function GET(req: NextRequest) {
     });
 
     // ไฟล์แนบท้ายผล — ใช้ระบบลิงก์ดาวน์โหลด (ลายน้ำ) ตัวเดิมของร้าน
-    const downloads = buildDownloadLinks({
-      id: attempt.orderId,
-      firstName: attempt.firstName,
-      lastName: attempt.lastName,
-      email: attempt.email,
-      product: { ...PRODUCTS.mock1, files: exam.resultFiles },
-    });
+    //
+    // ⚠️ ห้ามให้ส่วนนี้ล้มทั้งหน้าผลสอบเด็ดขาด: การสร้างลิงก์ต้องใช้ DOWNLOAD_SECRET
+    // ที่ปลอดภัย ถ้าตั้งค่าพลาดเมื่อไหร่ createDownloadToken จะ throw แล้วผู้สอบจะเห็น
+    // หน้า error ทั้งที่ทำข้อสอบเสร็จและมีคะแนนอยู่แล้ว (เคยเกิดจริง 2026-07-26)
+    // — คะแนนกับบทวิเคราะห์คือหัวใจของหน้านี้ ลิงก์แนบเป็นของเสริม ขาดได้
+    let downloads: ReturnType<typeof buildDownloadLinks> = [];
+    try {
+      downloads = buildDownloadLinks({
+        id: attempt.orderId,
+        firstName: attempt.firstName,
+        lastName: attempt.lastName,
+        email: attempt.email,
+        product: { ...PRODUCTS.mock1, files: exam.resultFiles },
+      });
+    } catch (err) {
+      console.error(
+        "สร้างลิงก์ดาวน์โหลดแนบท้ายผลสอบไม่สำเร็จ — แสดงผลสอบตามปกติแต่ไม่มีปุ่มโหลดไฟล์:",
+        err
+      );
+    }
 
     return NextResponse.json({
       examId: exam.id,

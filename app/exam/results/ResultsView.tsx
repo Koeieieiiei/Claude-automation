@@ -7,10 +7,10 @@ import { DEFAULT_EXAM_ID } from "@/lib/exams";
 
 /**
  * หน้าผลสอบ + บทวิเคราะห์ละเอียด
- *   1) คะแนนของคุณ (สเกล 300) + อันดับเทียบผู้สอบทุกคน
+ *   1) คะแนนของคุณ (สเกลตามคะแนนเต็มของสนาม) + อันดับเทียบผู้สอบทุกคน
  *   2) สถิติภาพรวม: ค่าเฉลี่ย / SD / สูงสุด / ต่ำสุด + กราฟการแจกแจงคะแนน
- *   3) สรุปรายตอน (บท) 5 ตอน
- *   4) วิเคราะห์รายข้อทั้ง 70 ข้อ: บท · คำตอบ · ถูก/ผิด · ความยาก · %คนตอบถูก · คำแนะนำ (6 แบบ)
+ *   3) สรุปรายตอน (บท)
+ *   4) วิเคราะห์รายข้อทุกข้อ: บท · คำตอบ · ถูก/ผิด · ความยาก · %คนตอบถูก · คำแนะนำ (6 แบบ)
  *   5) ไฟล์โจทย์ + เฉลยแนบท้าย (ลายน้ำชื่อผู้ซื้อ ตามระบบดาวน์โหลดเดิม)
  */
 
@@ -69,13 +69,43 @@ export default function ResultsView() {
       setError("ไม่พบสิทธิ์ดูผลสอบ — เข้าห้องสอบด้วยอีเมลที่ซื้อก่อน");
       return;
     }
-    fetch(`/api/exam/results?token=${encodeURIComponent(token)}`, { cache: "no-store" })
-      .then(async (res) => {
+
+    let cancelled = false;
+    /**
+     * หน้านี้มักถูกเปิด "วินาทีเดียวกับที่เพิ่งกดส่งข้อสอบ" — ไฟล์ผลสอบเพิ่งถูกเขียน
+     * ถ้าจังหวะนั้น Storage คืนไฟล์เวอร์ชันเก่า/เน็ตสะดุด คำขอแรกอาจได้ 409/503
+     * ทั้งที่ผลบันทึกแล้วจริง (เคยค้างเกิน 5 วิ) จึงลองซ้ำให้เองอีก 5 รอบ ห่างรอบละ 2 วิ
+     * ก่อนยอมขึ้นข้อความผิดพลาด · ยกเว้น 403 (โทเค็นไม่ถูกต้อง/หมดอายุ) แจ้งทันที
+     */
+    const load = async (retriesLeft: number) => {
+      try {
+        const res = await fetch(`/api/exam/results?token=${encodeURIComponent(token)}`, {
+          cache: "no-store",
+        });
         const d = await res.json();
-        if (!res.ok) throw new Error(d.error ?? "โหลดผลสอบไม่สำเร็จ");
-        setData(d as ResultsData);
-      })
-      .catch((e: Error) => setError(e.message));
+        if (cancelled) return;
+        if (res.ok) {
+          setData(d as ResultsData);
+          return;
+        }
+        if (res.status !== 403 && retriesLeft > 0) {
+          setTimeout(() => !cancelled && load(retriesLeft - 1), 2000);
+          return;
+        }
+        setError(d.error ?? "โหลดผลสอบไม่สำเร็จ");
+      } catch {
+        if (cancelled) return;
+        if (retriesLeft > 0) {
+          setTimeout(() => !cancelled && load(retriesLeft - 1), 2000);
+          return;
+        }
+        setError("เชื่อมต่อไม่สำเร็จ — รีเฟรชหน้านี้อีกครั้ง");
+      }
+    };
+    load(5);
+    return () => {
+      cancelled = true;
+    };
     // ตั้งใจให้รันครั้งเดียวตอนเปิดหน้า
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -85,6 +115,11 @@ export default function ResultsView() {
       <main className="grid-paper flex min-h-screen items-center justify-center px-4">
         <div className="max-w-md border border-ink bg-paper px-8 py-10 text-center">
           <p className="text-ink/75">{error}</p>
+          <p className="mt-3 text-sm leading-relaxed text-ink/55">
+            ถ้าเพิ่งกดส่งไปแล้วเห็นข้อความนี้ ให้กดปุ่มด้านล่างแล้ว
+            <strong>กรอกชื่อ นามสกุล และอีเมลที่ใช้สอบ</strong> — ระบบจะพาไปหน้าผลสอบให้เอง
+            (ผลสอบไม่หายไปไหน)
+          </p>
           <a
             href="/exam"
             className="mt-6 inline-block bg-maroon px-6 py-3 font-bold text-paper transition hover:bg-maroon-dark"
@@ -215,7 +250,9 @@ export default function ResultsView() {
 
         {/* ===== วิเคราะห์รายข้อ ===== */}
         <section className="mt-10">
-          <h2 className="font-display text-2xl font-bold text-ink">วิเคราะห์รายข้อทั้ง 70 ข้อ</h2>
+          <h2 className="font-display text-2xl font-bold text-ink">
+            วิเคราะห์รายข้อทั้ง {score.totalQuestions} ข้อ
+          </h2>
           <div className="mt-5 space-y-4">
             {data.sections.map((s) => (
               <QuestionTable
@@ -227,7 +264,8 @@ export default function ResultsView() {
           </div>
         </section>
 
-        {/* ===== ไฟล์แนบท้าย ===== */}
+        {/* ===== ไฟล์แนบท้าย (ไม่มีลิงก์ = ข้ามทั้งบล็อก ไม่ต้องโชว์กล่องว่าง) ===== */}
+        {data.downloads.length > 0 && (
         <section className="mt-10 border-2 border-maroon bg-white p-6 md:p-8">
           <h2 className="font-display text-2xl font-bold text-ink">ไฟล์แนบท้ายผลสอบ</h2>
           <p className="mt-2 text-sm leading-relaxed text-ink/70">
@@ -255,6 +293,7 @@ export default function ResultsView() {
               : "ลิงก์ไม่มีวันหมดอายุ"}
           </p>
         </section>
+        )}
 
         <p className="mt-10 text-center font-label text-sm text-ink/50 print:hidden">
           มีข้อสงสัยเกี่ยวกับผลสอบ? ติดต่อ{" "}

@@ -121,13 +121,10 @@ export default function Home() {
 
       {/* ===== Hero ===== */}
       <section className="grid-paper relative overflow-hidden border-b border-grid">
-        <Gear teeth={16} className="pointer-events-none absolute -right-16 -top-16 h-72 w-72 text-maroon/[0.07]" spin="cw" />
-        <Gear teeth={12} className="pointer-events-none absolute right-28 top-40 h-36 w-36 text-steel/20" spin="ccw" />
-        <Gear teeth={14} className="pointer-events-none absolute -bottom-16 left-[-3rem] h-56 w-56 text-maroon/[0.06]" spin="ccw" />
-
-        <div className="relative mx-auto max-w-6xl px-5 py-14 md:py-20">
-          {/* คำทักทายจากผู้สร้าง — เจ้าของขอให้อยู่บนสุดของหน้า (2026-09-16) */}
-          <div className="mb-10 flex max-w-3xl flex-col gap-4 border-l-4 border-maroon bg-white/80 px-5 py-4 shadow-[0_12px_30px_-22px_rgba(36,16,22,0.5)] sm:flex-row sm:items-start sm:gap-5 md:px-6 md:py-5">
+        {/* คำทักทายจากผู้สร้าง — แถบเต็มความกว้างจอ ชนขอบซ้าย-ขวา (เจ้าของขอ 2026-09-16)
+            ตัวหนังสือด้านในยังเรียงตรงกับคอลัมน์เนื้อหา (max-w-6xl) เหมือนส่วนอื่นของหน้า */}
+        <div className="relative z-10 border-b border-grid border-l-4 border-l-maroon bg-white shadow-[0_12px_30px_-22px_rgba(36,16,22,0.5)]">
+          <div className="mx-auto flex max-w-6xl flex-col gap-4 px-5 pb-6 pt-5 sm:flex-row sm:items-center sm:gap-6 md:py-6">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/about/mako-square.jpg"
@@ -154,7 +151,12 @@ export default function Home() {
             </a>
             </div>
           </div>
+        </div>
+        <Gear teeth={16} className="pointer-events-none absolute -right-16 -top-16 h-72 w-72 text-maroon/[0.07]" spin="cw" />
+        <Gear teeth={12} className="pointer-events-none absolute right-28 top-40 h-36 w-36 text-steel/20" spin="ccw" />
+        <Gear teeth={14} className="pointer-events-none absolute -bottom-16 left-[-3rem] h-56 w-56 text-maroon/[0.06]" spin="ccw" />
 
+        <div className="relative mx-auto max-w-6xl px-5 py-14 md:py-20">
           <h1 className="font-display text-[2.4rem] font-bold leading-[1.15] tracking-tight text-ink md:text-[3.4rem]">
             Tpat3 and Physics A-Level<br />
             <span className="text-maroon">by Mr.tpat3</span>

@@ -4,7 +4,6 @@ import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import Gear from "@/components/Gear";
 import { USER_COOKIE, verifyUserSession } from "@/lib/user-session";
-import { PRODUCTS } from "@/lib/catalog";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -75,17 +74,18 @@ export default async function AboutPage() {
                 จุฬาลงกรณ์มหาวิทยาลัย
               </p>
               <p>
-                พี่ไม่ใช่เด็กเรียนเก่ง และไม่ใช่เด็กขยันมาตั้งแต่แรก วัยเด็กของพี่เหมือนเด็กทั่วไป — เล่นเกมทั้งวัน
-                เตะบอลทั้งวัน ม.1 พี่สอบไม่ติดสวนกุหลาบ ม.4 พี่สอบไม่ติดเตรียมอุดม
+                พี่ไม่ใช่เด็กเรียนเก่ง และไม่ใช่เด็กขยันมาตั้งแต่แรก วัยเด็กของพี่เหมือนเด็กทั่วไป เล่นเกมทั้งวัน
+                เตะบอลทั้งวัน ไม่ใช่เด็กแข่งขันหรือไม่ใช่เด็กเรียนเลย ม.1 พี่สอบไม่ติดสวนกุหลาบ ม.4 ก็เช่นเดียวกัน
+                พี่สอบไม่ติดเตรียมอุดม
               </p>
               <p>
-                จุดเปลี่ยนมาถึงตอน ม.5 พี่ฟลุกสอบติด สอวน. รอบหนึ่ง และที่นั่นพี่ได้เห็นสังคมที่ต่างออกไปโดยสิ้นเชิง
-                ทุกคนขยัน ทุกคนพากันเรียน และไม่มีใครมองว่าการตั้งใจเรียนเป็นเรื่องแปลก พี่กลับออกมาพร้อมไฟที่ไม่เคยมี
-                — <strong className="text-ink">อยากกลับเข้าไปอยู่ในสังคมแบบนั้นอีกครั้ง</strong>
+                จุดเปลี่ยนมาถึงตอน ม.5 พี่ฟลุกสอบติด สอวน. รอบหนึ่ง และที่นั่นทำให้พี่ได้เห็นสังคมที่ต่างออกไปโดยสิ้นเชิง
+                ทุกคนขยัน ทุกคนพากันเรียน และไม่มีใครมองว่าการตั้งใจเรียนเป็นเรื่องแปลก ถึงพี่จะเต็มที่แล้วและไม่ได้ไปต่อ
+                แต่พี่กลับออกมาพร้อมไฟที่<strong className="text-ink">อยากกลับเข้าไปอยู่ในสังคมแบบนั้นอีกครั้ง</strong>
               </p>
               <p>
                 ไฟนั้นพาพี่มาถึงคณะวิศวกรรมศาสตร์ จุฬาฯ และพาพี่มาเจอเพื่อน ๆ ที่คิดเหมือนกัน
-                พวกพี่จึงรวมหัวกันออกแบบ Mock TPAT3 และเล่มเนื้อหาชุดนี้ขึ้นมา —
+                พวกพี่จึงรวมหัวกันออกแบบ Mock TPAT3 และเล่มเนื้อหาชุดนี้ขึ้นมา
                 ให้เป็นข้อสอบแบบที่พวกพี่เองอยากมีตอนเตรียมสอบ
               </p>
             </div>
@@ -93,8 +93,7 @@ export default async function AboutPage() {
             <blockquote className="my-10 border-l-4 border-maroon bg-white px-6 py-6 shadow-[0_16px_40px_-28px_rgba(36,16,22,0.6)] md:px-8">
               <p className="font-display text-2xl font-bold leading-snug text-maroon md:text-[1.9rem]">“The best or nothing”</p>
               <p className="mt-2 text-[1.05rem] leading-relaxed text-ink/75">
-                ถ้าไม่ทำให้ดีที่สุด ก็อย่าทำเลยดีกว่า — คติที่พี่ยึดมาตลอด และเป็นมาตรฐานเดียวที่ทุกข้อในชุดนี้
-                ทุกหน้าในเล่มเนื้อหา ต้องผ่าน
+                ถ้าไม่ทำให้ดีที่สุด ก็อย่าทำเลยดีกว่า
               </p>
             </blockquote>
           </section>
@@ -127,11 +126,7 @@ export default async function AboutPage() {
                 ถ้าตอนนี้น้องยังไม่ใช่เด็กเก่ง ไม่เป็นไรครับ พี่ก็เคยเป็นแบบนั้น สิ่งเดียวที่ต้องมีคือไฟ —
                 ส่วนเครื่องมือ พี่เตรียมไว้ให้แล้ว
               </p>
-            </div>
-
-            <div className="mt-10 border border-maroon bg-maroon px-6 py-7 text-center text-paper shadow-[0_22px_50px_-28px_rgba(110,20,35,0.8)] md:px-8">
-              <p className="font-display text-[1.6rem] font-bold leading-snug md:text-[1.9rem]">สู้ ๆ นะครับ 💪</p>
-              <p className="mt-1.5 font-display text-[1.25rem] font-semibold md:text-[1.4rem]">เราจะสอบติดไปด้วยกัน</p>
+              <p className="font-semibold text-ink">สู้ ๆ นะครับ เราจะสอบติดไปด้วยกัน</p>
             </div>
           </section>
 
@@ -142,22 +137,6 @@ export default async function AboutPage() {
             </span>
           </p>
 
-          <div className="mt-12 grid gap-3 border-t border-grid pt-8 sm:grid-cols-2">
-            <a
-              href="/courses/mock-tpat3"
-              className="flex items-center justify-between gap-3 border border-ink bg-maroon px-5 py-4 font-bold text-paper transition hover:bg-maroon-dark"
-            >
-              ดู Mock TPAT3 · ฿{PRODUCTS.mock1.price}
-              <span aria-hidden>→</span>
-            </a>
-            <a
-              href="/courses/tpat3-content"
-              className="flex items-center justify-between gap-3 border border-ink px-5 py-4 font-bold text-ink transition hover:bg-ink hover:text-paper"
-            >
-              ดูเนื้อหาทั้งหมดสำหรับสอบ TPAT3 · ฿{PRODUCTS.sum4.price}
-              <span aria-hidden>→</span>
-            </a>
-          </div>
         </article>
       </main>
 

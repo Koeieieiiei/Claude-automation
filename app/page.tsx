@@ -102,18 +102,18 @@ export default function Home() {
     <div className="min-h-screen">
       {/* ===== Top bar ===== */}
       <header className="sticky top-0 z-40 border-b border-grid bg-paper/85 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-3.5">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-5">
           <a href="/" className="flex items-center gap-2.5" aria-label="Mr.tpat3 หน้าแรก">
-            <Gear teeth={10} className="h-6 w-6 text-maroon" spin="cw" />
-            <span className="font-display text-lg font-bold tracking-tight text-ink">Mr.tpat3</span>
-            <span className="hidden font-label text-xs font-semibold tracking-[0.22em] text-maroon sm:inline">TPAT3 · ฟิสิกส์</span>
+            <Gear teeth={10} className="h-7 w-7 text-maroon" spin="cw" />
+            <span className="font-display text-xl font-bold tracking-tight text-ink">Mr.tpat3</span>
+            <span className="hidden font-label text-[0.8rem] font-semibold tracking-[0.22em] text-maroon sm:inline">TPAT3 · ฟิสิกส์</span>
           </a>
-          <nav className="hidden items-center gap-6 md:flex" aria-label="เมนูหลัก">
-            <a href="#mock" className="text-sm font-semibold text-ink/60 transition hover:text-maroon">ข้อสอบ Mock</a>
-            <a href="#content" className="text-sm font-semibold text-ink/60 transition hover:text-maroon">ไฟล์เนื้อหา</a>
-            <a href="#bundles" className="text-sm font-semibold text-ink/60 transition hover:text-maroon">Bundles</a>
-            <a href="#faq" className="text-sm font-semibold text-ink/60 transition hover:text-maroon">ข้อสงสัย</a>
-            <a href="/about" className="text-sm font-semibold text-ink/60 transition hover:text-maroon">เกี่ยวกับพี่</a>
+          <nav className="hidden items-center gap-8 md:flex" aria-label="เมนูหลัก">
+            <a href="#mock" className="text-base font-semibold text-ink/60 transition hover:text-maroon">ข้อสอบ Mock</a>
+            <a href="#content" className="text-base font-semibold text-ink/60 transition hover:text-maroon">ไฟล์เนื้อหา</a>
+            <a href="#bundles" className="text-base font-semibold text-ink/60 transition hover:text-maroon">Bundles</a>
+            <a href="#faq" className="text-base font-semibold text-ink/60 transition hover:text-maroon">ข้อสงสัย</a>
+            <a href="/about" className="text-base font-semibold text-ink/60 transition hover:text-maroon">เกี่ยวกับพี่</a>
           </nav>
           <AccountButton user={user} />
         </div>

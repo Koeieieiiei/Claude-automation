@@ -107,15 +107,7 @@ export default function Home() {
             <a href="#faq" className="text-sm font-semibold text-ink/60 transition hover:text-maroon">ข้อสงสัย</a>
             <a href="/about" className="text-sm font-semibold text-ink/60 transition hover:text-maroon">เกี่ยวกับพี่</a>
           </nav>
-          <div className="flex items-center gap-2.5">
-            <AccountButton user={user} />
-            <button
-              onClick={() => buy(PRODUCTS["bundle-all"])}
-              className="hidden border border-maroon bg-maroon px-5 py-1.5 text-sm font-semibold text-paper transition hover:bg-maroon-dark sm:inline-block"
-            >
-              สั่งซื้อ
-            </button>
-          </div>
+          <AccountButton user={user} />
         </div>
       </header>
 

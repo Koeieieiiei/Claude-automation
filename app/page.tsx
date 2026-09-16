@@ -222,8 +222,8 @@ export default function Home() {
               ตัวอย่าง 4 ข้อนี้เป็นคนละชุดกับข้อสอบจริง 70 ข้อ — ไม่ใช่ข้อที่อยู่ในชุดเต็ม
             </p>
             <div className="mt-auto" />
-            <SampleButton href="/samples/tpat3-sample-questions.pdf" downloadName="ตัวอย่างโจทย์ Mock TPAT3.pdf" label="โหลดตัวอย่างโจทย์ฟรี (PDF)" />
-            <SampleButton href="/samples/tpat3-sample-answers.pdf" downloadName="ตัวอย่างเฉลย Mock TPAT3.pdf" label="โหลดตัวอย่างเฉลยฟรี (PDF)" />
+            {/* ไฟล์เดียว = โจทย์ 4 ข้อ + เฉลยละเอียด (สร้างด้วย Desktop/Project/MOCK/_build-sarabun/demo/make_sample.py) */}
+            <SampleButton href="/samples/tpat3-mock-sample.pdf" downloadName="TPat3 Mock Sample.pdf" label="โหลดตัวอย่างโจทย์ + เฉลยฟรี (PDF)" />
           </div>
         </div>
       </section>

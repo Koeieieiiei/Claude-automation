@@ -32,13 +32,9 @@ export default async function AboutPage() {
           <Gear teeth={12} className="pointer-events-none absolute -bottom-12 left-[-2rem] h-44 w-44 text-steel/20" spin="ccw" />
           <div className="relative mx-auto grid max-w-4xl items-center gap-8 px-5 py-14 md:grid-cols-[1fr_auto] md:py-20">
             <div>
-            <p className="font-label text-[11px] font-semibold uppercase tracking-[0.22em] text-maroon">เกี่ยวกับพี่</p>
-            <h1 className="mt-3 font-display text-[2.4rem] font-bold leading-[1.1] tracking-tight text-ink md:text-[3.2rem]">
+            <h1 className="font-display text-[2.4rem] font-bold leading-[1.1] tracking-tight text-ink md:text-[3.2rem]">
               The best <span className="text-maroon">or nothing</span>
             </h1>
-            <p className="mt-4 max-w-xl text-[1.1rem] leading-relaxed text-ink/70">
-              เรื่องราวสั้น ๆ ของคนทำ Mock TPAT3 — และเหตุผลว่าทำไมต้องเป็น TPAT3
-            </p>
             <nav className="mt-6 flex flex-wrap gap-2 font-label text-sm" aria-label="หัวข้อในบทความ">
               <a href="#story" className="border border-ink/25 bg-white px-3.5 py-1.5 font-semibold text-ink transition hover:border-maroon hover:text-maroon">
                 1 · ประวัติของพี่
@@ -58,7 +54,6 @@ export default async function AboutPage() {
                 className="w-full rotate-[2deg] border-[6px] border-white object-cover shadow-[0_28px_60px_-24px_rgba(36,16,22,0.7)]"
                 style={{ aspectRatio: "3 / 4" }}
               />
-              <figcaption className="mt-3 text-center font-label text-xs text-ink/55">มาโก้ ศุภวัฒน์ · วิศวคอม จุฬาฯ</figcaption>
             </figure>
           </div>
         </section>
@@ -104,17 +99,16 @@ export default async function AboutPage() {
             <h2 className="mt-1 font-display text-[1.75rem] font-bold leading-snug text-ink md:text-[2rem]">ทำไมถึงเลือก TPAT3</h2>
             <div className="mt-6 space-y-6 text-[1.08rem] leading-[1.9] text-ink/85 md:text-[1.15rem]">
               <p>
-                ปีที่พี่เตรียมตัวสอบ TPAT3 เป็นปีที่หลักสูตรนี้เพิ่งประกาศออกมา ยังไม่มีใครรู้แนวข้อสอบที่แน่ชัด
+                ปีที่พี่เตรียมตัวสอบ TPAT3 เป็นปีที่หลักสูตรนี้เพิ่งประกาศออกมาไม่นาน ยังไม่มีใครรู้แนวข้อสอบที่แน่ชัด
                 และยังไม่มีติวเตอร์ที่ไหนออกมาทำเรื่อง TPAT3 อย่างจริงจัง
               </p>
               <p>
-                พี่จึงต้องขวนขวายหาข้อมูลเกือบทั้งหมดด้วยตัวเอง — เรียนหลายที่ ซื้อหนังสือหลายเล่ม
+                พี่จึงต้องขวนขวายหาข้อมูลเกือบทั้งหมดด้วยตัวเอง เรียนหลายที่ ซื้อหนังสือหลายเล่ม
                 แล้วเอามาประกบกันเองว่า TPAT3 น่าจะออกแนวไหน
               </p>
               <p>
                 แต่ในวันสอบจริง พี่พบว่าข้อสอบ TPAT3{" "}
-                <strong className="text-ink">ยากกว่าที่พี่เตรียมมาไว้เยอะมาก</strong> — ส่วนหนึ่งอาจเพราะพี่ตื่นเต้นและหลงทาง
-                แต่อีกส่วนคือไม่มีใครบอกพี่ได้เลยว่าของจริงหน้าตาเป็นอย่างไร
+                <strong className="text-ink">ยากกว่าที่พี่เตรียมมาไว้เยอะมาก</strong> ส่วนหนึ่งอาจเพราะพี่ตื่นเต้นและความรน
               </p>
               <p>
                 พี่จึงตัดสินใจเป็นติวเตอร์ด้าน TPAT3 และออกข้อสอบที่มี
@@ -123,10 +117,9 @@ export default async function AboutPage() {
                 และไม่ต้องไปเจอความรู้สึกแบบที่พี่เจอในห้องสอบวันนั้น
               </p>
               <p>
-                ถ้าตอนนี้น้องยังไม่ใช่เด็กเก่ง ไม่เป็นไรครับ พี่ก็เคยเป็นแบบนั้น สิ่งเดียวที่ต้องมีคือไฟ —
-                ส่วนเครื่องมือ พี่เตรียมไว้ให้แล้ว
+                ถ้าตอนนี้น้องยังไม่ใช่เด็กเก่ง ไม่เป็นไรครับ พี่ก็เคยเป็นแบบนั้น สิ่งเดียวที่ต้องมีคือไฟ
+                ส่วนเครื่องมือ พี่เตรียมไว้ให้แล้ว <strong className="text-ink">สู้ ๆ น้อง เราจะสอบติดไปด้วยกัน</strong>
               </p>
-              <p className="font-semibold text-ink">สู้ ๆ นะครับ เราจะสอบติดไปด้วยกัน</p>
             </div>
           </section>
 

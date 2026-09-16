@@ -125,14 +125,6 @@ export default function Home() {
             ตัวหนังสือด้านในยังเรียงตรงกับคอลัมน์เนื้อหา (max-w-6xl) เหมือนส่วนอื่นของหน้า */}
         <div className="relative z-10 border-b border-grid border-l-4 border-l-maroon bg-white shadow-[0_12px_30px_-22px_rgba(36,16,22,0.5)]">
           <div className="mx-auto flex max-w-6xl flex-col gap-4 px-5 pb-6 pt-5 sm:flex-row sm:items-center sm:gap-6 md:py-6">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/about/mako-square.jpg"
-              alt="พี่มาโก้ ศุภวัฒน์"
-              width={480}
-              height={480}
-              className="h-24 w-24 shrink-0 rounded-full border-2 border-maroon/30 object-cover shadow-[0_10px_24px_-12px_rgba(36,16,22,0.6)] sm:h-28 sm:w-28"
-            />
             <div>
             <p className="text-[1.05rem] leading-relaxed text-ink md:text-[1.15rem]">
               สวัสดีครับน้อง ๆ พี่ชื่อ <strong className="text-maroon">มาโก้ ศุภวัฒน์</strong> กำลังศึกษาอยู่ที่
@@ -144,7 +136,7 @@ export default function Home() {
               href="/about"
               className="mt-3 inline-flex items-center gap-2 border border-maroon px-4 py-2 text-sm font-bold text-maroon transition hover:bg-maroon hover:text-paper"
             >
-              อ่านเรื่องราวของพี่ — “The best or nothing”
+              อ่านเรื่องราวของพี่
               <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} aria-hidden>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
               </svg>

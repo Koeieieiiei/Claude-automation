@@ -168,7 +168,7 @@ export default function Home() {
             <strong className="text-paper"> วิศวคอม จุฬาฯ</strong> พี่และเพื่อน ๆ ในกลุ่มได้รวมหัวกันออกแบบ{" "}
             <strong className="text-paper">Mock TPAT3</strong> และ
             <strong className="text-paper">เนื้อหาสำหรับสอบ TPAT3</strong> หากน้องสนใจ
-            สามารถคลิกดูด้านล่าง<span className="whitespace-nowrap">ได้เลยครับ</span>
+            สามารถเลื่อนดูด้านล่าง<span className="whitespace-nowrap">ได้เลยครับ</span>
           </p>
           <a
             href="/about"

@@ -122,7 +122,7 @@ export default function Home() {
           </div>
           <nav className="hidden items-center gap-6 md:flex" aria-label="เมนูหลัก">
             <a href="#mock" className="text-sm font-semibold text-ink/60 transition hover:text-maroon">ข้อสอบ Mock</a>
-            <a href="#summaries" className="text-sm font-semibold text-ink/60 transition hover:text-maroon">ไฟล์สรุป</a>
+            <a href="#summaries" className="text-sm font-semibold text-ink/60 transition hover:text-maroon">ไฟล์เนื้อหา</a>
             <a href="#bundles" className="text-sm font-semibold text-ink/60 transition hover:text-maroon">Bundles</a>
             <a href="#faq" className="text-sm font-semibold text-ink/60 transition hover:text-maroon">ข้อสงสัย</a>
           </nav>
@@ -228,41 +228,38 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ===== ไฟล์สรุปเนื้อหา ===== */}
+      {/* ===== ไฟล์เนื้อหาทั้งหมด ===== */}
       <section id="summaries" className="mx-auto max-w-6xl scroll-mt-20 px-5 pb-16">
         <h2 className="max-w-3xl font-display text-3xl font-bold leading-snug text-ink md:text-4xl">
-          ไฟล์สรุปเนื้อหาสำหรับสอบ TPAT3
-          <span className="mt-2 block text-lg font-medium leading-relaxed text-ink/60 md:text-xl">
-            — เป็นไฟล์ที่เน้น tricks ในการทำโจทย์ให้เก่งขึ้น เหมาะสำหรับผู้ที่มีพื้นฐานอยู่แล้ว
-          </span>
+          เนื้อหาทั้งหมดสำหรับสอบ TPAT3
         </h2>
         <p className="mt-3 max-w-2xl text-[1.2rem] font-medium leading-relaxed text-ink">
-          ซื้อ 1 ชุด ได้ 2 ไฟล์ — ไฟล์เนื้อหา และไฟล์สูตรล้วน
+          ครบทั้ง 5 พาร์ตของข้อสอบจริง รวมในไฟล์เดียว 160 หน้า
         </p>
 
         {/* จงใจให้แคบกว่าโซน Mock — ดันให้ Mock เป็นพระเอกของหน้า */}
         <div className="mt-10 grid max-w-4xl gap-5 md:grid-cols-2">
           <SummaryCard
-            no="สรุป TPAT3"
-            tag={<span className="border border-maroon/40 px-2 py-0.5 font-label text-[10px] font-bold uppercase tracking-[0.14em] text-maroon">มีตัวอย่างฟรี</span>}
+            no="เนื้อหาทั้งหมดสำหรับสอบ TPAT3"
+            tag={<span className="shrink-0 whitespace-nowrap border border-maroon/40 px-2 py-0.5 font-label text-[10px] font-bold uppercase tracking-[0.14em] text-maroon">มีตัวอย่างฟรี</span>}
             product={PRODUCTS.sum4}
-            title="สรุปเนื้อหาฟิสิกส์สำหรับสอบ TPAT3"
+            title="Part 1–5 ครบ · 160 หน้า"
             bar="bg-maroon"
-            cover="/covers/sum4.png"
+            cover="/covers/tpat3-content.png"
             onBuy={buy}
           />
 
-          {/* การ์ดตัวอย่างฟรีของไฟล์สรุป — วางข้างกันแบบเดียวกับฝั่ง Mock */}
+          {/* การ์ดตัวอย่างฟรีของไฟล์เนื้อหา — วางข้างกันแบบเดียวกับฝั่ง Mock */}
           <div className="flex flex-col border border-dashed border-maroon/40 p-7">
             <div className="mx-auto mb-6 w-full max-w-[210px]">
-              <Cover src="/covers/demo.png" alt="ปกไฟล์ Demo ตัวอย่างสรุปฟรี" />
+              <Cover src="/covers/demo.png" alt="ปกไฟล์ Demo ตัวอย่างเนื้อหาฟรี" />
             </div>
             <h3 className="font-display text-xl font-semibold text-ink">ไฟล์ Demo (ตัวอย่างฟรี)</h3>
             <p className="mt-2 text-sm leading-relaxed text-ink/60">
-              ตัวอย่างหน้าสรุปจากไฟล์จริง — โหลดดูก่อนตัดสินใจ
+              ตัวอย่างหน้าเนื้อหาจากไฟล์จริง — โหลดดูก่อนตัดสินใจ
             </p>
             <div className="mt-auto" />
-            <SampleButton href="/samples/tpat3-summary1-sample.pdf" downloadName="ตัวอย่างสรุปเนื้อหา TPAT3.pdf" label="โหลดตัวอย่างสรุปฟรี (PDF)" />
+            <SampleButton href="/samples/tpat3-summary1-sample.pdf" downloadName="ตัวอย่างเนื้อหา TPAT3.pdf" label="โหลดตัวอย่างเนื้อหาฟรี (PDF)" />
           </div>
         </div>
       </section>
@@ -281,15 +278,15 @@ export default function Home() {
               displayName="Mock เดี่ยว"
               covers={[{ src: "/covers/mock.png", alt: "ปกข้อสอบ Mock TPAT3" }]}
               items={["Mock TPAT3 (โจทย์ + เฉลย + กระดาษคำตอบ)", "โควตาเข้าสอบ TPAT3 ออนไลน์ 1 ครั้ง"]}
-              dimItems={["สรุปเนื้อหา TPAT3"]}
+              dimItems={["เนื้อหาทั้งหมดสำหรับสอบ TPAT3"]}
               onBuy={buy}
             />
             <BundleCard
               eyebrow="เก็บเนื้อหา"
               product={PRODUCTS.sum4}
-              displayName="สรุปเดี่ยว"
-              covers={[{ src: "/covers/sum4.png", alt: "ปกสรุปเนื้อหา TPAT3" }]}
-              items={["สรุปเนื้อหา TPAT3 (เนื้อหา + สูตรล้วน)"]}
+              displayName="เนื้อหาเดี่ยว"
+              covers={[{ src: "/covers/tpat3-content.png", alt: "ปกเนื้อหา TPAT3" }]}
+              items={["เนื้อหาทั้งหมดสำหรับสอบ TPAT3"]}
               dimItems={["Mock TPAT3", "โควตาเข้าสอบ TPAT3 ออนไลน์"]}
               onBuy={buy}
             />
@@ -300,12 +297,12 @@ export default function Home() {
               displayName="ครบเซ็ตพร้อมสอบ"
               covers={[
                 { src: "/covers/mock.png", alt: "ปกข้อสอบ Mock TPAT3" },
-                { src: "/covers/sum4.png", alt: "ปกสรุปเนื้อหา TPAT3" },
+                { src: "/covers/tpat3-content.png", alt: "ปกเนื้อหา TPAT3" },
               ]}
               items={[
                 "Mock TPAT3 (โจทย์ + เฉลย + กระดาษคำตอบ)",
                 "โควตาเข้าสอบ TPAT3 ออนไลน์ 1 ครั้ง",
-                "สรุปเนื้อหา TPAT3 (เนื้อหา + สูตรล้วน)",
+                "เนื้อหาทั้งหมดสำหรับสอบ TPAT3",
               ]}
               upsellFrom={PRODUCTS.mock1}
               onBuy={buy}
@@ -334,7 +331,7 @@ export default function Home() {
             />
             <FaqItem
               q="มีตัวอย่างให้ดูก่อนไหม?"
-              a="มี — โหลดตัวอย่างโจทย์/เฉลย และตัวอย่างไฟล์สรุปได้ฟรี ไม่ต้องกรอกอะไร เป็น PDF แบบเดียวกับไฟล์จริง"
+              a="มี — โหลดตัวอย่างโจทย์/เฉลย และตัวอย่างไฟล์เนื้อหาได้ฟรี ไม่ต้องกรอกอะไร เป็น PDF แบบเดียวกับไฟล์จริง"
             />
             <FaqItem
               q="ไม่ได้รับอีเมล ทำยังไงดี?"
@@ -346,7 +343,7 @@ export default function Home() {
             />
             <FaqItem
               q="ได้อะไรบ้าง?"
-              a="ชุด Mock ได้ไฟล์ PDF 3 ไฟล์ (โจทย์ + เฉลยละเอียด + กระดาษคำตอบ) พร้อมโควตาเข้าสอบ TPAT3 ออนไลน์ 1 ครั้งและผลวิเคราะห์ · สรุปเนื้อหา TPAT3 ได้ 2 ไฟล์ (เนื้อหา + สูตรล้วน) · ไฟล์เป็นของคุณถาวร ลิงก์ดาวน์โหลดไม่มีวันหมดอายุ"
+              a="ชุด Mock ได้ไฟล์ PDF 3 ไฟล์ (โจทย์ + เฉลยละเอียด + กระดาษคำตอบ) พร้อมโควตาเข้าสอบ TPAT3 ออนไลน์ 1 ครั้งและผลวิเคราะห์ · เนื้อหาทั้งหมดสำหรับสอบ TPAT3 ได้ไฟล์ PDF 1 ไฟล์ (Part 1–5 ครบ 160 หน้า) · ไฟล์เป็นของคุณถาวร ลิงก์ดาวน์โหลดไม่มีวันหมดอายุ"
             />
             <FaqItem
               q="ขอคืนเงินได้ไหม?"
@@ -432,7 +429,7 @@ function SampleButton({ href, label, downloadName }: { href: string; label: stri
   );
 }
 
-/* ---------- การ์ดหนังสือสรุป ---------- */
+/* ---------- การ์ดหนังสือเนื้อหา ---------- */
 function SummaryCard({
   no, tag, product, title, bar, onBuy, sample, cover,
 }: {
@@ -448,9 +445,9 @@ function SummaryCard({
   return (
     <div className="flex flex-col border border-grid bg-white p-7 transition hover:border-maroon">
       <div className="mx-auto mb-6 w-full max-w-[210px]">
-        <Cover src={cover} alt={`ปกสรุปฟิสิกส์ ${title}`} />
+        <Cover src={cover} alt={`ปก${no}`} />
       </div>
-      <div className="flex items-center justify-between">
+      <div className="flex items-start justify-between gap-3">
         <span className="font-display text-2xl font-bold text-maroon">{no}</span>
         {tag}
       </div>
@@ -485,7 +482,7 @@ function BundleCard({
   upsellFrom?: Product;
 }) {
   const save = product.compareAt ? product.compareAt - product.price : 0;
-  // ส่วนต่างจาก Mock เดี่ยว — จ่ายเพิ่มอีกนิดได้สรุปครบ (คำนวณสด กันลืมแก้ตอนเปลี่ยนราคา)
+  // ส่วนต่างจาก Mock เดี่ยว — จ่ายเพิ่มอีกนิดได้เนื้อหาครบ (คำนวณสด กันลืมแก้ตอนเปลี่ยนราคา)
   const upsell = upsellFrom ? product.price - upsellFrom.price : 0;
   return (
     <div
@@ -538,7 +535,7 @@ function BundleCard({
         ))}
       </ul>
       {upsell > 0 ? (
-        // ราคาเต็มตัวใหญ่ + บรรทัด "เพิ่มสรุปแค่ +40" ขนาดกลางเป็นตัวชู
+        // ราคาเต็มตัวใหญ่ + บรรทัด "เพิ่มเนื้อหาทั้งหมดแค่ +170" ขนาดกลางเป็นตัวชู
         <div className="mt-5">
           <div className="flex flex-wrap items-baseline gap-2.5">
             <span className="font-display text-[2.1rem] font-bold leading-none text-maroon">
@@ -549,7 +546,7 @@ function BundleCard({
             )}
           </div>
           <p className="mt-2.5 font-display text-[1.15rem] font-bold text-maroon">
-            เพิ่มสรุปแค่ +฿{upsell.toLocaleString()}
+            เพิ่มเนื้อหาทั้งหมดแค่ +฿{upsell.toLocaleString()}
           </p>
         </div>
       ) : (

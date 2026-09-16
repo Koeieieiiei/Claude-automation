@@ -10,7 +10,7 @@
 
 อ่าน:
   assets/master-questions.pdf   โจทย์ 1-70 (หน้า 1 ปก, 2-3 คำชี้แจง, 4-57 โจทย์)
-  assets/master-answers.pdf     เฉลย — หน้า 1-2 มี "ตารางเฉลยรวม" (ข้อ/ตอบ/ระดับ)
+  assets/master-answers.pdf     เฉลย — มี "ตารางเฉลยรวม" (ข้อ/ตอบ/ระดับ) อยู่ใน 5 หน้าแรก
 
 สร้าง (แยกโฟลเดอร์ตามสนาม):
   assets/exam-pages/<examId>/page-NN.png  รูปโจทย์รายหน้า (เสิร์ฟผ่าน API ที่เช็คสิทธิ์ — ห้าม commit)
@@ -54,10 +54,11 @@ DIFF_MAP = {"ง่าย": "easy", "กลาง": "medium", "ยาก": "hard
 
 
 def parse_answer_table():
-    """อ่านตารางเฉลยรวมจากหน้า 1-2 ของไฟล์เฉลย → {ข้อ: {answer, difficulty}}"""
+    """อ่านตารางเฉลยรวมจาก 5 หน้าแรกของไฟล์เฉลย → {ข้อ: {answer, difficulty}}
+    (ฉบับเดิมตารางอยู่หน้า 1-2 · ฉบับ Master Answers 2026-09-16 มีปก+สารบัญ ตารางเลื่อนไปหน้า 3-4)"""
     doc = fitz.open(A_PDF)
     tokens = []
-    for i in (0, 1):
+    for i in range(min(5, doc.page_count)):
         tokens += doc[i].get_text().split()
     key = {}
     expected = 1

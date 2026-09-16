@@ -1,5 +1,8 @@
-// อัปโหลดไฟล์ข้อสอบจาก assets/ ขึ้น Supabase Storage
+// อัปโหลดไฟล์ต้นฉบับจาก assets/ ขึ้น Supabase Storage
 // รัน: node --env-file=.env.local scripts/upload-pdfs.mjs
+//
+// path ปลายทางต้องตรงกับ MASTER_SOURCES ใน lib/watermark.ts
+// ⚠️ ไฟล์โจทย์ไม่อยู่ในลิสต์นี้ — ต้องแปะหน้าปกก่อน ใช้ scripts/prepend-cover.mjs (อัปให้เอง)
 import { createClient } from "@supabase/supabase-js";
 import { readFile } from "fs/promises";
 import { join } from "path";
@@ -10,8 +13,8 @@ const bucket = process.env.SUPABASE_BUCKET || "ebooks";
 const supabase = createClient(url, key, { auth: { persistSession: false } });
 
 const files = [
-  { local: "assets/master-questions.pdf", storage: "master/questions.pdf" },
-  { local: "assets/master-answers.pdf", storage: "master/answers.pdf" },
+  { local: "assets/master-answers.pdf", storage: "master/answers-2026-09-16.pdf" },
+  { local: "assets/master-tpat3-content.pdf", storage: "master/tpat3-content.pdf" },
 ];
 
 for (const f of files) {

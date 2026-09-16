@@ -13,13 +13,20 @@ export type FileId =
   | "questions" // Mock: ไฟล์โจทย์ 1–70
   | "answers" // Mock: ไฟล์เฉลย 1–70
   | "answersheet" // Mock: กระดาษคำตอบ
-  | "sum4content" // สรุปเนื้อหา TPAT3 (ไฟล์เนื้อหา)
-  | "sum4formula"; // สรุปเนื้อหา TPAT3 (ไฟล์สูตรล้วน)
+  | "tpat3content" // เนื้อหาทั้งหมดสำหรับสอบ TPAT3 (Part 1–5 ไฟล์เดียว)
+  // ↓ ไฟล์ของสินค้า "สรุป TPAT3" รุ่นเก่า (เลิกขาย 2026-09-16) — ห้ามลบ
+  //   ลิงก์ในอีเมลของคนที่ซื้อไปแล้วยังฝังชื่อไฟล์เหล่านี้อยู่ ต้องโหลดได้ต่อ
+  | "sum4content" // สรุป TPAT3 รุ่นเก่า (ไฟล์เนื้อหา / Mind Map)
+  | "sum4formula"; // สรุป TPAT3 รุ่นเก่า (ไฟล์สูตรล้วน)
 
 export const FILE_INFO: Record<FileId, { label: string; downloadName: string }> = {
   questions: { label: "ไฟล์โจทย์ Mock TPAT3 (ข้อ 1–70)", downloadName: "mock-tpat3-questions.pdf" },
   answers: { label: "ไฟล์เฉลย Mock TPAT3 (ข้อ 1–70)", downloadName: "mock-tpat3-answers.pdf" },
   answersheet: { label: "กระดาษคำตอบ Mock TPAT3", downloadName: "mock-tpat3-answer-sheet.pdf" },
+  tpat3content: {
+    label: "เนื้อหาทั้งหมดสำหรับสอบ TPAT3 (Part 1–5)",
+    downloadName: "mrtpat3-tpat3-content.pdf",
+  },
   sum4content: {
     label: "สรุปเนื้อหา TPAT3 (ไฟล์เนื้อหา)",
     downloadName: "mrtpat3-summary-content.pdf",
@@ -52,18 +59,19 @@ export const PRODUCTS: Record<ProductId, Product> = {
     price: 159,
     files: ["questions", "answers", "answersheet"],
   },
+  // id "sum4" คงไว้ตามเดิม (ออเดอร์เก่า/สถิติหลังร้านอ้างถึง) แต่ตัวสินค้าเปลี่ยนเป็นเล่มเนื้อหาทั้งหมดแล้ว
   sum4: {
     id: "sum4",
-    name: "สรุปเนื้อหาสำหรับสอบ TPAT3 (เนื้อหา + สูตรล้วน)",
-    price: 99,
-    files: ["sum4content", "sum4formula"],
+    name: "เนื้อหาทั้งหมดสำหรับสอบ TPAT3",
+    price: 219,
+    files: ["tpat3content"],
   },
   "bundle-all": {
     id: "bundle-all",
-    name: "ครบเซ็ตพร้อมสอบ (Mock + สรุปเนื้อหา TPAT3)",
-    price: 199,
-    compareAt: 258, // 159 + 99
-    files: ["questions", "answers", "answersheet", "sum4content", "sum4formula"],
+    name: "ครบเซ็ตพร้อมสอบ (Mock + เนื้อหาทั้งหมดสำหรับสอบ TPAT3)",
+    price: 329,
+    compareAt: 378, // 159 + 219
+    files: ["questions", "answers", "answersheet", "tpat3content"],
   },
 };
 

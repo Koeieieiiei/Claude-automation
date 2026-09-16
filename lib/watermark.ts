@@ -13,8 +13,12 @@ const THAI_FONT = join(ASSETS, "fonts", "Sarabun-Regular.ttf");
 /** ตำแหน่งไฟล์ต้นฉบับของแต่ละไฟล์ในแคตตาล็อก (ดู lib/catalog.ts) */
 const MASTER_SOURCES: Record<FileId, { local: string; storage: string }> = {
   questions: { local: join(ASSETS, "master-questions.pdf"), storage: "master/questions.pdf" },
-  answers: { local: join(ASSETS, "master-answers.pdf"), storage: "master/answers.pdf" },
+  // เฉลยฉบับ Master Answers ใหม่ (2026-09-16) — อัปขึ้น path ใหม่แทนการทับ master/answers.pdf
+  // (CDN ของ Supabase คืนไฟล์เก่าที่แคชไว้ได้สักพักหลังอัปทับ + เก็บฉบับเก่าไว้เป็นสำรอง)
+  answers: { local: join(ASSETS, "master-answers.pdf"), storage: "master/answers-2026-09-16.pdf" },
   answersheet: { local: join(ASSETS, "master-answersheet.pdf"), storage: "master/answersheet.pdf" },
+  tpat3content: { local: join(ASSETS, "master-tpat3-content.pdf"), storage: "master/tpat3-content.pdf" },
+  // สรุป TPAT3 รุ่นเก่า (เลิกขายแล้ว) — ไฟล์ยังอยู่บน Storage ให้ลิงก์ในอีเมลเก่าโหลดได้
   sum4content: { local: join(ASSETS, "master-sum4-content.pdf"), storage: "master/sum4-content.pdf" },
   sum4formula: { local: join(ASSETS, "master-sum4-formula.pdf"), storage: "master/sum4-formula.pdf" },
 };
@@ -94,10 +98,12 @@ function fitSize(font: PDFFont, text: string, preferred: number, min: number, ma
 /** ไฟล์ที่ "ไม่ใส่ลายน้ำทั้งไฟล์" — กระดาษคำตอบมีไว้พิมพ์ฝนคำตอบจริง ลายน้ำจะกวนวงกลม OMR */
 const NO_WATERMARK: ReadonlySet<FileId> = new Set(["answersheet"]);
 
-/** ไฟล์ที่ "ข้ามลายน้ำเฉพาะหน้าแรก" — หน้าแรกเป็นหน้าปก
- *  · questions  = หน้าปกที่แปะรูปไว้ (scripts/prepend-cover.mjs)
- *  · sum4content = หน้าปก "สรุป TPAT3" ในตัว Mind Map (เจ้าของขอให้ปกสะอาดไม่มีลายน้ำ) */
-const SKIP_COVER_PAGE: ReadonlySet<FileId> = new Set(["questions", "sum4content"]);
+/** ไฟล์ที่ "ข้ามลายน้ำเฉพาะหน้าแรก" — หน้าแรกเป็นหน้าปก (เจ้าของขอให้ปกสะอาดไม่มีลายน้ำ)
+ *  · questions    = หน้าปกที่แปะรูปไว้ (scripts/prepend-cover.mjs)
+ *  · answers      = ปก "MOCK TPAT3" ของเฉลยฉบับ Master Answers (ฉบับก่อน 2026-09-16 ไม่มีปก)
+ *  · tpat3content = ปก "เนื้อหา TPAT3"
+ *  · sum4content  = ปก "สรุป TPAT3" ในตัว Mind Map รุ่นเก่า */
+const SKIP_COVER_PAGE: ReadonlySet<FileId> = new Set(["questions", "answers", "tpat3content", "sum4content"]);
 
 /**
  * เตรียมไฟล์ PDF พร้อมส่งให้ลูกค้า: โหลดต้นฉบับ + ใส่ลายน้ำตามกติการายไฟล์

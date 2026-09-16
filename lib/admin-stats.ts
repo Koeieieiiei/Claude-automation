@@ -53,7 +53,9 @@ const LEGACY_PRICE_TO_PRODUCT: Record<number, ProductId> = {
   99: "sum4",
   159: "mock1",
   199: "bundle-all",
+  219: "sum4", // ราคาตั้งแต่ 2026-09-16 (sum4 = เนื้อหาทั้งหมดสำหรับสอบ TPAT3)
   299: "mock1",
+  329: "bundle-all",
 };
 
 /**

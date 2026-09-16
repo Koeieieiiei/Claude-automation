@@ -144,7 +144,7 @@ export default function SuccessView() {
   if (status === "ready") {
     const expiry = formatExpiry(expiryHours);
     const expiryText = expiry ? `ได้อีก ${expiry}` : "ได้ตลอด ไม่มีวันหมดอายุ";
-    // ไฟล์ที่ไม่ใช่ชุดข้อสอบ (เช่น สรุปเนื้อหา/สูตรล้วนใน bundle) — โหลดได้ทันทีไม่ต้องรอสอบ
+    // ไฟล์ที่ไม่ใช่ชุดข้อสอบ (เช่น ไฟล์เนื้อหาทั้งหมดใน bundle) — โหลดได้ทันทีไม่ต้องรอสอบ
     const instantLinks = links.filter((l) => !l.examFile);
     return (
       <Frame badge="ชำระแล้ว ✓">
@@ -175,7 +175,7 @@ export default function SuccessView() {
                 💻 แนะนำให้ทำในคอมพิวเตอร์ หรือ iPad · 1 อีเมลมีสิทธิ์สอบ 1 รอบ
               </p>
 
-              {/* ไฟล์อื่นในชุด (เช่น สรุปเนื้อหา/สูตรล้วนของ bundle) ไม่ใช่สปอยล์ข้อสอบ
+              {/* ไฟล์อื่นในชุด (เช่น ไฟล์เนื้อหาทั้งหมดของ bundle) ไม่ใช่สปอยล์ข้อสอบ
                   — เปิดให้โหลดได้ทันที ไม่ต้องรอสอบเสร็จ */}
               {instantLinks.length > 0 && (
                 <div className="mt-6">

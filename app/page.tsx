@@ -115,23 +115,37 @@ export default function Home() {
           เจ้าของขอ 2026-09-16: เอาข้อความเดิมในแถบแดงออก แล้วเอาคำทักทาย + ปุ่มบทความมาใส่แทน
           และย้ายแถบนี้ขึ้นมาอยู่เหนือ Hero (ใต้เมนูบนสุด) ให้คำทักทายเป็นสิ่งแรกที่เห็น */}
       <section className="border-b border-maroon-dark bg-maroon text-paper">
-        <div className="mx-auto max-w-6xl px-5 py-6 md:py-7">
-          <p className="text-[1.05rem] leading-relaxed text-paper/90 md:text-[1.15rem]">
-            สวัสดีครับน้อง ๆ พี่ชื่อ <strong className="text-paper">มาโก้ ศุภวัฒน์</strong> กำลังศึกษาอยู่ที่
-            <strong className="text-paper"> วิศวคอม จุฬาฯ</strong> พี่และเพื่อน ๆ ในกลุ่มได้รวมหัวกันออกแบบ{" "}
-            <strong className="text-paper">Mock TPAT3</strong> และ
-            <strong className="text-paper">เนื้อหาสำหรับสอบ TPAT3</strong> หากน้องสนใจ
-            สามารถเลื่อนดูด้านล่าง<span className="whitespace-nowrap">ได้เลยครับ</span>
-          </p>
-          <a
-            href="/about"
-            className="mt-4 inline-flex items-center gap-2 border border-paper px-4 py-2 text-sm font-bold text-paper transition hover:bg-paper hover:text-maroon"
-          >
-            บทความเกี่ยวกับฉัน
-            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} aria-hidden>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-            </svg>
+        <div className="mx-auto flex max-w-6xl flex-col gap-6 px-5 py-7 sm:flex-row sm:items-center sm:gap-8 md:py-8">
+          {/* รูปพี่มาโก้ — ไฟล์เดียวกับหน้าเกี่ยวกับพี่ (เจ้าของขอแปะรูปในแถบนี้ 2026-09-16) */}
+          <a href="/about" className="shrink-0 self-start sm:self-center" aria-label="บทความเกี่ยวกับฉัน">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/about/mako.jpg"
+              alt="พี่มาโก้ ศุภวัฒน์"
+              width={900}
+              height={1200}
+              className="w-[120px] -rotate-[2deg] border-4 border-paper object-cover shadow-[0_18px_40px_-16px_rgba(0,0,0,0.7)] sm:w-[150px]"
+              style={{ aspectRatio: "3 / 4" }}
+            />
           </a>
+          <div>
+            <p className="text-[1.05rem] leading-relaxed text-paper/90 md:text-[1.15rem]">
+              สวัสดีครับน้อง ๆ พี่ชื่อ <strong className="text-paper">มาโก้ ศุภวัฒน์</strong> กำลังศึกษาอยู่ที่
+              <strong className="text-paper"> วิศวคอม จุฬาฯ</strong> พี่และเพื่อน ๆ ในกลุ่มได้รวมหัวกันออกแบบ{" "}
+              <strong className="text-paper">Mock TPAT3</strong> และ
+              <strong className="text-paper">เนื้อหาสำหรับสอบ TPAT3</strong> หากน้องสนใจ
+              สามารถเลื่อนดูด้านล่าง<span className="whitespace-nowrap">ได้เลยครับ</span>
+            </p>
+            <a
+              href="/about"
+              className="mt-4 inline-flex items-center gap-2 border border-paper px-4 py-2 text-sm font-bold text-paper transition hover:bg-paper hover:text-maroon"
+            >
+              บทความเกี่ยวกับฉัน
+              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} aria-hidden>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+              </svg>
+            </a>
+          </div>
         </div>
       </section>
 

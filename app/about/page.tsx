@@ -87,14 +87,11 @@ export default async function AboutPage() {
                 พวกพี่จึงรวมหัวกันออกแบบ Mock TPAT3 และเล่มเนื้อหาชุดนี้ขึ้นมา
                 ให้เป็นข้อสอบแบบที่พวกพี่เองอยากมีตอนเตรียมสอบ
               </p>
-            </div>
-
-            <blockquote className="my-10 border-l-4 border-maroon bg-white px-6 py-6 shadow-[0_16px_40px_-28px_rgba(36,16,22,0.6)] md:px-8">
-              <p className="font-display text-2xl font-bold leading-snug text-maroon md:text-[1.9rem]">“The best or nothing”</p>
-              <p className="mt-2 text-[1.05rem] leading-relaxed text-ink/75">
+              <p>
+                โดยคติที่พี่ยึดถือมาตลอดคือ <strong className="text-ink">“The best or nothing”</strong>{" "}
                 ถ้าไม่ทำให้ดีที่สุด ก็อย่าทำเลยดีกว่า
               </p>
-            </blockquote>
+            </div>
           </section>
 
           {/* ===== 2. ทำไมต้อง TPAT3 ===== */}

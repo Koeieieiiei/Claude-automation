@@ -109,6 +109,11 @@ export default function BuyModal({ product, onClose, user = null, returnTo }: Pr
                 กลับมาเข้าเรียนได้ทุกเครื่องที่หน้า “คอร์สของฉัน” ไม่ต้องกรอกอะไรเพิ่ม
               </p>
               <GoogleButton next={next} label="เข้าสู่ระบบด้วย Google เพื่อสั่งซื้อ" className="mt-3" />
+              <p className="mt-2 font-label text-[11px] leading-snug text-ink/50">
+                การเข้าสู่ระบบและสั่งซื้อถือว่ายอมรับ{" "}
+                <a href="/terms" target="_blank" className="underline underline-offset-2 hover:text-maroon">ข้อกำหนดการใช้งาน</a> และ{" "}
+                <a href="/privacy" target="_blank" className="underline underline-offset-2 hover:text-maroon">นโยบายความเป็นส่วนตัว</a>
+              </p>
             </div>
           )}
 

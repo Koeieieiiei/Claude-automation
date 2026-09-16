@@ -368,14 +368,13 @@ function ProductCard({
   sample: { href: string; label: string; downloadName: string };
 }) {
   return (
+    // คลิกตรงไหนของการ์ดก็ได้ = ไปหน้ารายละเอียดคอร์ส (เจ้าของขอ 2026-09-16)
+    // ทำด้วยลิงก์ "ดูรายละเอียดคอร์ส" ที่ขยาย ::after คลุมทั้งการ์ด — ปุ่มสั่งซื้อ/โหลดตัวอย่างลอยอยู่บน (z-10) เลยยังกดของตัวเองได้
     <article
       id={id}
-      className="group grid scroll-mt-20 items-center gap-7 border border-grid bg-white p-7 transition hover:border-maroon sm:grid-cols-[220px_1fr] md:grid-cols-[300px_1fr] md:gap-12 md:p-11"
+      className="group relative grid scroll-mt-20 items-center gap-7 border border-grid bg-white p-7 transition hover:border-maroon sm:grid-cols-[220px_1fr] md:grid-cols-[300px_1fr] md:gap-12 md:p-11"
     >
-      {/* กดปก = เข้าหน้ารายละเอียดคอร์ส */}
-      <a href={courseHref} className="block" aria-label={`ดูรายละเอียดคอร์ส ${title}`}>
-        {cover}
-      </a>
+      <div>{cover}</div>
       <div>
         <p className="font-label text-xs font-semibold uppercase tracking-[0.22em] text-maroon">{kicker}</p>
         <h3 className="mt-2 font-display text-[clamp(1.5rem,2.6vw,1.95rem)] font-semibold leading-snug text-ink">{title}</h3>
@@ -395,12 +394,16 @@ function ProductCard({
         <div className="mt-5 flex flex-wrap items-center gap-3">
           <button
             onClick={() => onBuy(product)}
-            className="bg-maroon px-5 py-3.5 font-semibold text-white transition hover:bg-maroon-dark"
+            className="relative z-10 bg-maroon px-5 py-3.5 font-semibold text-white transition hover:bg-maroon-dark"
           >
             {buyLabel}
           </button>
           <SampleButton href={sample.href} downloadName={sample.downloadName} label={sample.label} />
-          <a href={courseHref} className="ml-1 inline-flex items-center gap-1.5 font-semibold text-maroon underline-offset-4 hover:underline">
+          <a
+            href={courseHref}
+            aria-label={`ดูรายละเอียดคอร์ส ${title}`}
+            className="ml-1 inline-flex items-center gap-1.5 font-semibold text-maroon underline-offset-4 after:absolute after:inset-0 after:z-[1] after:content-[''] group-hover:underline"
+          >
             ดูรายละเอียดคอร์ส
             <Arrow className="h-3.5 w-3.5" />
           </a>
@@ -466,7 +469,7 @@ function SampleButton({ href, label, downloadName }: { href: string; label: stri
       download={downloadName}
       // นับเข้า GA เพื่อคำนวณอัตราส่วน "คนเข้าเว็บ → โหลดเดโม → ซื้อ" บนหน้า /admin
       onClick={() => trackEvent("download_sample", { file: downloadName })}
-      className="inline-flex items-center gap-2.5 bg-[#3D4854] px-5 py-3.5 font-semibold text-white transition hover:bg-[#2E3742]"
+      className="relative z-10 inline-flex items-center gap-2.5 bg-[#3D4854] px-5 py-3.5 font-semibold text-white transition hover:bg-[#2E3742]"
     >
       <DownloadIcon className="h-[17px] w-[17px]" />
       {label}
@@ -487,12 +490,13 @@ function BundleCard({
   const upsell = product.price - upsellFrom.price;
   const href = courseHref(product);
   return (
+    // คลิกตรงไหนของการ์ดก็ได้ = ไปหน้ารายละเอียดคอร์ส (ลิงก์ที่ชื่อชุดขยาย ::after คลุมทั้งการ์ด ปุ่มสั่งซื้อลอยบน z-10)
     <div className="group relative mt-2 grid items-center gap-7 border-2 border-maroon bg-white p-7 md:grid-cols-[360px_1fr] md:gap-12 md:p-12">
       <span className="absolute -top-3.5 left-6 bg-maroon px-3 py-1 font-label text-[11px] font-bold uppercase tracking-[0.18em] text-white">
         คุ้มสุด · คนซื้อเยอะสุด
       </span>
       {/* ปกสองเล่มวางเหลื่อมซ้อนกัน เอียงคนละทาง */}
-      <a href={href} className="flex items-start justify-center py-3" aria-label="ดูรายละเอียดคอร์ส ครบเซ็ตพร้อมสอบ">
+      <div className="flex items-start justify-center py-3">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src="/covers/mock.png"
@@ -506,14 +510,20 @@ function BundleCard({
           src="/covers/tpat3-content.png"
           alt="ปกเนื้อหาทั้งหมดสำหรับสอบ TPAT3"
           loading="lazy"
-          className="relative z-10 -ml-[8%] mt-3.5 w-[52%] max-w-[190px] rotate-[5deg] border border-grid bg-white shadow-[0_14px_30px_-16px_rgba(36,16,22,0.5)] transition group-hover:-translate-y-1"
+          className="relative -ml-[8%] mt-3.5 w-[52%] max-w-[190px] rotate-[5deg] border border-grid bg-white shadow-[0_14px_30px_-16px_rgba(36,16,22,0.5)] transition group-hover:-translate-y-1"
           style={{ aspectRatio: "1792 / 2400", objectFit: "cover" }}
         />
-      </a>
+      </div>
       <div>
         <p className="font-label text-xs font-semibold uppercase tracking-[0.22em] text-maroon">รวมแพควิศวะ</p>
         <h3 className="mt-2 font-display text-[clamp(1.5rem,2.6vw,1.95rem)] font-semibold leading-snug text-ink">
-          <a href={href} className="hover:text-maroon">ครบเซ็ตพร้อมสอบ</a>
+          <a
+            href={href}
+            aria-label="ดูรายละเอียดคอร์ส ครบเซ็ตพร้อมสอบ"
+            className="after:absolute after:inset-0 after:z-[1] after:content-[''] group-hover:text-maroon"
+          >
+            ครบเซ็ตพร้อมสอบ
+          </a>
         </h3>
         <div className="mt-5 flex flex-wrap items-baseline gap-2.5">
           <span className="font-display text-[2rem] font-bold leading-none tracking-tight text-maroon">
@@ -543,7 +553,7 @@ function BundleCard({
         </ul>
         <button
           onClick={() => onBuy(product)}
-          className="bg-maroon px-6 py-3.5 font-semibold text-white transition hover:bg-maroon-dark"
+          className="relative z-10 bg-maroon px-6 py-3.5 font-semibold text-white transition hover:bg-maroon-dark"
         >
           สั่งซื้อครบเซ็ต · ฿{product.price.toLocaleString()}
         </button>

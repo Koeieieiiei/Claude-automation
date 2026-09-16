@@ -23,6 +23,8 @@ export const metadata: Metadata = {
     "ความถนัดวิศวกรรม",
   ],
   alternates: { canonical: "/" },
+  // ยืนยันความเป็นเจ้าของโดเมนกับ Google Search Console (ใช้ประกอบการยืนยันแบรนด์ OAuth) — ห้ามลบ
+  verification: { google: "Fv1bhnvbNK-gCMLmN1UYVXCPJVHfR8oc4etku6pxENA" },
   openGraph: {
     type: "website",
     locale: "th_TH",

@@ -127,12 +127,7 @@ export default async function AboutPage() {
             </div>
           </section>
 
-          <p className="mt-10 font-display text-lg font-bold text-ink">
-            มาโก้ ศุภวัฒน์
-            <span className="mt-1 block font-label text-xs font-semibold uppercase tracking-[0.2em] text-maroon">
-              Mrtpat3
-            </span>
-          </p>
+          <p className="mt-10 font-display text-lg font-bold text-maroon">Mrtpat3</p>
 
         </article>
       </main>

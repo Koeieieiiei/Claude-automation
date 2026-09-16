@@ -174,7 +174,7 @@ export default function Home() {
             href="/about"
             className="mt-4 inline-flex items-center gap-2 border border-paper px-4 py-2 text-sm font-bold text-paper transition hover:bg-paper hover:text-maroon"
           >
-            อ่านเรื่องราวของพี่
+            บทความเกี่ยวกับฉัน
             <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} aria-hidden>
               <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
             </svg>

@@ -7,7 +7,7 @@ export default function robots(): MetadataRoute.Robots {
   return {
     // อนุญาตให้เก็บหน้าสาธารณะได้ แต่กันหน้า API (มีลิงก์ดาวน์โหลดฝังโทเค็น)
     // หน้าขอบคุณ และหน้าสรุปยอดขายหลังร้าน
-    rules: { userAgent: "*", allow: "/", disallow: ["/api/", "/success", "/admin"] },
+    rules: { userAgent: "*", allow: "/", disallow: ["/api/", "/success", "/admin", "/my-courses", "/exam"] },
     sitemap: `${base}/sitemap.xml`,
   };
 }

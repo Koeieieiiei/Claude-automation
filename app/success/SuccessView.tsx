@@ -249,12 +249,25 @@ export default function SuccessView() {
             </>
           )}
 
-          <a
-            href="/"
-            className="mt-8 inline-block border border-ink px-6 py-2.5 font-medium text-ink transition hover:bg-ink hover:text-paper"
-          >
-            กลับหน้าหลัก
-          </a>
+          {/* ทุกอย่างที่ซื้อรวมอยู่ที่ "คอร์สของฉัน" — ล็อกอินด้วยบัญชี Google อีเมลที่สั่งซื้อ */}
+          <div className="mt-8 flex flex-wrap gap-3">
+            <a
+              href={`/api/auth/google?next=${encodeURIComponent("/my-courses")}`}
+              className="inline-block border border-maroon px-6 py-2.5 font-semibold text-maroon transition hover:bg-maroon hover:text-paper"
+            >
+              ไปที่คอร์สของฉัน
+            </a>
+            <a
+              href="/"
+              className="inline-block border border-ink px-6 py-2.5 font-medium text-ink transition hover:bg-ink hover:text-paper"
+            >
+              กลับหน้าหลัก
+            </a>
+          </div>
+          <p className="mt-3 font-label text-xs leading-relaxed text-ink/50">
+            หน้า “คอร์สของฉัน” รวมไฟล์และสิทธิ์สอบทั้งหมดของอีเมล{email ? <> <strong>{email}</strong></> : "ที่สั่งซื้อ"}{" "}
+            — ล็อกอินด้วยบัญชี Google อีเมลนี้เพื่อเปิดดูได้ทุกเครื่อง
+          </p>
         </div>
       </Frame>
     );

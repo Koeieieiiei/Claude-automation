@@ -2,53 +2,20 @@
 
 import { useEffect, useState } from "react";
 import BuyModal from "@/components/BuyModal";
+import AccountButton, { ClientUser, fetchCurrentUser } from "@/components/AccountButton";
+import Gear from "@/components/Gear";
+import SiteFooter from "@/components/SiteFooter";
 import { getProduct, PRODUCTS, Product } from "@/lib/catalog";
+import { courseForProduct } from "@/lib/courses";
 import { trackEvent } from "@/lib/analytics";
 
-/* ---------- เฟืองเกียร์ (SVG) ---------- */
-function gearPath(teeth: number, rOut: number, rIn: number, rHub: number, c = 50) {
-  const step = (Math.PI * 2) / teeth;
-  let d = "";
-  for (let i = 0; i < teeth; i++) {
-    const a = i * step;
-    const pts: [number, number][] = [
-      [rIn, a],
-      [rOut, a + step * 0.14],
-      [rOut, a + step * 0.36],
-      [rIn, a + step * 0.5],
-      [rIn, a + step],
-    ];
-    pts.forEach(([r, ang], j) => {
-      const x = c + r * Math.cos(ang);
-      const y = c + r * Math.sin(ang);
-      d += `${i === 0 && j === 0 ? "M" : "L"}${x.toFixed(2)} ${y.toFixed(2)} `;
-    });
-  }
-  d += "Z ";
-  d += `M ${c + rHub} ${c} A ${rHub} ${rHub} 0 1 0 ${c - rHub} ${c} A ${rHub} ${rHub} 0 1 0 ${c + rHub} ${c} Z`;
-  return d;
-}
-
-function Gear({ teeth = 12, className = "", spin }: { teeth?: number; className?: string; spin?: "cw" | "ccw" }) {
-  return (
-    <svg viewBox="0 0 100 100" className={className} aria-hidden>
-      <path
-        d={gearPath(teeth, 48, 38, 17)}
-        fill="currentColor"
-        fillRule="evenodd"
-        className={spin === "cw" ? "gear-spin" : spin === "ccw" ? "gear-spin-rev" : ""}
-        style={{ transformBox: "fill-box", transformOrigin: "center" }}
-      />
-    </svg>
-  );
-}
-
-/** สถานะสิทธิ์ทำข้อสอบของเครื่องนี้ — ใช้สลับปุ่มใหญ่บน hero */
 type ExamState = "eligible" | "in_progress" | "submitted";
 
 export default function Home() {
   const [buying, setBuying] = useState<Product | null>(null);
   const [examState, setExamState] = useState<ExamState | null>(null);
+  // undefined = กำลังถาม server · null = ยังไม่ล็อกอิน
+  const [user, setUser] = useState<ClientUser | null | undefined>(undefined);
 
   useEffect(() => {
     fetch("/api/track", {
@@ -76,32 +43,45 @@ export default function Home() {
     }
   }, []);
 
-  // ผู้ซื้อชุด Mock ที่เคยเข้าห้องสอบจากเครื่องนี้ จะมีโทเค็นใน localStorage —
-  // เช็คสถานะกับ server แล้วเปลี่ยนปุ่ม hero: ยังไม่ทำ → "ทำข้อสอบ", ทำแล้ว → "ดูผลสอบ"
+  // เช็คสถานะผู้ซื้อแล้วเปลี่ยนปุ่ม hero: ยังไม่ทำ → "ทำข้อสอบ", ทำแล้ว → "ดูผลสอบ"
+  // ล็อกอินอยู่ = เช็คจากบัญชี Google · ไม่ได้ล็อกอิน = ใช้โทเค็นที่เครื่องนี้เคยเข้าห้องสอบไว้
   useEffect(() => {
-    let token = "";
-    try {
-      token = localStorage.getItem("exam.token") ?? "";
-    } catch {}
-    if (!token) return;
-    fetch("/api/exam/access", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token }),
-    })
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (!data) return;
-        if (data.state === "eligible" || data.state === "in_progress" || data.state === "submitted") {
-          setExamState(data.state);
-          if (data.token) {
-            try {
-              localStorage.setItem("exam.token", data.token);
-            } catch {}
-          }
-        }
+    let cancelled = false;
+    (async () => {
+      const u = await fetchCurrentUser();
+      if (cancelled) return;
+      setUser(u);
+      let body: { useSession: true } | { token: string } | null = null;
+      if (u) {
+        body = { useSession: true };
+      } else {
+        let token = "";
+        try {
+          token = localStorage.getItem("exam.token") ?? "";
+        } catch {}
+        if (token) body = { token };
+      }
+      if (!body) return;
+      const data = await fetch("/api/exam/access", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
       })
-      .catch(() => {});
+        .then((res) => (res.ok ? res.json() : null))
+        .catch(() => null);
+      if (cancelled || !data) return;
+      if (data.state === "eligible" || data.state === "in_progress" || data.state === "submitted") {
+        setExamState(data.state);
+        if (data.token) {
+          try {
+            localStorage.setItem("exam.token", data.token);
+          } catch {}
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // ทุกปุ่มสั่งซื้อบนหน้านี้เรียกผ่านตัวนี้ — นับเป็นเหตุการณ์ "เปิดฟอร์มสั่งซื้อ" ที่เดียวจบ
@@ -125,13 +105,17 @@ export default function Home() {
             <a href="#summaries" className="text-sm font-semibold text-ink/60 transition hover:text-maroon">ไฟล์เนื้อหา</a>
             <a href="#bundles" className="text-sm font-semibold text-ink/60 transition hover:text-maroon">Bundles</a>
             <a href="#faq" className="text-sm font-semibold text-ink/60 transition hover:text-maroon">ข้อสงสัย</a>
+            <a href="/about" className="text-sm font-semibold text-ink/60 transition hover:text-maroon">เกี่ยวกับพี่</a>
           </nav>
-          <button
-            onClick={() => buy(PRODUCTS["bundle-all"])}
-            className="border border-maroon bg-maroon px-5 py-1.5 text-sm font-semibold text-paper transition hover:bg-maroon-dark"
-          >
-            สั่งซื้อ
-          </button>
+          <div className="flex items-center gap-2.5">
+            <AccountButton user={user} />
+            <button
+              onClick={() => buy(PRODUCTS["bundle-all"])}
+              className="hidden border border-maroon bg-maroon px-5 py-1.5 text-sm font-semibold text-paper transition hover:bg-maroon-dark sm:inline-block"
+            >
+              สั่งซื้อ
+            </button>
+          </div>
         </div>
       </header>
 
@@ -141,7 +125,36 @@ export default function Home() {
         <Gear teeth={12} className="pointer-events-none absolute right-28 top-40 h-36 w-36 text-steel/20" spin="ccw" />
         <Gear teeth={14} className="pointer-events-none absolute -bottom-16 left-[-3rem] h-56 w-56 text-maroon/[0.06]" spin="ccw" />
 
-        <div className="relative mx-auto max-w-6xl px-5 py-20 md:py-24">
+        <div className="relative mx-auto max-w-6xl px-5 py-14 md:py-20">
+          {/* คำทักทายจากผู้สร้าง — เจ้าของขอให้อยู่บนสุดของหน้า (2026-09-16) */}
+          <div className="mb-10 flex max-w-3xl flex-col gap-4 border-l-4 border-maroon bg-white/80 px-5 py-4 shadow-[0_12px_30px_-22px_rgba(36,16,22,0.5)] sm:flex-row sm:items-start sm:gap-5 md:px-6 md:py-5">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/about/mako-square.jpg"
+              alt="พี่มาโก้ ศุภวัฒน์"
+              width={480}
+              height={480}
+              className="h-24 w-24 shrink-0 rounded-full border-2 border-maroon/30 object-cover shadow-[0_10px_24px_-12px_rgba(36,16,22,0.6)] sm:h-28 sm:w-28"
+            />
+            <div>
+            <p className="text-[1.05rem] leading-relaxed text-ink md:text-[1.15rem]">
+              สวัสดีครับน้อง ๆ พี่ชื่อ <strong className="text-maroon">มาโก้ ศุภวัฒน์</strong> กำลังศึกษาอยู่ที่
+              <strong> วิศวคอม จุฬาฯ</strong> พี่และเพื่อน ๆ ในกลุ่มได้รวมหัวกันออกแบบ{" "}
+              <strong>Mock TPAT3</strong> และ<strong>เนื้อหาสำหรับสอบ TPAT3</strong> หากน้องสนใจ
+              สามารถคลิกดูด้านล่างได้เลยครับ
+            </p>
+            <a
+              href="/about"
+              className="mt-3 inline-flex items-center gap-2 border border-maroon px-4 py-2 text-sm font-bold text-maroon transition hover:bg-maroon hover:text-paper"
+            >
+              อ่านเรื่องราวของพี่ — “The best or nothing”
+              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} aria-hidden>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+              </svg>
+            </a>
+            </div>
+          </div>
+
           <h1 className="font-display text-[2.4rem] font-bold leading-[1.15] tracking-tight text-ink md:text-[3.4rem]">
             Tpat3 and Physics A-Level<br />
             <span className="text-maroon">by Mr.tpat3</span>
@@ -194,11 +207,15 @@ export default function Home() {
         <div className="mt-10 grid gap-5 md:grid-cols-[1.1fr_1fr]">
           {/* การ์ดสินค้า Mock */}
           <div className="flex flex-col border border-grid bg-white p-7 transition hover:border-maroon">
-            <MockStack />
-            <div>
-              <span className="font-display text-2xl font-bold text-maroon">ชุดที่ 1</span>
-            </div>
-            <h3 className="mt-3 font-display text-xl font-semibold text-ink">ข้อสอบ Mock TPAT3</h3>
+            {/* กดปก/ชื่อ = เข้าหน้ารายละเอียดคอร์ส */}
+            <a href="/courses/mock-tpat3" className="group block" aria-label="ดูรายละเอียดคอร์ส ข้อสอบ Mock TPAT3">
+              <MockStack />
+              <div>
+                <span className="font-display text-2xl font-bold text-maroon">ชุดที่ 1</span>
+              </div>
+              <h3 className="mt-3 font-display text-xl font-semibold text-ink group-hover:text-maroon">ข้อสอบ Mock TPAT3</h3>
+              <DetailLink />
+            </a>
             <div className="mt-auto" />
             <div className="mt-6 h-1 w-10 bg-maroon" />
             <p className="mt-4 font-display text-3xl font-bold text-maroon">
@@ -319,11 +336,11 @@ export default function Home() {
           <div className="mt-7 divide-y divide-grid border-y border-grid">
             <FaqItem
               q="ซื้อแล้วทำอะไรต่อ?"
-              a="ชำระเงินสำเร็จ หน้าเว็บจะมีปุ่ม “เริ่มสอบ” ให้กดเข้าห้องสอบออนไลน์ได้ทันที ส่วนไฟล์ทั้งหมด (โจทย์ เฉลยละเอียด กระดาษคำตอบ) ระบบส่งลิงก์เข้าอีเมลที่กรอกไว้ให้เรียบร้อยแล้ว แนะนำให้เปิดเฉลยหลังทำข้อสอบเสร็จ ผลวิเคราะห์จะได้ตรงกับฝีมือจริง"
+              a="ชำระเงินสำเร็จ กด “เริ่มสอบ” แล้วล็อกอินด้วยบัญชี Google อีเมลเดียวกับที่สั่งซื้อ ก็เข้าห้องสอบออนไลน์ได้ทันที ไฟล์ทั้งหมด (โจทย์ เฉลยละเอียด กระดาษคำตอบ) กลับมาโหลดได้ตลอดที่หน้า “คอร์สของฉัน” และระบบส่งลิงก์เข้าอีเมลไว้ให้ด้วย แนะนำให้เปิดเฉลยหลังทำข้อสอบเสร็จ ผลวิเคราะห์จะได้ตรงกับฝีมือจริง"
             />
             <FaqItem
               q="ทำข้อสอบออนไลน์ยังไง? ต้องเตรียมอะไร?"
-              a="เข้าหน้าห้องสอบแล้วกรอกชื่อ นามสกุล และอีเมลให้ตรงกับตอนสั่งซื้อ จากนั้นกดเริ่ม ระบบจะจับเวลา 3 ชั่วโมงและบันทึกคำตอบให้อัตโนมัติ (เน็ตหลุดหรือรีเฟรชก็ทำต่อได้) แนะนำให้ทำในคอมพิวเตอร์หรือ iPad เพื่อให้เห็นโจทย์ชัดเต็มตา"
+              a="เข้าหน้าห้องสอบแล้วล็อกอินด้วยบัญชี Google อีเมลเดียวกับที่สั่งซื้อ จากนั้นกดเริ่ม ระบบจะจับเวลา 3 ชั่วโมงและบันทึกคำตอบให้อัตโนมัติ (เน็ตหลุดหรือรีเฟรชก็ทำต่อได้) แนะนำให้ทำในคอมพิวเตอร์หรือ iPad เพื่อให้เห็นโจทย์ชัดเต็มตา"
             />
             <FaqItem
               q="ทำข้อสอบออนไลน์ได้กี่รอบ? ทำเสร็จแล้วได้อะไร?"
@@ -335,7 +352,7 @@ export default function Home() {
             />
             <FaqItem
               q="ไม่ได้รับอีเมล ทำยังไงดี?"
-              a="เช็กกล่อง Junk / Spam ก่อน (โดยเฉพาะ Hotmail / Outlook) แล้วค้นคำว่า “tpat3mock” — ระหว่างนั้นยังเข้าห้องสอบออนไลน์ได้ตามปกติ เพราะใช้แค่ชื่อ นามสกุล และอีเมลที่สั่งซื้อ ไม่ต้องใช้ลิงก์ในอีเมล และท้ายหน้าผลสอบมีลิงก์โหลดไฟล์ให้อีกครั้ง หากยังไม่พบ ติดต่อ mr.tpat3@gmail.com"
+              a="เช็กกล่อง Junk / Spam ก่อน (โดยเฉพาะ Hotmail / Outlook) แล้วค้นคำว่า “tpat3mock” — ระหว่างนั้นล็อกอินด้วยบัญชี Google อีเมลเดียวกับที่สั่งซื้อ แล้วโหลดไฟล์ได้เลยที่หน้า “คอร์สของฉัน” ไม่ต้องใช้ลิงก์ในอีเมล หากยังไม่พบ ติดต่อ mr.tpat3@gmail.com"
             />
             <FaqItem
               q="จ่ายเงินยังไงได้บ้าง?"
@@ -360,8 +377,22 @@ export default function Home() {
         </div>
       </section>
 
-      {buying && <BuyModal product={buying} onClose={() => setBuying(null)} />}
+      <SiteFooter />
+
+      {buying && <BuyModal product={buying} user={user ?? null} onClose={() => setBuying(null)} />}
     </div>
+  );
+}
+
+/* ---------- "ดูรายละเอียดคอร์ส" ใต้ชื่อบนการ์ด (ปก+ชื่อเป็นลิงก์อยู่แล้ว ตัวนี้บอกให้รู้ว่ากดได้) ---------- */
+function DetailLink() {
+  return (
+    <span className="mt-2 inline-flex items-center gap-1.5 text-sm font-semibold text-maroon underline-offset-4 group-hover:underline">
+      ดูรายละเอียดคอร์ส
+      <svg className="h-3.5 w-3.5 transition group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} aria-hidden>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+      </svg>
+    </span>
   );
 }
 
@@ -444,14 +475,22 @@ function SummaryCard({
 }) {
   return (
     <div className="flex flex-col border border-grid bg-white p-7 transition hover:border-maroon">
-      <div className="mx-auto mb-6 w-full max-w-[210px]">
-        <Cover src={cover} alt={`ปก${no}`} />
-      </div>
-      <div className="flex items-start justify-between gap-3">
-        <span className="font-display text-2xl font-bold text-maroon">{no}</span>
-        {tag}
-      </div>
-      <h3 className="mt-5 font-display text-xl font-semibold text-ink">{title}</h3>
+      {/* กดปก/ชื่อ = เข้าหน้ารายละเอียดคอร์ส */}
+      <a
+        href={`/courses/${courseForProduct(product.id)?.slug ?? ""}`}
+        className="group block"
+        aria-label={`ดูรายละเอียดคอร์ส ${no}`}
+      >
+        <div className="mx-auto mb-6 w-full max-w-[210px]">
+          <Cover src={cover} alt={`ปก${no}`} />
+        </div>
+        <div className="flex items-start justify-between gap-3">
+          <span className="font-display text-2xl font-bold text-maroon">{no}</span>
+          {tag}
+        </div>
+        <h3 className="mt-5 font-display text-xl font-semibold text-ink">{title}</h3>
+        <DetailLink />
+      </a>
       <div className={`mt-auto h-1.5 w-full ${bar}`} style={{ marginTop: "auto" }} />
       <p className="mt-4 font-display text-3xl font-bold text-maroon">฿{product.price.toLocaleString()}</p>
       <button
@@ -498,7 +537,11 @@ function BundleCard({
         </span>
       )}
       {covers.length > 0 && (
-        <div className="mb-6 flex items-center justify-center">
+        <a
+          href={`/courses/${courseForProduct(product.id)?.slug ?? ""}`}
+          className="mb-6 flex items-center justify-center"
+          aria-label={`ดูรายละเอียดคอร์ส ${displayName}`}
+        >
           {covers.map((c, i) => (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -516,10 +559,14 @@ function BundleCard({
               style={{ aspectRatio: "1792 / 2400", objectFit: "cover" }}
             />
           ))}
-        </div>
+        </a>
       )}
       <p className="eyebrow tracking-[0.18em]">{eyebrow}</p>
-      <h3 className="mt-2 font-display text-xl font-bold text-ink">{displayName}</h3>
+      <h3 className="mt-2 font-display text-xl font-bold text-ink">
+        <a href={`/courses/${courseForProduct(product.id)?.slug ?? ""}`} className="hover:text-maroon">
+          {displayName}
+        </a>
+      </h3>
       <ul className="mt-5 flex-1">
         {items.map((item) => (
           <li key={item} className="relative border-b border-dashed border-grid py-2 pl-6 text-[0.92rem] text-ink">

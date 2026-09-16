@@ -31,7 +31,7 @@ export async function sendDownloadEmail(input: {
   // ชุดที่มีข้อสอบ: ชวนเข้าห้องสอบก่อน แล้วค่อยเป็นไฟล์ พร้อมเตือนเรื่องเปิดเฉลย
   const examBlock = input.hasExam
     ? `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 8px"><tr><td style="background:#6E1423;border-radius:8px"><a href="${config.baseUrl}/exam" style="display:inline-block;color:#ffffff;padding:16px 34px;text-decoration:none;font-weight:700;font-size:16px;font-family:Arial,sans-serif">เริ่มสอบ TPAT3 &middot; 70 ข้อ &middot; จับเวลา 3 ชม. &rarr;</a></td></tr></table>` +
-      `<p style="color:#666;font-size:13px;margin:0 0 22px">กรอกชื่อ นามสกุล และอีเมลให้ตรงกับที่สั่งซื้อเพื่อเข้าห้องสอบ &middot; 1 อีเมลมีสิทธิ์สอบ 1 รอบ &middot; แนะนำให้ทำในคอมพิวเตอร์หรือ iPad</p>` +
+      `<p style="color:#666;font-size:13px;margin:0 0 22px">ล็อกอินด้วยบัญชี Google อีเมลเดียวกับที่สั่งซื้อเพื่อเข้าห้องสอบ &middot; 1 อีเมลมีสิทธิ์สอบ 1 รอบ &middot; แนะนำให้ทำในคอมพิวเตอร์หรือ iPad</p>` +
       `<p style="font-size:14px;margin:0 0 10px"><strong>ไฟล์ของคุณ ${fileCount} ไฟล์</strong> — แนะนำให้เปิดไฟล์เฉลยหลังทำข้อสอบเสร็จ ผลวิเคราะห์จะได้ตรงกับฝีมือจริง</p>`
     : `<p>การชำระเงินสำหรับ <strong>${escapeHtml(input.productName)}</strong> สำเร็จแล้ว คุณจะได้รับ <strong>${fileCount} ไฟล์</strong> กดปุ่มด้านล่างเพื่อดาวน์โหลดแต่ละไฟล์</p>`;
 
@@ -44,6 +44,7 @@ export async function sendDownloadEmail(input: {
       : "") +
     examBlock +
     `<div style="margin-top:8px">${buttons}</div>` +
+    `<p style="font-size:14px;margin:18px 0 0">ไฟล์ทั้งหมดกลับมาโหลดซ้ำได้ตลอดที่หน้า <a href="${config.baseUrl}/my-courses" style="color:#6E1423;font-weight:700">คอร์สของฉัน</a> (ล็อกอินด้วยบัญชี Google อีเมลนี้)</p>` +
     `<p style="color:#666;font-size:13px;border-top:1px solid #eeeeee;padding-top:14px;margin-top:18px">${escapeHtml(footerNote)}</p>` +
     `</div>`;
 

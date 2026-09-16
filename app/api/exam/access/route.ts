@@ -8,6 +8,8 @@ import {
   isUnlimitedEmail,
   Entitlement,
 } from "@/lib/exam-store";
+import { USER_COOKIE, verifyUserSession } from "@/lib/user-session";
+import { splitName } from "@/lib/name";
 
 export const runtime = "nodejs";
 
@@ -18,9 +20,11 @@ function sameName(a: string, b: string): boolean {
 }
 
 /**
- * เช็คสิทธิ์เข้าห้องสอบ — รับ { email, firstName, lastName, examId? } (พิมพ์เอง)
- * หรือ { token } (จากลิงก์/localStorage — โทเค็นฝังสนามสอบไว้แล้ว)
- * ไม่ระบุ examId = สนามหลัก (TPAT3)
+ * เช็คสิทธิ์เข้าห้องสอบ — รับได้ 3 แบบ (ไม่ระบุ examId = สนามหลัก TPAT3)
+ *   { useSession: true, examId? }  ทางหลัก: ล็อกอินด้วย Google แล้ว — ใช้อีเมลจากคุกกี้ล็อกอิน
+ *                                  (Google ยืนยันอีเมลให้แล้ว จึงไม่ต้องเทียบชื่อ-นามสกุล)
+ *   { token }                      จากลิงก์/localStorage — โทเค็นฝังสนามสอบไว้แล้ว
+ *   { email, firstName, lastName } ทางสำรองของคนที่ซื้อด้วยอีเมลที่ไม่ใช่บัญชี Google
  *
  * กติกา: ต้องกรอก "ชื่อ + นามสกุล + อีเมล" ให้ตรงกับคำสั่งซื้อที่ส่งของแล้วจริง
  * และคำสั่งซื้อนั้นต้องมีสิทธิ์ของสนามที่ขอ — ไม่ตรงอย่างใดอย่างหนึ่ง = เข้าไม่ได้
@@ -38,6 +42,7 @@ export async function POST(req: NextRequest) {
     lastName?: string;
     token?: string;
     examId?: string;
+    useSession?: boolean;
   };
   try {
     body = await req.json();
@@ -52,7 +57,18 @@ export async function POST(req: NextRequest) {
   // ชื่อ-นามสกุลที่ผู้ใช้พิมพ์เอง — ต้องเทียบกับข้อมูลตอนซื้อ (null = เข้าด้วยโทเค็น ไม่ต้องเทียบ)
   let typed: { firstName: string; lastName: string } | null = null;
 
-  if (typeof body.token === "string" && body.token) {
+  if (body.useSession === true) {
+    const user = verifyUserSession(req.cookies.get(USER_COOKIE)?.value);
+    if (!user) {
+      return NextResponse.json(
+        { error: "กรุณาล็อกอินก่อนเข้าห้องสอบ", loginRequired: true },
+        { status: 401 }
+      );
+    }
+    email = user.email;
+    // ชื่อจากบัญชี Google ใช้เป็นตัวสำรองเท่านั้น — มีคำสั่งซื้อ/การสอบค้าง จะใช้ชื่อตอนสั่งซื้อก่อนเสมอ
+    name = splitName(user.name);
+  } else if (typeof body.token === "string" && body.token) {
     const payload = verifyExamToken(body.token);
     if (!payload) {
       return NextResponse.json(

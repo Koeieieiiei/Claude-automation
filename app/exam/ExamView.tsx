@@ -4,12 +4,16 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getExam, DEFAULT_EXAM_ID, ExamDef } from "@/lib/exams";
 import { trackEvent } from "@/lib/analytics";
+import GoogleButton from "@/components/GoogleButton";
+import { Avatar, ClientUser, fetchCurrentUser } from "@/components/AccountButton";
 
 /**
  * ห้องสอบออนไลน์ — เลือกสนามสอบผ่าน ?exam=<examId> (ไม่ระบุ = สนามหลัก TPAT3)
  * นิยามรายสนาม (จำนวนข้อ เวลา หน้าโจทย์) มาจาก lib/exams.ts
  *
- * ลำดับหน้าจอ: gate (กรอกอีเมล/ลิงก์) → instructions (คำชี้แจง + กติกา) → exam → ไปหน้าผล
+ * ลำดับหน้าจอ: gate (ล็อกอิน Google / ลิงก์ / กรอกอีเมล) → instructions (คำชี้แจง + กติกา) → exam → ไปหน้าผล
+ * ทางหลักคือล็อกอินด้วย Google อีเมลเดียวกับที่ซื้อ (ไม่ต้องกรอกอะไร) — ฟอร์มชื่อ+อีเมลเป็นทางสำรอง
+ * สำหรับคนที่ซื้อด้วยอีเมลที่ไม่ใช่บัญชี Google
  * เวลาอิงนาฬิกา server เสมอ (คำนวณ offset ตอน start) — แก้นาฬิกาเครื่องเองไม่มีผล
  */
 
@@ -46,6 +50,8 @@ export default function ExamView() {
   const exam = getExam(params.get("exam"));
   const LS_TOKEN = lsTokenKey(exam.id);
   const LS_EMAIL = lsEmailKey(exam.id);
+  // path ของหน้านี้ (ไว้ให้ล็อกอินเสร็จแล้วเด้งกลับมาสนามเดิม)
+  const examPath = exam.id === DEFAULT_EXAM_ID ? "/exam" : `/exam?exam=${exam.id}`;
 
   const [phase, setPhase] = useState<Phase>("loading");
   const [token, setToken] = useState("");
@@ -54,6 +60,9 @@ export default function ExamView() {
   const [retakeMode, setRetakeMode] = useState(false); // อีเมลยกเว้น เริ่มรอบใหม่ทับรอบเก่า
   const [gateError, setGateError] = useState("");
   const [busy, setBusy] = useState(false);
+  // undefined = ยังไม่รู้ · null = ไม่ได้ล็อกอิน
+  const [user, setUser] = useState<ClientUser | null | undefined>(undefined);
+  const [showManual, setShowManual] = useState(false); // เปิดฟอร์มกรอกเอง (ทางสำรอง)
 
   // สถานะระหว่างสอบ
   const [deadline, setDeadline] = useState(0); // server ms
@@ -79,10 +88,12 @@ export default function ExamView() {
   /* ---------- เข้าห้องสอบ: เช็คสิทธิ์จากโทเค็น (ลิงก์/localStorage) หรือชื่อ+อีเมล ---------- */
 
   const applyAccess = useCallback(
-    (data: AccessResponse, opts: { verified?: boolean } = {}) => {
+    (data: AccessResponse, opts: { verified?: boolean; session?: boolean } = {}) => {
       if (!data.state || data.state === "none") {
         setGateError(
-          "ไม่พบสิทธิ์ทำข้อสอบของชื่อและอีเมลนี้ — ถ้าซื้อแล้ว ลองตรวจตัวสะกดให้ตรงกับตอนสั่งซื้ออีกครั้ง"
+          opts.session
+            ? "บัญชีนี้ยังไม่มีสิทธิ์ทำข้อสอบ — ถ้าซื้อด้วยอีเมลอื่น ให้เปลี่ยนบัญชี Google หรือกรอกชื่อและอีเมลที่ใช้สั่งซื้อด้านล่าง"
+            : "ไม่พบสิทธิ์ทำข้อสอบของชื่อและอีเมลนี้ — ถ้าซื้อแล้ว ลองตรวจตัวสะกดให้ตรงกับตอนสั่งซื้ออีกครั้ง"
         );
         // นับเฉพาะตอนผู้ใช้กรอกเองแล้วไม่ผ่าน (ไม่นับตอนเช็คโทเค็นเงียบ ๆ ตอนเปิดหน้า)
         if (opts.verified) trackEvent("exam_access_denied", { exam_id: exam.id });
@@ -114,13 +125,17 @@ export default function ExamView() {
     [router]
   );
 
-  const checkAccess = useCallback(
-    async (
-      body: { token?: string; email?: string; firstName?: string; lastName?: string },
-      opts: { verified?: boolean } = {}
-    ) => {
-      setBusy(true);
-      setGateError("");
+  type AccessBody = {
+    token?: string;
+    email?: string;
+    firstName?: string;
+    lastName?: string;
+    useSession?: boolean;
+  };
+
+  /** ยิง /api/exam/access — คืน { ok, data } (ไม่แตะ state ของหน้า) */
+  const fetchAccess = useCallback(
+    async (body: AccessBody): Promise<{ ok: boolean; data: AccessResponse } | null> => {
       try {
         const res = await fetch("/api/exam/access", {
           method: "POST",
@@ -128,42 +143,76 @@ export default function ExamView() {
           // ระบุสนามเสมอ (กรณีมีโทเค็น server จะยึดสนามในโทเค็นเป็นหลักอยู่แล้ว)
           body: JSON.stringify({ examId: exam.id, ...body }),
         });
-        const data = (await res.json()) as AccessResponse;
-        if (!res.ok) {
-          setGateError(data.error ?? "ตรวจสอบสิทธิ์ไม่สำเร็จ ลองใหม่อีกครั้ง");
-          if (body.token) {
-            try {
-              localStorage.removeItem(LS_TOKEN);
-            } catch {}
-          }
-          setPhase("gate");
-          return;
-        }
-        applyAccess(data, opts);
+        return { ok: res.ok, data: (await res.json()) as AccessResponse };
       } catch {
-        setGateError("เชื่อมต่อไม่สำเร็จ ลองใหม่อีกครั้ง");
-        setPhase("gate");
-      } finally {
-        setBusy(false);
+        return null;
       }
     },
-    [applyAccess]
+    [exam.id]
+  );
+
+  const checkAccess = useCallback(
+    async (body: AccessBody, opts: { verified?: boolean; session?: boolean } = {}) => {
+      setBusy(true);
+      setGateError("");
+      const result = await fetchAccess(body);
+      setBusy(false);
+      if (!result) {
+        setGateError("เชื่อมต่อไม่สำเร็จ ลองใหม่อีกครั้ง");
+        setPhase("gate");
+        return;
+      }
+      if (!result.ok) {
+        setGateError(result.data.error ?? "ตรวจสอบสิทธิ์ไม่สำเร็จ ลองใหม่อีกครั้ง");
+        if (body.token) {
+          try {
+            localStorage.removeItem(LS_TOKEN);
+          } catch {}
+        }
+        setPhase("gate");
+        return;
+      }
+      applyAccess(result.data, opts);
+    },
+    [applyAccess, fetchAccess]
   );
 
   useEffect(() => {
-    const fromUrl = params.get("token");
-    let stored = "";
-    try {
-      stored = localStorage.getItem(LS_TOKEN) ?? "";
-    } catch {}
-    const t = fromUrl || stored;
-    if (t) checkAccess({ token: t });
-    else {
+    (async () => {
+      const u = await fetchCurrentUser();
+      setUser(u);
+
+      const fromUrl = params.get("token");
+      let stored = "";
       try {
-        setEmail(localStorage.getItem(LS_EMAIL) ?? "");
+        stored = localStorage.getItem(LS_TOKEN) ?? "";
       } catch {}
-      setPhase("gate");
-    }
+      const t = fromUrl || stored;
+
+      if (u) {
+        // ล็อกอินแล้ว: ตรวจสิทธิ์จากบัญชี Google โดยตรง (ยืนยันตัวตนแล้ว ไม่ต้องกรอกอะไร)
+        const r = await fetchAccess({ useSession: true });
+        if (r?.ok && r.data.state && r.data.state !== "none") {
+          applyAccess(r.data, { verified: true, session: true });
+          return;
+        }
+        // บัญชีนี้ไม่มีสิทธิ์ แต่เครื่องนี้เคยยืนยันด้วยอีเมลอื่นไว้ (ซื้อด้วยอีเมลที่ไม่ใช่ Google)
+        if (t) {
+          checkAccess({ token: t });
+          return;
+        }
+        applyAccess(r?.ok ? r.data : { state: "none" }, { verified: true, session: true });
+        return;
+      }
+
+      if (t) checkAccess({ token: t });
+      else {
+        try {
+          setEmail(localStorage.getItem(LS_EMAIL) ?? "");
+        } catch {}
+        setPhase("gate");
+      }
+    })();
     // ตั้งใจให้รันครั้งเดียวตอนเปิดหน้า
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -336,13 +385,54 @@ export default function ExamView() {
             </span>
           </div>
           <div className="px-6 py-8">
-            <h1 className="font-display text-2xl font-bold text-ink">ยืนยันตัวตนก่อนเข้าสอบ</h1>
-            <p className="mt-2 text-sm leading-relaxed text-ink/70">
-              กรอก<strong>ชื่อ นามสกุล และอีเมลให้ตรงกับตอนสั่งซื้อ</strong>ชุด {exam.title}{" "}
-              จึงจะเข้าทำข้อสอบออนไลน์ได้ ({exam.totalQuestions} ข้อ · จับเวลา {durationText(exam)} · ทำได้ 1 รอบ)
-            </p>
+            {user ? (
+              <>
+                <h1 className="font-display text-2xl font-bold text-ink">ตรวจสอบสิทธิ์เข้าสอบ</h1>
+                <div className="mt-4 flex items-center justify-between gap-3 border border-ink/15 bg-white px-3 py-2.5 text-sm">
+                  <span className="flex min-w-0 items-center gap-2.5">
+                    <Avatar user={user} size="h-8 w-8" />
+                    <span className="min-w-0">
+                      <span className="block truncate font-semibold text-ink">{user.name || "บัญชี Google"}</span>
+                      <span className="block truncate text-xs text-ink/60">{user.email}</span>
+                    </span>
+                  </span>
+                  <a
+                    href={`/api/auth/logout?switch=1&next=${encodeURIComponent(examPath)}`}
+                    className="shrink-0 font-label text-xs font-semibold text-maroon underline underline-offset-2 hover:no-underline"
+                  >
+                    เปลี่ยนบัญชี
+                  </a>
+                </div>
+              </>
+            ) : (
+              <>
+                <h1 className="font-display text-2xl font-bold text-ink">โปรดล็อกอินก่อนเข้าห้องสอบ</h1>
+                <p className="mt-2 text-sm leading-relaxed text-ink/70">
+                  ล็อกอินด้วยบัญชี Google <strong>อีเมลเดียวกับที่ใช้สั่งซื้อ</strong>ชุด {exam.title}{" "}
+                  ระบบจะตรวจสิทธิ์และพาเข้าห้องสอบให้ทันที ({exam.totalQuestions} ข้อ · จับเวลา{" "}
+                  {durationText(exam)} · ทำได้ 1 รอบ)
+                </p>
+                <GoogleButton next={examPath} className="mt-5" />
+              </>
+            )}
+
+            {gateError && (
+              <p className="mt-4 border border-maroon/40 bg-maroon/[0.06] px-4 py-3 text-sm leading-relaxed text-maroon">
+                {gateError}
+              </p>
+            )}
+
+            {/* ทางสำรอง: ซื้อด้วยอีเมลที่ไม่ใช่บัญชี Google → กรอกชื่อ-นามสกุล-อีเมลตอนสั่งซื้อ */}
+            <button
+              type="button"
+              onClick={() => setShowManual((v) => !v)}
+              className="mt-5 text-left text-sm font-semibold text-ink/60 underline underline-offset-4 hover:text-maroon"
+            >
+              {showManual ? "ซ่อนฟอร์มกรอกเอง" : "ซื้อด้วยอีเมลที่ไม่ใช่บัญชี Google? กรอกชื่อและอีเมลตอนสั่งซื้อ"}
+            </button>
+            {showManual && (
             <form
-              className="mt-5"
+              className="mt-3"
               onSubmit={(e) => {
                 e.preventDefault();
                 const f = new FormData(e.currentTarget);
@@ -384,15 +474,11 @@ export default function ExamView() {
               <button
                 type="submit"
                 disabled={busy}
-                className="mt-3 w-full bg-maroon py-3.5 font-bold text-paper transition hover:bg-maroon-dark disabled:opacity-60"
+                className="mt-3 w-full border border-ink py-3 font-bold text-ink transition hover:bg-ink hover:text-paper disabled:opacity-60"
               >
                 {busy ? "กำลังตรวจสอบ…" : "ตรวจสอบสิทธิ์เข้าสอบ"}
               </button>
             </form>
-            {gateError && (
-              <p className="mt-4 border border-maroon/40 bg-maroon/[0.06] px-4 py-3 text-sm leading-relaxed text-maroon">
-                {gateError}
-              </p>
             )}
 
             {/* ทางไปซื้อ — โชว์ตั้งแต่เปิดหน้า ไม่ต้องรอให้กรอกผิดก่อน */}

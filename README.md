@@ -283,6 +283,35 @@ npx vercel --prod --yes
 
 ---
 
+## 🔐 ล็อกอินด้วย Google + "คอร์สของฉัน" + หน้ารายละเอียดคอร์ส (เพิ่ม 2026-09-16)
+
+แนวคิด: **สิทธิ์ทุกอย่างผูกกับอีเมลในตาราง `orders` เหมือนเดิม** — ล็อกอินด้วยบัญชี Google
+อีเมลเดียวกับตอนสั่งซื้อ = เห็นคอร์ส/ไฟล์/ห้องสอบของตัวเอง การซื้อและการส่งไฟล์ทางอีเมลไม่เปลี่ยน
+
+| หน้า / API | ทำอะไร |
+|---|---|
+| `/my-courses` | คอร์สของฉัน — ทุกอย่างที่อีเมลนี้ซื้อ: ปุ่มเข้าห้องสอบ/ดูผล + ไฟล์ทุกไฟล์โหลดซ้ำได้ตลอด (ลายน้ำชื่อผู้ซื้อ) |
+| `/courses/<slug>` | รายละเอียดคอร์ส (mock-tpat3 / tpat3-content / complete-set) — ข้อความอยู่ใน [lib/courses.ts](lib/courses.ts) ซื้อแล้วปุ่มเปลี่ยนเป็น "เข้าเรียน" |
+| `/about` | บทความ "เกี่ยวกับพี่" (แก้ข้อความใน [app/about/page.tsx](app/about/page.tsx) รูปที่ `public/about/`) |
+| `/api/auth/google?next=` | เริ่มล็อกอิน (PKCE ผ่าน Supabase Auth → Google) |
+| `/api/auth/callback` | Supabase ส่งกลับ → แลก code เป็นอีเมลที่ยืนยันแล้ว → ออกคุกกี้ `mrtpat3_user` (httpOnly, เซ็น HMAC, 180 วัน) |
+| `/api/auth/me` · `/api/auth/logout` | ถามสถานะ / ออกจากระบบ (`?switch=1` = เปลี่ยนบัญชี) |
+
+- ห้องสอบ `/exam`: ทางหลักคือล็อกอิน Google (`/api/exam/access` รับ `{ useSession: true }`) —
+  ฟอร์มกรอกชื่อ+อีเมลยังอยู่เป็นทางสำรองสำหรับคนที่ซื้อด้วยอีเมลที่ไม่ใช่บัญชี Google
+- ฟอร์มสั่งซื้อ: ล็อกอินอยู่ → อีเมลล็อกตามบัญชี (มีปุ่มเปลี่ยนบัญชี) ชื่อเติมจาก Google แต่แก้ได้
+- คุกกี้ล็อกอินเซ็นด้วย `DOWNLOAD_SECRET + ":user-session"` และฝัง `t:"user"` — เอาโทเค็นดาวน์โหลด/
+  โทเค็นห้องสอบมาสวมไม่ได้ (มี test ใน `tests/user-session.test.ts`)
+- ไม่มี anon key / Supabase client ฝั่ง browser — ทุกอย่างทำฝั่ง server ด้วย service role key
+- ออเดอร์ `sum4`/`bundle-all` ก่อน 2026-09-16 16:43 (ยุคไฟล์สรุป 2 ไฟล์) หน้าคอร์สของฉันจะโชว์ไฟล์รุ่นเก่า
+  ตามที่ซื้อจริง (`CONTENT_SWITCH_AT` ใน [lib/library.ts](lib/library.ts))
+
+**ตั้งค่าที่ต้องมี (Supabase Dashboard):** Authentication → Providers → Google เปิด + Client ID + **Client Secret** ·
+URL Configuration → Site URL `https://tpat3mock.com` + Redirect URLs `https://tpat3mock.com/**` และ `http://localhost:3000/**` ·
+Google Cloud → OAuth consent screen ต้องเป็น **Production** (Testing = ล็อกอินได้เฉพาะ test users)
+
+---
+
 ## ⚠️ ข้อจำกัดที่ควรรู้
 - **ลายน้ำกันแชร์ได้ระดับหนึ่ง ไม่ 100%** — ช่วยสืบหาต้นตอคนแชร์ แต่กันแคป/ส่งต่อไม่ได้ทั้งหมด
 - **ไม่รับคืนเงิน** — เป็นสินค้าดิจิทัลที่ส่งทันที (ระบุใน FAQ บนเว็บแล้ว)

@@ -59,18 +59,28 @@ export default function ResultsView() {
   const [error, setError] = useState("");
 
   useEffect(() => {
+    let cancelled = false;
     let token = params.get("token") ?? "";
     if (!token) {
       try {
         token = localStorage.getItem(lsTokenKey(params.get("exam"))) ?? "";
       } catch {}
     }
-    if (!token) {
-      setError("ไม่พบสิทธิ์ดูผลสอบ — เข้าห้องสอบด้วยอีเมลที่ซื้อก่อน");
-      return;
-    }
 
-    let cancelled = false;
+    /** ไม่มีโทเค็นในเครื่อง (เช่น เปิดจากหน้า "คอร์สของฉัน" คนละเครื่อง) → ขอจากบัญชีที่ล็อกอินอยู่ */
+    const tokenFromSession = async (): Promise<string> => {
+      try {
+        const res = await fetch("/api/exam/access", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ useSession: true, examId: params.get("exam") ?? undefined }),
+        });
+        const d = await res.json();
+        return res.ok && typeof d.token === "string" ? d.token : "";
+      } catch {
+        return "";
+      }
+    };
     /**
      * หน้านี้มักถูกเปิด "วินาทีเดียวกับที่เพิ่งกดส่งข้อสอบ" — ไฟล์ผลสอบเพิ่งถูกเขียน
      * ถ้าจังหวะนั้น Storage คืนไฟล์เวอร์ชันเก่า/เน็ตสะดุด คำขอแรกอาจได้ 409/503
@@ -102,7 +112,15 @@ export default function ResultsView() {
         setError("เชื่อมต่อไม่สำเร็จ — รีเฟรชหน้านี้อีกครั้ง");
       }
     };
-    load(5);
+    (async () => {
+      if (!token) token = await tokenFromSession();
+      if (cancelled) return;
+      if (!token) {
+        setError("ไม่พบสิทธิ์ดูผลสอบ — ล็อกอินด้วยบัญชี Google อีเมลเดียวกับที่ซื้อ หรือเข้าห้องสอบด้วยอีเมลที่ซื้อก่อน");
+        return;
+      }
+      load(5);
+    })();
     return () => {
       cancelled = true;
     };
@@ -117,7 +135,7 @@ export default function ResultsView() {
           <p className="text-ink/75">{error}</p>
           <p className="mt-3 text-sm leading-relaxed text-ink/55">
             ถ้าเพิ่งกดส่งไปแล้วเห็นข้อความนี้ ให้กดปุ่มด้านล่างแล้ว
-            <strong>กรอกชื่อ นามสกุล และอีเมลที่ใช้สอบ</strong> — ระบบจะพาไปหน้าผลสอบให้เอง
+            <strong>ล็อกอินด้วยบัญชี Google อีเมลที่ใช้สอบ</strong> — ระบบจะพาไปหน้าผลสอบให้เอง
             (ผลสอบไม่หายไปไหน)
           </p>
           <a

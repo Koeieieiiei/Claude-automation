@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyDownloadToken } from "@/lib/download-token";
 import { FILE_INFO, isFileId } from "@/lib/catalog";
 import { buildDeliverablePdf } from "@/lib/watermark";
+import { afterReset } from "@/lib/access-reset";
 
 export const runtime = "nodejs";
 // ไฟล์เฉลยเป็น PDF ใหญ่ (~15MB) การใส่ลายน้ำทุกหน้าใช้เวลาหลายวินาที
@@ -22,6 +23,14 @@ export async function GET(
   if (!payload) {
     return NextResponse.json(
       { error: "ลิงก์ดาวน์โหลดไม่ถูกต้องหรือหมดอายุแล้ว" },
+      { status: 403 }
+    );
+  }
+
+  // ลิงก์ที่ออกก่อนวันรีเซ็ตสิทธิ์ (เช่น ในอีเมลเก่า) ใช้ไม่ได้แล้ว — ดู lib/access-reset.ts
+  if (!afterReset(payload.iat)) {
+    return NextResponse.json(
+      { error: "ลิงก์นี้ใช้ไม่ได้แล้ว — ล็อกอินด้วยบัญชี Google ที่หน้า “คอร์สของฉัน” เพื่อโหลดไฟล์" },
       { status: 403 }
     );
   }

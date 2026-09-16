@@ -119,14 +119,24 @@ export async function buildDeliverablePdf(
   return watermarkPdf(master, buyer, { skipFirstPage: SKIP_COVER_PAGE.has(file) });
 }
 
-/** บรรทัดที่ 2 ของลายน้ำทแยง — ข้อความเตือนสิทธิ์ (แทนอีเมลที่เคยโชว์กลางหน้า) */
-const PERMISSION_LINE = "อนุญาตให้ใช้เฉพาะบุคคลนี้";
+/**
+ * ลายน้ำแบรนด์ — แบบเดียวกับไฟล์ตัวอย่างฟรี (scripts/make-summary-sample.mjs):
+ * "Mr.tpat3" / "Tiktok: Mrtpat3" 2 บรรทัด เอียง 35° สีเทาจาง สลับเยื้องซ้าย-ขวาทีละหน้า
+ * (เจ้าของสั่ง 2026-09-16: เลิกพิมพ์ชื่อ-อีเมลผู้ซื้อบนหน้ากระดาษ)
+ * ตำแหน่งคิดเป็นสัดส่วนของหน้า A4 (595×842) ของต้นฉบับ เพื่อให้หน้าขนาดอื่นวางตรงกัน
+ */
+const BRAND_LINES = [
+  { text: "Mr.tpat3", size: 34, yFrac: 403.92 / 842 },
+  { text: "Tiktok: Mrtpat3", size: 28, yFrac: 347.92 / 842 },
+];
+const BRAND_X_LEFT = 124 / 595; // หน้าคี่ของชุด — เยื้องซ้าย
+const BRAND_X_RIGHT = 339 / 595; // หน้าคู่ของชุด — เยื้องขวา
+const BRAND_ANGLE = 35;
+const BRAND_OPACITY = 0.25;
 
 /**
- * ใส่ลายน้ำระบุตัวผู้ซื้อลงทุกหน้าของ PDF
- * - ลายน้ำทแยงมุมจางๆ กลางหน้า 3 บรรทัด (ชื่อ-นามสกุล / อีเมล / ข้อความเตือนสิทธิ์)
- *   เยื้องซ้าย-ขวาสลับกันทุกหน้า
- * - ไม่มีแถบข้อความที่ขอบล่างแล้ว (เจ้าของขอเอาออก 2026-07-26)
+ * ใส่ลายน้ำแบรนด์ลงทุกหน้าของ PDF
+ * - ตัวตนผู้ซื้อ (ชื่อ/อีเมล) ไม่พิมพ์บนหน้ากระดาษแล้ว แต่ยังฝังใน metadata ของไฟล์ไว้สืบย้อนถ้าไฟล์หลุด
  * - opts.skipFirstPage = เว้นหน้าแรก (ใช้กับไฟล์ที่หน้าแรกเป็นหน้าปก)
  */
 export async function watermarkPdf(
@@ -142,15 +152,10 @@ export async function watermarkPdf(
   if (fontBytes) {
     font = await pdfDoc.embedFont(fontBytes, { subset: true });
   } else {
-    // fallback: Helvetica รองรับเฉพาะอักษรละติน (ชื่อภาษาไทยอาจไม่แสดง)
     font = await pdfDoc.embedFont(StandardFonts.Helvetica);
   }
 
   const fullName = `${buyer.firstName} ${buyer.lastName}`.trim();
-
-  // เจ้าของร้านขอเอาแถบข้อความขอบล่างออก (2026-07-26) — หน้ากระดาษจะได้สะอาด
-  // แต่ยังต้องสืบย้อนได้ถ้าไฟล์หลุด จึงฝังตัวตนผู้ซื้อไว้ใน metadata ของ PDF แทน
-  // (มองไม่เห็นตอนอ่าน แต่เปิดดูคุณสมบัติไฟล์แล้วรู้ว่าเป็นของใคร — ชื่อซ้ำกันได้ อีเมลไม่ซ้ำ)
   pdfDoc.setSubject(`เอกสารลิขสิทธิ์เฉพาะ ${fullName} (${buyer.email}) • ห้ามเผยแพร่ต่อ`);
   pdfDoc.setKeywords([fullName, buyer.email, "ห้ามเผยแพร่ต่อ"]);
 
@@ -158,37 +163,19 @@ export async function watermarkPdf(
     if (opts.skipFirstPage && index === 0) return; // หน้าปก — ปล่อยสะอาด
 
     const { width, height } = page.getSize();
-
-    // ลายน้ำทแยงมุมกลางหน้า 3 บรรทัด: ชื่อ-นามสกุล / อีเมล / ข้อความเตือนสิทธิ์
-    // ชื่อตัวใหญ่สุด อีก 2 บรรทัดเล็กลง — ให้อ่านออกชัดถ้าไฟล์หลุด แต่ไม่บังโจทย์
-    const maxSpan = width * 0.62;
-    const nameSize = fitSize(font, fullName, Math.max(13, Math.min(23, width / 26)), 9, maxSpan);
-    const subSize = nameSize * 0.72;
-    const lines = [
-      ...(fullName ? [{ text: fullName, size: nameSize }] : []),
-      ...(buyer.email ? [{ text: buyer.email, size: fitSize(font, buyer.email, subSize, 8, maxSpan) }] : []),
-      { text: PERMISSION_LINE, size: fitSize(font, PERMISSION_LINE, subSize, 8, maxSpan) },
-    ];
-    const gap = nameSize * 1.5;
-
-    // จุดกึ่งกลางของบล็อกลายน้ำ — หน้าคี่เยื้องซ้าย หน้าคู่เยื้องขวา สลับกันไปทุกหน้า
-    const anchorX = width * (index % 2 === 0 ? 0.36 : 0.64);
-    const anchorY = height * 0.46;
-
-    lines.forEach((line, i) => {
-      const half = font.widthOfTextAtSize(line.text, line.size) / 2;
-      const drop = (i - (lines.length - 1) / 2) * gap; // ระยะห่างจากกึ่งกลางบล็อกในแนวตั้งฉาก
+    const scale = width / 595; // ต้นฉบับเป็น A4 — หน้าขนาดอื่นย่อ/ขยายตาม
+    const baseX = width * (index % 2 === 1 ? BRAND_X_RIGHT : BRAND_X_LEFT); // สลับซ้าย-ขวาทีละหน้า
+    BRAND_LINES.forEach((line, j) => {
       page.drawText(line.text, {
-        x: anchorX - ALONG.x * half + BELOW.x * drop,
-        y: anchorY - ALONG.y * half + BELOW.y * drop,
-        size: line.size,
+        x: baseX + j * 3 * scale, // บรรทัดล่างเยื้องขวาอีก 3pt ตามต้นฉบับ
+        y: height * line.yFrac,
+        size: line.size * scale,
         font,
         color: rgb(0.5, 0.5, 0.5),
-        opacity: 0.28,
-        rotate: degrees(DIAG_ANGLE),
+        opacity: BRAND_OPACITY,
+        rotate: degrees(BRAND_ANGLE),
       });
     });
-
   });
 
   return pdfDoc.save();

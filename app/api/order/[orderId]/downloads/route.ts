@@ -4,6 +4,7 @@ import { getProduct, PRODUCTS } from "@/lib/catalog";
 import { getOrder } from "@/lib/orders";
 import { getStripe } from "@/lib/stripe";
 import { buildDownloadLinks } from "@/lib/downloads";
+import { afterReset } from "@/lib/access-reset";
 
 // การสร้างลิงก์เกี่ยวข้องกับ crypto (เซ็นโทเค็น) + เรียก Stripe — ต้องรันบน Node
 export const runtime = "nodejs";
@@ -28,7 +29,8 @@ export async function GET(
   const { orderId } = await params;
 
   const order = await getOrder(orderId);
-  if (!order) {
+  // ออเดอร์ก่อนวันรีเซ็ตสิทธิ์ไม่ออกลิงก์ใหม่ให้ (ดู lib/access-reset.ts)
+  if (!order || !afterReset(order.created_at)) {
     return NextResponse.json(
       { status: "not_found" },
       { status: 404, headers: { "Cache-Control": "no-store" } }

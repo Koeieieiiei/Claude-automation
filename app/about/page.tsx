@@ -9,7 +9,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "เกี่ยวกับพี่ — The best or nothing | Mr.tpat3",
+  title: "บทความเกี่ยวกับฉัน | Mr.tpat3",
   description:
     "เรื่องราวสั้น ๆ ของคนทำ Mock TPAT3 — จากเด็กที่เล่นเกมทั้งวัน สอบไม่ติดสวนกุหลาบและเตรียมอุดม สู่วิศวกรรมคอมพิวเตอร์ จุฬาฯ ทำไมถึงเลือกทำ TPAT3 และคติ “The best or nothing”",
   alternates: { canonical: "/about" },
@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 
 /**
  * บทความ "เกี่ยวกับพี่" — เจ้าของเล่าเรื่องมาให้เรียบเรียง (2026-09-16) แบ่ง 2 หัวข้อ:
- * ประวัติของพี่ / ทำไมถึงเลือก TPAT3 — แก้ข้อความได้ที่ไฟล์นี้ที่เดียว
+ * ประวัติของพี่ / ทำไมต้อง TPAT3 — แก้ข้อความได้ที่ไฟล์นี้ที่เดียว
  */
 export default async function AboutPage() {
   const user = verifyUserSession((await cookies()).get(USER_COOKIE)?.value);
@@ -33,16 +33,17 @@ export default async function AboutPage() {
           <div className="relative mx-auto grid max-w-4xl items-center gap-8 px-5 py-14 md:grid-cols-[1fr_auto] md:py-20">
             <div>
             <h1 className="font-display text-[2.4rem] font-bold leading-[1.1] tracking-tight text-ink md:text-[3.2rem]">
-              The best <span className="text-maroon">or nothing</span>
+              บทความ<span className="text-maroon">เกี่ยวกับฉัน</span>
             </h1>
-            <nav className="mt-6 flex flex-wrap gap-2 font-label text-sm" aria-label="หัวข้อในบทความ">
-              <a href="#story" className="border border-ink/25 bg-white px-3.5 py-1.5 font-semibold text-ink transition hover:border-maroon hover:text-maroon">
-                1 · ประวัติของพี่
-              </a>
-              <a href="#why-tpat3" className="border border-ink/25 bg-white px-3.5 py-1.5 font-semibold text-ink transition hover:border-maroon hover:text-maroon">
-                2 · ทำไมถึงเลือก TPAT3
-              </a>
-            </nav>
+            <a
+              href="/"
+              className="mt-6 inline-flex items-center gap-2 border border-ink/25 bg-white px-4 py-2 font-label text-sm font-semibold text-ink transition hover:border-maroon hover:text-maroon"
+            >
+              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} aria-hidden>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+              </svg>
+              กลับหน้าหลัก
+            </a>
             </div>
             <figure className="mx-auto w-[220px] md:w-[260px]">
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -69,13 +70,16 @@ export default async function AboutPage() {
                 จุฬาลงกรณ์มหาวิทยาลัย
               </p>
               <p>
-                พี่ไม่ใช่เด็กเรียนเก่ง และไม่ใช่เด็กขยันมาตั้งแต่แรก วัยเด็กของพี่เหมือนเด็กทั่วไป เล่นเกมทั้งวัน
-                เตะบอลทั้งวัน ไม่ใช่เด็กแข่งขันหรือไม่ใช่เด็กเรียนเลย ม.1 พี่สอบไม่ติดสวนกุหลาบ ม.4 ก็เช่นเดียวกัน
-                พี่สอบไม่ติดเตรียมอุดม
+                พี่ไม่ใช่เด็กเรียนเก่ง และไม่ใช่เด็กขยันมาตั้งแต่แรก วัยเด็กของพี่เหมือนเด็กทั่วไปเลย เล่นเกมทั้งวัน
+                เตะบอลทั้งวัน ไม่ใช่เด็กแข่งขันหรือเด็กเรียนเลย ม.1 พี่สอบไม่ติดสวนกุหลาบ ม.4 ก็เช่นเดียวกัน
+                พี่สอบไม่ติดเตรียมอุดม แต่พี่ก็ไม่ได้เสียใจอะไร เพราะในช่วงนั้น การใช้ชีวิตไปวัน ๆ
+                นั่นแหละคือความฝันของพี่
               </p>
               <p>
-                จุดเปลี่ยนมาถึงตอน ม.5 พี่ฟลุกสอบติด สอวน. รอบหนึ่ง และที่นั่นทำให้พี่ได้เห็นสังคมที่ต่างออกไปโดยสิ้นเชิง
-                ทุกคนขยัน ทุกคนพากันเรียน และไม่มีใครมองว่าการตั้งใจเรียนเป็นเรื่องแปลก ถึงพี่จะเต็มที่แล้วและไม่ได้ไปต่อ
+                จุดเปลี่ยนมาถึงตอน ม.5 พี่ฟลุกสอบติด สอวน. รอบหนึ่ง ตอนแรกพี่ก็ไม่ได้อยากเข้าค่ายด้วยซ้ำ
+                เพราะไม่รู้จะเข้าค่ายไปทำไม และคิดแค่อยากเล่นเกมกับอยากเตะบอล แต่สุดท้ายก็ต้องไปเพราะแม่บังคับ
+                และที่นั่นทำให้พี่ได้เห็นสังคมที่ต่างออกไปโดยสิ้นเชิง ทุกคนขยัน ทุกคนพากันเรียน
+                และไม่มีใครมองว่าการตั้งใจเรียนเป็นเรื่องแปลก ถึงพี่จะเต็มที่แล้วและไม่ได้ไปต่อ
                 แต่พี่กลับออกมาพร้อมไฟที่<strong className="text-ink">อยากกลับเข้าไปอยู่ในสังคมแบบนั้นอีกครั้ง</strong>
               </p>
               <p>
@@ -93,10 +97,10 @@ export default async function AboutPage() {
             </blockquote>
           </section>
 
-          {/* ===== 2. ทำไมถึงเลือก TPAT3 ===== */}
+          {/* ===== 2. ทำไมต้อง TPAT3 ===== */}
           <section id="why-tpat3" className="mt-14 scroll-mt-24 border-t border-grid pt-12">
             <p className="font-label text-[11px] font-semibold uppercase tracking-[0.22em] text-maroon">02</p>
-            <h2 className="mt-1 font-display text-[1.75rem] font-bold leading-snug text-ink md:text-[2rem]">ทำไมถึงเลือก TPAT3</h2>
+            <h2 className="mt-1 font-display text-[1.75rem] font-bold leading-snug text-ink md:text-[2rem]">ทำไมต้อง TPAT3</h2>
             <div className="mt-6 space-y-6 text-[1.08rem] leading-[1.9] text-ink/85 md:text-[1.15rem]">
               <p>
                 ปีที่พี่เตรียมตัวสอบ TPAT3 เป็นปีที่หลักสูตรนี้เพิ่งประกาศออกมาไม่นาน ยังไม่มีใครรู้แนวข้อสอบที่แน่ชัด
@@ -126,7 +130,7 @@ export default async function AboutPage() {
           <p className="mt-10 font-display text-lg font-bold text-ink">
             มาโก้ ศุภวัฒน์
             <span className="mt-1 block font-label text-xs font-semibold uppercase tracking-[0.2em] text-maroon">
-              วิศวกรรมคอมพิวเตอร์ จุฬาฯ · Mr.tpat3
+              Mrtpat3
             </span>
           </p>
 

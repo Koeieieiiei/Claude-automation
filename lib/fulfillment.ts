@@ -1,7 +1,5 @@
-import { config } from "./config";
 import { getProduct, PRODUCTS, Product } from "./catalog";
 import { buildDownloadLinks } from "./downloads";
-import { sendDownloadEmail } from "./email";
 import { logSale } from "./sheets";
 import { getMasterPdfBytes } from "./watermark";
 
@@ -9,14 +7,14 @@ import { getMasterPdfBytes } from "./watermark";
  * "ส่งของ" หลังจ่ายเงินสำเร็จ — ทำงานอัตโนมัติทั้งหมด (ไม่มีคนเกี่ยวข้อง):
  * 1) หาว่าสินค้าที่ซื้อประกอบด้วยไฟล์อะไรบ้าง (จากแคตตาล็อก lib/catalog.ts)
  * 2) เช็คว่าไฟล์ต้นฉบับทุกไฟล์พร้อมให้ดาวน์โหลดจริง
- * 3) สร้างลิงก์ดาวน์โหลดแบบเซ็น + มีวันหมดอายุ + จำกัดสิทธิ์เฉพาะไฟล์ที่ซื้อ
- *    (ไฟล์จะถูกใส่ลายน้ำตอนกดดาวน์โหลด)
- * 4) ส่งอีเมลลิงก์ให้ลูกค้า
- * 5) บันทึกการขายลง Google Sheets
+ * 3) บันทึกการขายลง Google Sheets
+ *
+ * ตั้งแต่ 2026-09-16 (เจ้าของสั่ง): **ไม่ส่งอีเมลลิงก์ดาวน์โหลดแล้ว** — ลูกค้าเข้าเรียน/โหลดไฟล์
+ * ที่หน้า "คอร์สของฉัน" ด้วยบัญชี Google ที่ใช้ซื้อ (สิทธิ์อ่านจากตาราง orders โดยตรง)
+ * ลิงก์ที่คืนไปยังใช้บนหน้า success ได้ (โค้ดส่งอีเมลเดิมยังอยู่ใน lib/email.ts เผื่อกลับมาใช้)
  *
  * หมายเหตุ: ฟังก์ชันนี้ "ไม่" อัปเดตสถานะ order — ผู้เรียกเป็นคนจัดการ
  * (webhook ใช้ claimDelivery กันส่งซ้ำก่อนเรียก และคืนสถานะเองถ้าล้มเหลว)
- * เรียกซ้ำจะส่งอีเมลซ้ำ จึงต้องกันซ้ำที่ผู้เรียกเสมอ
  */
 export async function fulfillOrder(order: {
   id: string;
@@ -29,27 +27,17 @@ export async function fulfillOrder(order: {
   // order เก่าที่เกิดก่อนระบบหลายสินค้าไม่มี productId — ถือเป็นชุด Mock เดิม
   const product: Product = getProduct(order.productId) ?? PRODUCTS.mock1;
 
-  // เช็คก่อนส่งอีเมลว่าไฟล์ต้นฉบับมีจริงครบทุกไฟล์ — ถ้าไม่มี (เช่น ลืมอัปโหลดขึ้น
-  // Supabase Storage) ให้ล้มดัง ๆ ตรงนี้ ดีกว่าส่งอีเมล "สำเร็จ" พร้อมลิงก์เสียให้ลูกค้า
+  // เช็คว่าไฟล์ต้นฉบับมีจริงครบทุกไฟล์ — ถ้าไม่มี (เช่น ลืมอัปโหลดขึ้น Supabase Storage)
+  // ให้ล้มดัง ๆ ตรงนี้ (webhook จะคืนสถานะให้ลองใหม่) ดีกว่าเปิดคอร์สที่โหลดไฟล์ไม่ได้
   // (ผลพลอยได้: อุ่น cache ให้การดาวน์โหลดจริงเร็วขึ้น)
   await Promise.all(product.files.map((file) => getMasterPdfBytes(file)));
 
-  // ลิงก์ดาวน์โหลด — ใช้ตัวสร้างร่วมกับปุ่มดาวน์โหลดบนหน้า success (lib/downloads.ts)
   const links = buildDownloadLinks({
     id: order.id,
     firstName: order.firstName,
     lastName: order.lastName,
     email: order.email,
     product,
-  });
-
-  await sendDownloadEmail({
-    to: order.email,
-    firstName: order.firstName,
-    productName: product.name,
-    links,
-    expiryHours: config.download.expiryHours,
-    hasExam: product.files.includes("questions"),
   });
 
   await logSale({ ...order, productName: product.name });

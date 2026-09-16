@@ -5,12 +5,13 @@ import { getProduct } from "@/lib/catalog";
 import { createOrder, updateOrder } from "@/lib/orders";
 import { getStripe } from "@/lib/stripe";
 import { fulfillOrder } from "@/lib/fulfillment";
+import { USER_COOKIE, verifyUserSession } from "@/lib/user-session";
+import { splitName } from "@/lib/name";
 
+// หน้าเว็บส่งมาแค่ productId — ชื่อ/อีเมลผู้ซื้อมาจากบัญชี Google ที่ล็อกอินอยู่ (คุกกี้) เท่านั้น
+// (เจ้าของสั่ง 2026-09-16: ซื้อ = ล็อกอิน + จ่าย ไม่กรอกอะไรทั้งสิ้น)
 const schema = z.object({
   productId: z.string().trim().min(1).max(50),
-  firstName: z.string().trim().min(1).max(100),
-  lastName: z.string().trim().min(1).max(100),
-  email: z.string().trim().email().max(200),
 });
 
 export async function POST(req: NextRequest) {
@@ -23,9 +24,22 @@ export async function POST(req: NextRequest) {
 
   const parsed = schema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: "กรุณากรอกชื่อ นามสกุล และอีเมลให้ครบถูกต้อง" }, { status: 400 });
+    return NextResponse.json({ error: "ไม่พบสินค้าที่เลือก กรุณารีเฟรชหน้าเว็บแล้วลองใหม่" }, { status: 400 });
   }
-  const { productId, firstName, lastName, email } = parsed.data;
+  const { productId } = parsed.data;
+
+  const user = verifyUserSession(req.cookies.get(USER_COOKIE)?.value);
+  if (!user) {
+    return NextResponse.json(
+      { error: "กรุณาเข้าสู่ระบบด้วย Google ก่อนสั่งซื้อ", loginRequired: true },
+      { status: 401 }
+    );
+  }
+  const email = user.email;
+  // ชื่อจากบัญชี Google — ไว้ดูในหลังร้าน/ใบเสร็จ (ไม่ได้ใช้ทำลายน้ำแล้ว) ไม่มีชื่อก็ใช้ส่วนหน้า @ ของอีเมล
+  const n = splitName(user.name);
+  const firstName = n.firstName || email.split("@")[0];
+  const lastName = n.lastName;
 
   // ราคาและชื่อสินค้าอ่านจากแคตตาล็อกฝั่ง server เสมอ — client ส่งมาแค่ id
   // (กันการแก้ราคาจากหน้าเว็บ)
@@ -89,7 +103,7 @@ export async function POST(req: NextRequest) {
           },
         },
       ],
-      // เก็บข้อมูลผู้ซื้อ + สินค้า ไว้ใน metadata เพื่อให้ webhook นำไปส่งของ/ใส่ลายน้ำ
+      // เก็บข้อมูลผู้ซื้อ + สินค้า ไว้ใน metadata เพื่อให้ webhook นำไปส่งของ
       metadata: { orderId: order.id, productId: product.id, firstName, lastName, email },
       success_url: `${config.baseUrl}/success?order=${order.id}`,
       cancel_url: `${config.baseUrl}/?canceled=1`,
@@ -109,7 +123,7 @@ export async function POST(req: NextRequest) {
 
     if (!ready.stripeWebhook) {
       console.warn(
-        "⚠️ ยังไม่ได้ตั้งค่า STRIPE_WEBHOOK_SECRET — เมื่อจ่ายเงินสำเร็จ ระบบจะยังไม่ส่งไฟล์อัตโนมัติ จนกว่าจะตั้ง webhook"
+        "⚠️ ยังไม่ได้ตั้งค่า STRIPE_WEBHOOK_SECRET — เมื่อจ่ายเงินสำเร็จ ระบบจะยังไม่เปิดสิทธิ์อัตโนมัติ จนกว่าจะตั้ง webhook"
       );
     }
 

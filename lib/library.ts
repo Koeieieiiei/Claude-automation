@@ -1,6 +1,7 @@
 import { FileId, PRODUCTS, Product, ProductId, getProduct } from "./catalog";
 import { getSupabase } from "./supabase";
 import { getStripe } from "./stripe";
+import { accessResetIso } from "./access-reset";
 
 /**
  * "คอร์สของฉัน" — รวมทุกอย่างที่อีเมลหนึ่งซื้อไว้ (อ่านจากตาราง orders ที่ส่งของแล้ว)
@@ -70,6 +71,8 @@ export async function getLibrary(email: string): Promise<LibraryItem[]> {
     .select("*")
     .ilike("email", pattern)
     .eq("status", "delivered")
+    // ออเดอร์ก่อนวันรีเซ็ตสิทธิ์ไม่นับ (ดู lib/access-reset.ts)
+    .gte("created_at", accessResetIso())
     .order("created_at", { ascending: false });
   if (error) throw new Error(`อ่านคำสั่งซื้อไม่สำเร็จ: ${error.message}`);
 

@@ -121,34 +121,11 @@ export default function Home() {
 
       {/* ===== Hero ===== */}
       <section className="grid-paper relative overflow-hidden border-b border-grid">
-        {/* คำทักทายจากผู้สร้าง — แถบเต็มความกว้างจอ ชนขอบซ้าย-ขวา (เจ้าของขอ 2026-09-16)
-            ตัวหนังสือด้านในยังเรียงตรงกับคอลัมน์เนื้อหา (max-w-6xl) เหมือนส่วนอื่นของหน้า */}
-        <div className="relative z-10 border-b border-grid border-l-4 border-l-maroon bg-white shadow-[0_12px_30px_-22px_rgba(36,16,22,0.5)]">
-          <div className="mx-auto flex max-w-6xl flex-col gap-4 px-5 pb-6 pt-5 sm:flex-row sm:items-center sm:gap-6 md:py-6">
-            <div>
-            <p className="text-[1.05rem] leading-relaxed text-ink md:text-[1.15rem]">
-              สวัสดีครับน้อง ๆ พี่ชื่อ <strong className="text-maroon">มาโก้ ศุภวัฒน์</strong> กำลังศึกษาอยู่ที่
-              <strong> วิศวคอม จุฬาฯ</strong> พี่และเพื่อน ๆ ในกลุ่มได้รวมหัวกันออกแบบ{" "}
-              <strong>Mock TPAT3</strong> และ<strong>เนื้อหาสำหรับสอบ TPAT3</strong> หากน้องสนใจ
-              สามารถคลิกดูด้านล่างได้เลยครับ
-            </p>
-            <a
-              href="/about"
-              className="mt-3 inline-flex items-center gap-2 border border-maroon px-4 py-2 text-sm font-bold text-maroon transition hover:bg-maroon hover:text-paper"
-            >
-              อ่านเรื่องราวของพี่
-              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} aria-hidden>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-              </svg>
-            </a>
-            </div>
-          </div>
-        </div>
         <Gear teeth={16} className="pointer-events-none absolute -right-16 -top-16 h-72 w-72 text-maroon/[0.07]" spin="cw" />
         <Gear teeth={12} className="pointer-events-none absolute right-28 top-40 h-36 w-36 text-steel/20" spin="ccw" />
         <Gear teeth={14} className="pointer-events-none absolute -bottom-16 left-[-3rem] h-56 w-56 text-maroon/[0.06]" spin="ccw" />
 
-        <div className="relative mx-auto max-w-6xl px-5 py-14 md:py-20">
+        <div className="relative mx-auto max-w-6xl px-5 py-20 md:py-24">
           <h1 className="font-display text-[2.4rem] font-bold leading-[1.15] tracking-tight text-ink md:text-[3.4rem]">
             Tpat3 and Physics A-Level<br />
             <span className="text-maroon">by Mr.tpat3</span>
@@ -176,7 +153,7 @@ export default function Home() {
 
           {examState !== "submitted" && (
             <p className="mt-3 text-sm font-medium text-ink/60">
-              💻 แนะนำให้ทำในคอมพิวเตอร์ หรือ iPad · 1 อีเมลมีสิทธิ์สอบ 1 รอบ
+              💻 แนะนำให้ทำในคอมพิวเตอร์ หรือ iPad · 1 บัญชีมีสิทธิ์สอบ 1 รอบ
             </p>
           )}
         </div>
@@ -185,9 +162,33 @@ export default function Home() {
       {/* ===== Spec strip ===== */}
       <section className="border-b border-maroon-dark bg-maroon text-paper">
         <div className="mx-auto max-w-6xl px-5 py-[15px] text-center text-[15px] font-medium">
-          จ่ายเงินเสร็จ เข้าห้องสอบได้ทันที · ส่งลิงก์เข้าอีเมลไว้เปิดย้อนหลังด้วย
+          ล็อกอิน Google → ชำระเงิน → เข้าห้องสอบได้ทันที · ไฟล์อยู่ที่ “คอร์สของฉัน” กลับมาโหลดได้ตลอด
         </div>
       </section>
+
+      {/* คำทักทายจากผู้สร้าง — แถบเต็มความกว้างจอ ชนขอบซ้าย-ขวา อยู่ใต้แถบแดง ก่อนหัวข้อ Mock (เจ้าของขอ 2026-09-16)
+          ตัวหนังสือด้านในยังเรียงตรงกับคอลัมน์เนื้อหา (max-w-6xl) เหมือนส่วนอื่นของหน้า */}
+      <div className="border-b border-grid border-l-4 border-l-maroon bg-white shadow-[0_12px_30px_-22px_rgba(36,16,22,0.5)]">
+        <div className="mx-auto flex max-w-6xl flex-col gap-4 px-5 pb-6 pt-5 sm:flex-row sm:items-center sm:gap-6 md:py-6">
+          <div>
+          <p className="text-[1.05rem] leading-relaxed text-ink md:text-[1.15rem]">
+            สวัสดีครับน้อง ๆ พี่ชื่อ <strong className="text-maroon">มาโก้ ศุภวัฒน์</strong> กำลังศึกษาอยู่ที่
+            <strong> วิศวคอม จุฬาฯ</strong> พี่และเพื่อน ๆ ในกลุ่มได้รวมหัวกันออกแบบ{" "}
+            <strong>Mock TPAT3</strong> และ<strong>เนื้อหาสำหรับสอบ TPAT3</strong> หากน้องสนใจ
+            สามารถคลิกดูด้านล่างได้เลยครับ
+          </p>
+          <a
+            href="/about"
+            className="mt-3 inline-flex items-center gap-2 border border-maroon px-4 py-2 text-sm font-bold text-maroon transition hover:bg-maroon hover:text-paper"
+          >
+            อ่านเรื่องราวของพี่
+            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} aria-hidden>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+            </svg>
+          </a>
+          </div>
+        </div>
+      </div>
 
       {/* ===== Mock ===== */}
       <section id="mock" className="mx-auto max-w-6xl scroll-mt-20 px-5 pb-16 pt-20">
@@ -195,7 +196,7 @@ export default function Home() {
           ข้อสอบ Mock TPAT3
         </h2>
         <p className="mt-3 max-w-2xl text-[1.2rem] font-medium leading-relaxed text-ink">
-          โจทย์ · เฉลย · กระดาษคำตอบ + โควตาเข้าสอบ 1 ครั้ง
+          ห้องสอบออนไลน์ 70 ข้อ จับเวลา 3 ชม. + ไฟล์เฉลยละเอียด
         </p>
 
         <div className="mt-10 grid gap-5 md:grid-cols-[1.1fr_1fr]">
@@ -288,7 +289,7 @@ export default function Home() {
               product={PRODUCTS.mock1}
               displayName="Mock เดี่ยว"
               covers={[{ src: "/covers/mock.png", alt: "ปกข้อสอบ Mock TPAT3" }]}
-              items={["Mock TPAT3 (โจทย์ + เฉลย + กระดาษคำตอบ)", "โควตาเข้าสอบ TPAT3 ออนไลน์ 1 ครั้ง"]}
+              items={["Mock TPAT3 (ห้องสอบออนไลน์ + เฉลยละเอียด)", "โควตาเข้าสอบ TPAT3 ออนไลน์ 1 ครั้ง"]}
               dimItems={["เนื้อหาทั้งหมดสำหรับสอบ TPAT3"]}
               onBuy={buy}
             />
@@ -311,7 +312,7 @@ export default function Home() {
                 { src: "/covers/tpat3-content.png", alt: "ปกเนื้อหา TPAT3" },
               ]}
               items={[
-                "Mock TPAT3 (โจทย์ + เฉลย + กระดาษคำตอบ)",
+                "Mock TPAT3 (ห้องสอบออนไลน์ + เฉลยละเอียด)",
                 "โควตาเข้าสอบ TPAT3 ออนไลน์ 1 ครั้ง",
                 "เนื้อหาทั้งหมดสำหรับสอบ TPAT3",
               ]}
@@ -330,7 +331,7 @@ export default function Home() {
           <div className="mt-7 divide-y divide-grid border-y border-grid">
             <FaqItem
               q="ซื้อแล้วทำอะไรต่อ?"
-              a="ชำระเงินสำเร็จ กด “เริ่มสอบ” แล้วล็อกอินด้วยบัญชี Google อีเมลเดียวกับที่สั่งซื้อ ก็เข้าห้องสอบออนไลน์ได้ทันที ไฟล์ทั้งหมด (โจทย์ เฉลยละเอียด กระดาษคำตอบ) กลับมาโหลดได้ตลอดที่หน้า “คอร์สของฉัน” และระบบส่งลิงก์เข้าอีเมลไว้ให้ด้วย แนะนำให้เปิดเฉลยหลังทำข้อสอบเสร็จ ผลวิเคราะห์จะได้ตรงกับฝีมือจริง"
+              a="ชำระเงินสำเร็จ กด “เริ่มสอบ” เข้าห้องสอบออนไลน์ได้ทันที ไฟล์เฉลยละเอียดและไฟล์เนื้อหาอยู่ที่หน้า “คอร์สของฉัน” (ล็อกอินด้วยบัญชี Google ที่ใช้ซื้อ) กลับมาโหลดได้ตลอดทุกเครื่อง แนะนำให้เปิดเฉลยหลังทำข้อสอบเสร็จ ผลวิเคราะห์จะได้ตรงกับฝีมือจริง"
             />
             <FaqItem
               q="ทำข้อสอบออนไลน์ยังไง? ต้องเตรียมอะไร?"
@@ -345,8 +346,8 @@ export default function Home() {
               a="มี — โหลดตัวอย่างโจทย์/เฉลย และตัวอย่างไฟล์เนื้อหาได้ฟรี ไม่ต้องกรอกอะไร เป็น PDF แบบเดียวกับไฟล์จริง"
             />
             <FaqItem
-              q="ไม่ได้รับอีเมล ทำยังไงดี?"
-              a="เช็กกล่อง Junk / Spam ก่อน (โดยเฉพาะ Hotmail / Outlook) แล้วค้นคำว่า “tpat3mock” — ระหว่างนั้นล็อกอินด้วยบัญชี Google อีเมลเดียวกับที่สั่งซื้อ แล้วโหลดไฟล์ได้เลยที่หน้า “คอร์สของฉัน” ไม่ต้องใช้ลิงก์ในอีเมล หากยังไม่พบ ติดต่อ mr.tpat3@gmail.com"
+              q="ซื้อแล้วแต่ไม่เห็นคอร์ส ทำยังไงดี?"
+              a="ตรวจว่าล็อกอินด้วยบัญชี Google เดียวกับตอนสั่งซื้อ (กด “เปลี่ยนบัญชี” ที่หน้าคอร์สของฉันได้) ถ้ายังไม่เห็น ติดต่อ mr.tpat3@gmail.com พร้อมแจ้งอีเมลที่ใช้ซื้อ"
             />
             <FaqItem
               q="จ่ายเงินยังไงได้บ้าง?"
@@ -354,7 +355,7 @@ export default function Home() {
             />
             <FaqItem
               q="ได้อะไรบ้าง?"
-              a="ชุด Mock ได้ไฟล์ PDF 3 ไฟล์ (โจทย์ + เฉลยละเอียด + กระดาษคำตอบ) พร้อมโควตาเข้าสอบ TPAT3 ออนไลน์ 1 ครั้งและผลวิเคราะห์ · เนื้อหาทั้งหมดสำหรับสอบ TPAT3 ได้ไฟล์ PDF 1 ไฟล์ (Part 1–5 ครบ 160 หน้า) · ไฟล์เป็นของคุณถาวร ลิงก์ดาวน์โหลดไม่มีวันหมดอายุ"
+              a="ชุด Mock ได้ห้องสอบ TPAT3 ออนไลน์ 1 ครั้งพร้อมผลวิเคราะห์ + ไฟล์เฉลยละเอียด (PDF) · เนื้อหาทั้งหมดสำหรับสอบ TPAT3 ได้ไฟล์ PDF 1 ไฟล์ (Part 1–5 ครบ 160 หน้า) · ทุกอย่างอยู่ในบัญชี Google ของคุณถาวร ไม่มีวันหมดอายุ"
             />
             <FaqItem
               q="ขอคืนเงินได้ไหม?"

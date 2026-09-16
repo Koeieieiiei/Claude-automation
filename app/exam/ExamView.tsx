@@ -12,8 +12,8 @@ import { Avatar, ClientUser, fetchCurrentUser } from "@/components/AccountButton
  * นิยามรายสนาม (จำนวนข้อ เวลา หน้าโจทย์) มาจาก lib/exams.ts
  *
  * ลำดับหน้าจอ: gate (ล็อกอิน Google / ลิงก์ / กรอกอีเมล) → instructions (คำชี้แจง + กติกา) → exam → ไปหน้าผล
- * ทางหลักคือล็อกอินด้วย Google อีเมลเดียวกับที่ซื้อ (ไม่ต้องกรอกอะไร) — ฟอร์มชื่อ+อีเมลเป็นทางสำรอง
- * สำหรับคนที่ซื้อด้วยอีเมลที่ไม่ใช่บัญชี Google
+ * เข้าด้วยการล็อกอิน Google บัญชีเดียวกับที่ซื้อเท่านั้น (ไม่ต้องกรอกอะไร) — ตั้งแต่ 2026-09-16 การซื้อ
+ * ต้องล็อกอินอยู่แล้ว จึงไม่มีฟอร์มกรอกชื่อ/อีเมลอีก (API ยังรับ token จาก localStorage ไว้ทำต่อรอบที่ค้าง)
  * เวลาอิงนาฬิกา server เสมอ (คำนวณ offset ตอน start) — แก้นาฬิกาเครื่องเองไม่มีผล
  */
 
@@ -62,7 +62,6 @@ export default function ExamView() {
   const [busy, setBusy] = useState(false);
   // undefined = ยังไม่รู้ · null = ไม่ได้ล็อกอิน
   const [user, setUser] = useState<ClientUser | null | undefined>(undefined);
-  const [showManual, setShowManual] = useState(false); // เปิดฟอร์มกรอกเอง (ทางสำรอง)
 
   // สถานะระหว่างสอบ
   const [deadline, setDeadline] = useState(0); // server ms
@@ -92,7 +91,7 @@ export default function ExamView() {
       if (!data.state || data.state === "none") {
         setGateError(
           opts.session
-            ? "บัญชีนี้ยังไม่มีสิทธิ์ทำข้อสอบ — ถ้าซื้อด้วยอีเมลอื่น ให้เปลี่ยนบัญชี Google หรือกรอกชื่อและอีเมลที่ใช้สั่งซื้อด้านล่าง"
+            ? "บัญชีนี้ยังไม่มีสิทธิ์ทำข้อสอบ — ถ้าซื้อด้วยบัญชี Google อื่น ให้กดเปลี่ยนบัญชี หรือสั่งซื้อชุดข้อสอบด้านล่าง"
             : "ไม่พบสิทธิ์ทำข้อสอบของชื่อและอีเมลนี้ — ถ้าซื้อแล้ว ลองตรวจตัวสะกดให้ตรงกับตอนสั่งซื้ออีกครั้ง"
         );
         // นับเฉพาะตอนผู้ใช้กรอกเองแล้วไม่ผ่าน (ไม่นับตอนเช็คโทเค็นเงียบ ๆ ตอนเปิดหน้า)
@@ -194,11 +193,6 @@ export default function ExamView() {
         const r = await fetchAccess({ useSession: true });
         if (r?.ok && r.data.state && r.data.state !== "none") {
           applyAccess(r.data, { verified: true, session: true });
-          return;
-        }
-        // บัญชีนี้ไม่มีสิทธิ์ แต่เครื่องนี้เคยยืนยันด้วยอีเมลอื่นไว้ (ซื้อด้วยอีเมลที่ไม่ใช่ Google)
-        if (t) {
-          checkAccess({ token: t });
           return;
         }
         applyAccess(r?.ok ? r.data : { state: "none" }, { verified: true, session: true });
@@ -422,64 +416,6 @@ export default function ExamView() {
               </p>
             )}
 
-            {/* ทางสำรอง: ซื้อด้วยอีเมลที่ไม่ใช่บัญชี Google → กรอกชื่อ-นามสกุล-อีเมลตอนสั่งซื้อ */}
-            <button
-              type="button"
-              onClick={() => setShowManual((v) => !v)}
-              className="mt-5 text-left text-sm font-semibold text-ink/60 underline underline-offset-4 hover:text-maroon"
-            >
-              {showManual ? "ซ่อนฟอร์มกรอกเอง" : "ซื้อด้วยอีเมลที่ไม่ใช่บัญชี Google? กรอกชื่อและอีเมลตอนสั่งซื้อ"}
-            </button>
-            {showManual && (
-            <form
-              className="mt-3"
-              onSubmit={(e) => {
-                e.preventDefault();
-                const f = new FormData(e.currentTarget);
-                const em = ((f.get("email") as string) ?? "").trim();
-                const fn = ((f.get("firstName") as string) ?? "").trim();
-                const ln = ((f.get("lastName") as string) ?? "").trim();
-                if (em && fn && ln) {
-                  checkAccess({ email: em, firstName: fn, lastName: ln }, { verified: true });
-                }
-              }}
-            >
-              <div className="grid gap-3 sm:grid-cols-2">
-                <input
-                  name="firstName"
-                  type="text"
-                  required
-                  placeholder="ชื่อ"
-                  className="w-full border border-ink/40 bg-white px-4 py-3 text-ink outline-none focus:border-maroon"
-                />
-                <input
-                  name="lastName"
-                  type="text"
-                  required
-                  placeholder="นามสกุล"
-                  className="w-full border border-ink/40 bg-white px-4 py-3 text-ink outline-none focus:border-maroon"
-                />
-              </div>
-              <input
-                name="email"
-                type="email"
-                required
-                defaultValue={email}
-                placeholder="อีเมลที่ใช้สั่งซื้อ"
-                className="mt-3 w-full border border-ink/40 bg-white px-4 py-3 text-ink outline-none focus:border-maroon"
-              />
-              <p className="mt-2 font-label text-xs text-ink/45">
-                ต้องตรงกับที่กรอกตอนสั่งซื้อทั้ง 3 ช่อง
-              </p>
-              <button
-                type="submit"
-                disabled={busy}
-                className="mt-3 w-full border border-ink py-3 font-bold text-ink transition hover:bg-ink hover:text-paper disabled:opacity-60"
-              >
-                {busy ? "กำลังตรวจสอบ…" : "ตรวจสอบสิทธิ์เข้าสอบ"}
-              </button>
-            </form>
-            )}
 
             {/* ทางไปซื้อ — โชว์ตั้งแต่เปิดหน้า ไม่ต้องรอให้กรอกผิดก่อน */}
             <p className="mt-5 border-t border-dashed border-grid pt-4 text-sm leading-relaxed text-ink/75">

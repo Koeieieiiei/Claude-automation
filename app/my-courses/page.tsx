@@ -6,8 +6,8 @@ import { Avatar } from "@/components/AccountButton";
 import { USER_COOKIE, verifyUserSession } from "@/lib/user-session";
 import { getLibrary, LibraryItem } from "@/lib/library";
 import { buildDownloadLinks, DownloadLink } from "@/lib/downloads";
-import { PRODUCTS } from "@/lib/catalog";
-import { COURSES, courseForProduct } from "@/lib/courses";
+import { FileId, PRODUCTS } from "@/lib/catalog";
+import { COURSES, getCourse } from "@/lib/courses";
 import { getExam } from "@/lib/exams";
 import { getAttemptState, isUnlimitedEmail, AttemptState } from "@/lib/exam-store";
 
@@ -18,6 +18,37 @@ export const metadata = {
   title: "คอร์สของฉัน · Mr.tpat3",
   robots: { index: false }, // หน้าส่วนตัว — ไม่ให้ search engine เก็บ
 };
+
+/**
+ * "คอร์ส" ในหน้านี้มีแค่ 2 ตัวตายตัว (เจ้าของกำหนด 2026-09-16) ไม่ใช่รายการสั่งซื้อ:
+ *   mock-tpat3    = ห้องสอบ + ไฟล์เฉลย        ← ได้เมื่อมีไฟล์ questions (ซื้อ Mock หรือ bundle)
+ *   tpat3-content = ไฟล์เล่มเนื้อหา            ← ได้เมื่อมี tpat3content (หรือ sum4content รุ่นเก่า)
+ * ซื้อ bundle = ได้ 2 การ์ดนี้เหมือนคนซื้อแยก ไม่มีการ์ด "ครบเซ็ต"
+ * ไฟล์โจทย์/กระดาษคำตอบ/สูตรล้วนไม่โชว์ที่นี่ (ยังโหลดได้จากลิงก์ในอีเมลตามเดิม)
+ */
+interface LibraryCourse {
+  slug: "mock-tpat3" | "tpat3-content";
+  /** ออเดอร์ที่ให้สิทธิ์ (ใช้ชื่อ-อีเมลใส่ลายน้ำ + วันที่ซื้อ) */
+  item: LibraryItem;
+  files: FileId[];
+  hasExam: boolean;
+}
+
+function deriveCourses(items: LibraryItem[]): LibraryCourse[] {
+  const out: LibraryCourse[] = [];
+  const mockSrc = items.find((i) => i.files.includes("questions"));
+  if (mockSrc) out.push({ slug: "mock-tpat3", item: mockSrc, files: ["answers"], hasExam: true });
+  const contentFile: FileId | null = items.some((i) => i.files.includes("tpat3content"))
+    ? "tpat3content"
+    : items.some((i) => i.files.includes("sum4content"))
+      ? "sum4content"
+      : null;
+  if (contentFile) {
+    const src = items.find((i) => i.files.includes(contentFile))!;
+    out.push({ slug: "tpat3-content", item: src, files: [contentFile], hasExam: false });
+  }
+  return out;
+}
 
 const LOGIN_ERRORS: Record<string, string> = {
   cancelled: "ยกเลิกการล็อกอิน — กดล็อกอินใหม่ได้เลย",
@@ -84,9 +115,11 @@ export default async function MyCoursesPage({
     loadError = true;
   }
 
+  const courses = deriveCourses(items);
+
   // สถานะห้องสอบ (สนามหลัก) — เฉพาะคนที่มีชุด Mock หรืออีเมลเจ้าของร้าน
   const exam = getExam();
-  const hasMock = items.some((i) => i.files.includes(exam.entitlementFile));
+  const hasMock = courses.some((c) => c.hasExam);
   const owner = isUnlimitedEmail(user.email);
   let examState: AttemptState = "none";
   if (hasMock || owner) {
@@ -160,16 +193,10 @@ export default async function MyCoursesPage({
             </div>
           )}
 
-          {(items.length > 0 || owner) && (
+          {(courses.length > 0 || owner) && (
             <div className="grid gap-6 md:grid-cols-2">
-              {items.map((item, i) => (
-                <CourseCard
-                  key={item.productId}
-                  item={item}
-                  examState={examState}
-                  // สิทธิ์สอบเป็นของอีเมล (1 รอบ) ไม่ใช่ของแต่ละคอร์ส — โชว์ปุ่มห้องสอบที่การ์ดแรกที่มีข้อสอบใบเดียว
-                  showExam={items.findIndex((x) => x.files.includes(exam.entitlementFile)) === i}
-                />
+              {courses.map((c) => (
+                <CourseCard key={c.slug} course={c} examState={examState} />
               ))}
               {owner && !hasMock && (
                 <OwnerExamCard examState={examState} />
@@ -179,8 +206,8 @@ export default async function MyCoursesPage({
 
           {items.length > 0 && (
             <p className="mt-8 font-label text-xs leading-relaxed text-ink/50">
-              ไฟล์ทุกไฟล์ฝังลายน้ำชื่อและอีเมลของผู้ซื้อ · ระบบเตรียมไฟล์ตอนกดดาวน์โหลด อาจใช้เวลา 2–3 วินาทีต่อไฟล์ ·
-              ลิงก์ไม่มีวันหมดอายุ
+              ระบบเตรียมไฟล์ตอนกดดาวน์โหลด อาจใช้เวลา 2–3 วินาทีต่อไฟล์ · ไฟล์เป็นของบัญชีนี้ตลอด ไม่มีวันหมดอายุ ·
+              สงวนลิขสิทธิ์ ห้ามเผยแพร่ต่อ
             </p>
           )}
         </section>
@@ -194,18 +221,9 @@ export default async function MyCoursesPage({
 }
 
 /* ---------- การ์ดคอร์สที่ซื้อแล้ว ---------- */
-function CourseCard({
-  item,
-  examState,
-  showExam,
-}: {
-  item: LibraryItem;
-  examState: AttemptState;
-  showExam: boolean;
-}) {
-  const product = PRODUCTS[item.productId];
-  const course = courseForProduct(item.productId);
-  const hasExam = item.files.includes("questions");
+function CourseCard({ course: lc, examState }: { course: LibraryCourse; examState: AttemptState }) {
+  const { item, hasExam } = lc;
+  const course = getCourse(lc.slug);
 
   let links: DownloadLink[] = [];
   try {
@@ -214,7 +232,7 @@ function CourseCard({
       firstName: item.firstName,
       lastName: item.lastName,
       email: item.email,
-      product: { ...product, files: item.files },
+      product: { ...PRODUCTS[item.productId], files: lc.files },
     });
   } catch (err) {
     console.error("สร้างลิงก์ดาวน์โหลดในหน้าคอร์สของฉันไม่สำเร็จ:", err);
@@ -252,7 +270,7 @@ function CourseCard({
         </div>
       </div>
 
-      {hasExam && showExam && <ExamButton state={examState} />}
+      {hasExam && <ExamButton state={examState} />}
 
       <div className="mt-6">
         <p className="font-label text-[11px] font-semibold uppercase tracking-[0.18em] text-maroon">ไฟล์ในคอร์ส</p>

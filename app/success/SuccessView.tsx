@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { formatExpiry } from "@/lib/format-expiry";
 import { trackEvent } from "@/lib/analytics";
 
 interface DownloadLink {
@@ -15,7 +14,7 @@ interface DownloadLink {
 
 type Status = "loading" | "pending" | "ready" | "not_found" | "error";
 
-// หยุด poll หลังราว 5 นาที — ถ้ายังไม่ยืนยัน ปล่อยให้ลูกค้าพึ่งลิงก์ในอีเมลแทน
+// หยุด poll หลังราว 5 นาที — ถ้ายังไม่ยืนยัน ลูกค้าเปิดคอร์สได้เองที่ "คอร์สของฉัน" เมื่อ webhook ทำงานเสร็จ
 const MAX_PENDING_POLLS = 100;
 // เน็ต/เซิร์ฟเวอร์สะดุด: ลองซ้ำไม่กี่ครั้งพอ (~25 วิ) แล้วหยุด — ไม่ยิงซ้ำไม่รู้จบ
 const MAX_ERROR_RETRIES = 5;
@@ -43,9 +42,7 @@ export default function SuccessView() {
   const product = params.get("product");
 
   const [status, setStatus] = useState<Status>("loading");
-  const [links, setLinks] = useState<DownloadLink[]>([]);
   const [email, setEmail] = useState("");
-  const [expiryHours, setExpiryHours] = useState(0); // 0 = ไม่มีวันหมดอายุ
   const [hasExam, setHasExam] = useState(false); // ชุดที่ซื้อมีข้อสอบให้ทำออนไลน์ไหม
 
   useEffect(() => {
@@ -74,10 +71,8 @@ export default function SuccessView() {
         if (!active) return;
 
         if (data.status === "ready") {
-          setLinks(Array.isArray(data.links) ? data.links : []);
           setEmail(typeof data.email === "string" ? data.email : "");
           setHasExam(data.hasExam === true);
-          if (typeof data.expiryHours === "number") setExpiryHours(data.expiryHours);
           setStatus("ready");
           // ยืนยันแล้วว่าจ่ายเงินสำเร็จจริง — ตัวชี้วัดสำคัญที่สุดของร้าน
           trackEvent("purchase_success", {
@@ -97,7 +92,7 @@ export default function SuccessView() {
         if (!active) return;
         setStatus("error");
         errors += 1;
-        if (errors >= MAX_ERROR_RETRIES) return; // ยอมแพ้ — หน้าจะบอกให้ไปใช้ลิงก์ในอีเมล
+        if (errors >= MAX_ERROR_RETRIES) return; // ยอมแพ้ — หน้าจะบอกให้ไปเปิดที่คอร์สของฉัน
         timer = setTimeout(poll, 5000); // เน็ตสะดุด — ลองใหม่
       }
     }
@@ -131,10 +126,10 @@ export default function SuccessView() {
           <p className="mt-3 leading-relaxed text-ink/70">
             การชำระผ่าน PromptPay อาจใช้เวลายืนยันสักครู่
             <br />
-            ระบบจะแสดง <strong>ปุ่มดาวน์โหลด</strong> ให้อัตโนมัติทันทีที่ยืนยันสำเร็จ — ไม่ต้องรีเฟรชหน้านี้
+            ระบบจะเปิดคอร์สให้อัตโนมัติทันทีที่ยืนยันสำเร็จ — ไม่ต้องรีเฟรชหน้านี้
           </p>
           <p className="mt-4 font-label text-sm text-ink/50">
-            หากชำระเรียบร้อยแล้ว เราได้ส่งลิงก์ดาวน์โหลดไปที่อีเมลของคุณไว้ด้วยเช่นกัน
+            ถ้าปิดหน้านี้ไปก่อน ก็เปิดคอร์สได้ที่ “คอร์สของฉัน” (ล็อกอินด้วยบัญชี Google ที่ใช้ซื้อ)
           </p>
         </div>
       </Frame>
@@ -142,25 +137,20 @@ export default function SuccessView() {
   }
 
   if (status === "ready") {
-    const expiry = formatExpiry(expiryHours);
-    const expiryText = expiry ? `ได้อีก ${expiry}` : "ได้ตลอด ไม่มีวันหมดอายุ";
-    // ไฟล์ที่ไม่ใช่ชุดข้อสอบ (เช่น ไฟล์เนื้อหาทั้งหมดใน bundle) — โหลดได้ทันทีไม่ต้องรอสอบ
-    const instantLinks = links.filter((l) => !l.examFile);
     return (
       <Frame badge="ชำระแล้ว ✓">
         <div className="px-8 py-10">
           <div className="text-center">
             <div className="mx-auto grid h-14 w-14 place-items-center border border-ink bg-white text-2xl">🎉</div>
             <h1 className="mt-5 font-display text-2xl font-bold text-ink">ชำระเงินสำเร็จ</h1>
-            <p className="mt-2 text-ink/70">
-              {hasExam ? "เข้าห้องสอบออนไลน์ได้เลย" : "ดาวน์โหลดไฟล์ของคุณได้เลยด้านล่าง"}
+            <p className="mt-2 leading-relaxed text-ink/70">
+              เปิดคอร์สให้บัญชี{email ? <> <strong>{email}</strong></> : "ของคุณ"} แล้ว — เข้าเรียนได้เลย
             </p>
           </div>
 
           {hasExam ? (
-            /* ชุดที่มีข้อสอบ: ชูปุ่มเข้าห้องสอบเป็นหลัก ไม่โชว์ปุ่มโหลดไฟล์ตรงนี้
-               (ไฟล์ทั้งหมดส่งเข้าอีเมลแล้ว และเปิดให้โหลดอีกครั้งท้ายหน้าผลสอบ)
-               เพราะถ้าเปิดเฉลยก่อนสอบ ผลวิเคราะห์จะไม่ตรงกับฝีมือจริง */
+            /* ชุดที่มีข้อสอบ: ชูปุ่มเข้าห้องสอบเป็นหลัก ไฟล์เฉลย/เนื้อหาอยู่ที่คอร์สของฉัน
+               (เปิดเฉลยก่อนสอบ ผลวิเคราะห์จะไม่ตรงกับฝีมือจริง) */
             <>
               <a
                 href="/exam"
@@ -172,102 +162,41 @@ export default function SuccessView() {
                 </svg>
               </a>
               <p className="mt-3 text-center font-label text-xs leading-relaxed text-ink/55">
-                💻 แนะนำให้ทำในคอมพิวเตอร์ หรือ iPad · 1 อีเมลมีสิทธิ์สอบ 1 รอบ
+                💻 แนะนำให้ทำในคอมพิวเตอร์ หรือ iPad · 1 บัญชีมีสิทธิ์สอบ 1 รอบ
               </p>
-
-              {/* ไฟล์อื่นในชุด (เช่น ไฟล์เนื้อหาทั้งหมดของ bundle) ไม่ใช่สปอยล์ข้อสอบ
-                  — เปิดให้โหลดได้ทันที ไม่ต้องรอสอบเสร็จ */}
-              {instantLinks.length > 0 && (
-                <div className="mt-6">
-                  <p className="font-label text-[11px] font-semibold uppercase tracking-[0.18em] text-maroon">
-                    ไฟล์ในชุดที่โหลดได้เลย
-                  </p>
-                  <div className="mt-2.5 space-y-3">
-                    {instantLinks.map((l) => (
-                      <a
-                        key={l.url}
-                        href={l.url}
-                        download={l.downloadName}
-                        className="flex w-full items-center justify-between gap-3 border border-ink bg-white px-5 py-3.5 font-semibold text-ink transition hover:bg-ink hover:text-paper"
-                      >
-                        <span className="text-left text-[0.95rem] leading-snug">{l.label}</span>
-                        <DownloadIcon className="h-5 w-5 shrink-0" />
-                      </a>
-                    ))}
-                  </div>
-                  <p className="mt-2 font-label text-[12px] leading-snug text-ink/50">
-                    ระบบเตรียมไฟล์ให้ตอนกดดาวน์โหลด จึงอาจใช้เวลา 2–3 วินาทีต่อไฟล์
-                  </p>
-                </div>
-              )}
-
-              <div className="mt-6 border border-maroon/40 bg-maroon/[0.04] px-5 py-4">
-                <p className="font-label text-[11px] font-semibold uppercase tracking-[0.18em] text-maroon">
-                  ไฟล์ส่งเข้าอีเมลแล้ว
-                </p>
-                <p className="mt-1.5 text-sm leading-relaxed text-ink/75">
-                  ไฟล์โจทย์ เฉลยละเอียด และกระดาษคำตอบ ส่งไปที่
-                  {email ? <> <strong>{email}</strong></> : "อีเมลของคุณ"} เรียบร้อยแล้ว
-                  เปิดดาวน์โหลด{expiryText} — <strong>แนะนำให้เปิดเฉลยหลังทำข้อสอบเสร็จ</strong>{" "}
-                  ผลวิเคราะห์จะได้ตรงกับฝีมือจริง (ท้ายหน้าผลสอบมีลิงก์โหลดไฟล์ให้อีกครั้ง)
-                </p>
-                <p className="mt-2 text-sm leading-relaxed text-ink/60">
-                  หากไม่พบอีเมล ลองเช็กกล่อง Junk / Spam แล้วค้นคำว่า <strong>tpat3mock</strong>
-                </p>
-              </div>
+              <a
+                href="/my-courses"
+                className="mt-4 flex w-full items-center justify-center gap-3 border border-ink bg-white px-5 py-3.5 font-semibold text-ink transition hover:bg-ink hover:text-paper"
+              >
+                ไปที่คอร์สของฉัน (ไฟล์เฉลย / เนื้อหา) →
+              </a>
             </>
           ) : (
-            <>
-              <div className="mt-7 space-y-3">
-                {links.map((l) => (
-                  <a
-                    key={l.url}
-                    href={l.url}
-                    download={l.downloadName}
-                    className="flex w-full items-center justify-between gap-3 border border-ink bg-maroon px-5 py-3.5 font-semibold text-paper transition hover:bg-maroon-dark"
-                  >
-                    <span className="text-left text-[0.95rem] leading-snug">{l.label}</span>
-                    <DownloadIcon className="h-5 w-5 shrink-0" />
-                  </a>
-                ))}
-              </div>
-
-              <p className="mt-4 font-label text-[12px] leading-snug text-ink/50">
-                ระบบเตรียมไฟล์ให้ตอนกดดาวน์โหลด จึงอาจใช้เวลา 2–3 วินาทีต่อไฟล์
-              </p>
-
-              <div className="mt-6 border border-maroon/40 bg-maroon/[0.04] px-5 py-4">
-                <p className="font-label text-[11px] font-semibold uppercase tracking-[0.18em] text-maroon">
-                  เปิดย้อนหลังได้
-                </p>
-                <p className="mt-1.5 text-sm leading-relaxed text-ink/75">
-                  เราส่งลิงก์ชุดเดียวกันนี้ไปที่อีเมล{email ? <> <strong>{email}</strong></> : ""} ไว้ด้วย
-                  เปิดดาวน์โหลดย้อนหลัง{expiryText} — หากไม่พบ ลองเช็กกล่อง Junk / Spam แล้วค้นคำว่า{" "}
-                  <strong>tpat3mock</strong>
-                </p>
-              </div>
-            </>
+            <a
+              href="/my-courses"
+              className="mt-7 flex w-full items-center justify-center gap-3 border border-ink bg-maroon px-5 py-4 text-[1.05rem] font-bold text-paper transition hover:bg-maroon-dark"
+            >
+              ไปที่คอร์สของฉัน — โหลดไฟล์ได้เลย →
+            </a>
           )}
 
-          {/* ทุกอย่างที่ซื้อรวมอยู่ที่ "คอร์สของฉัน" — ล็อกอินด้วยบัญชี Google อีเมลที่สั่งซื้อ */}
-          <div className="mt-8 flex flex-wrap gap-3">
-            <a
-              href={`/api/auth/google?next=${encodeURIComponent("/my-courses")}`}
-              className="inline-block border border-maroon px-6 py-2.5 font-semibold text-maroon transition hover:bg-maroon hover:text-paper"
-            >
-              ไปที่คอร์สของฉัน
-            </a>
-            <a
-              href="/"
-              className="inline-block border border-ink px-6 py-2.5 font-medium text-ink transition hover:bg-ink hover:text-paper"
-            >
-              กลับหน้าหลัก
-            </a>
+          <div className="mt-6 border border-maroon/40 bg-maroon/[0.04] px-5 py-4">
+            <p className="font-label text-[11px] font-semibold uppercase tracking-[0.18em] text-maroon">
+              เปิดย้อนหลังได้ตลอด
+            </p>
+            <p className="mt-1.5 text-sm leading-relaxed text-ink/75">
+              ล็อกอินด้วยบัญชี Google{email ? <> <strong>{email}</strong></> : " ที่ใช้ซื้อ"} ที่หน้า “คอร์สของฉัน”
+              จากเครื่องไหนก็ได้ ไฟล์เป็นของบัญชีนี้ตลอด ไม่มีวันหมดอายุ
+              {hasExam && <> — <strong>แนะนำให้เปิดเฉลยหลังทำข้อสอบเสร็จ</strong></>}
+            </p>
           </div>
-          <p className="mt-3 font-label text-xs leading-relaxed text-ink/50">
-            หน้า “คอร์สของฉัน” รวมไฟล์และสิทธิ์สอบทั้งหมดของอีเมล{email ? <> <strong>{email}</strong></> : "ที่สั่งซื้อ"}{" "}
-            — ล็อกอินด้วยบัญชี Google อีเมลนี้เพื่อเปิดดูได้ทุกเครื่อง
-          </p>
+
+          <a
+            href="/"
+            className="mt-8 inline-block border border-ink px-6 py-2.5 font-medium text-ink transition hover:bg-ink hover:text-paper"
+          >
+            กลับหน้าหลัก
+          </a>
         </div>
       </Frame>
     );
@@ -275,26 +204,25 @@ export default function SuccessView() {
 
   // not_found / error — degrade เป็นข้อความอีเมล (เผื่อเปิด /success ตรง ๆ หรือหา order ไม่พบ)
   return (
-    <Frame badge={status === "error" ? "ลองใหม่อีกครั้ง" : "ตรวจอีเมล"}>
+    <Frame badge={status === "error" ? "ลองใหม่อีกครั้ง" : "เปิดที่คอร์สของฉัน"}>
       <div className="px-8 py-10 text-center">
-        <div className="mx-auto grid h-14 w-14 place-items-center border border-ink bg-white text-2xl">📩</div>
+        <div className="mx-auto grid h-14 w-14 place-items-center border border-ink bg-white text-2xl">📚</div>
         <h1 className="mt-5 font-display text-2xl font-bold text-ink">
-          {status === "error" ? "เชื่อมต่อไม่สำเร็จชั่วคราว" : "ตรวจลิงก์ดาวน์โหลดในอีเมล"}
+          {status === "error" ? "เชื่อมต่อไม่สำเร็จชั่วคราว" : "เปิดคอร์สได้ที่ “คอร์สของฉัน”"}
         </h1>
         <p className="mt-3 leading-relaxed text-ink/70">
-          หากคุณชำระเงินเรียบร้อยแล้ว เราได้ส่ง <strong>ลิงก์ดาวน์โหลด</strong> ไปที่อีเมลของคุณแล้ว
-          ลองเช็กกล่องจดหมายได้เลย
+          หากชำระเงินเรียบร้อยแล้ว คอร์สจะอยู่ในบัญชี Google ที่ใช้สั่งซื้อ —
+          ล็อกอินที่หน้า <strong>คอร์สของฉัน</strong> ได้เลย
         </p>
-        <div className="mt-6 border border-maroon/40 bg-maroon/[0.04] px-5 py-4 text-left">
-          <p className="font-label text-[11px] font-semibold uppercase tracking-[0.18em] text-maroon">โปรดทราบ</p>
-          <p className="mt-1.5 text-sm leading-relaxed text-ink/75">
-            ⚠️ หากไม่พบอีเมล กรุณาเช็กกล่อง <strong>Junk / Spam</strong> ด้วย
-            (โดยเฉพาะผู้ใช้ Hotmail / Outlook) — ลองค้นคำว่า <strong>tpat3mock</strong> ในอีเมลของคุณ
-          </p>
-        </div>
+        <a
+          href="/my-courses"
+          className="mt-6 flex w-full items-center justify-center gap-3 border border-ink bg-maroon px-5 py-3.5 font-bold text-paper transition hover:bg-maroon-dark"
+        >
+          ไปที่คอร์สของฉัน →
+        </a>
         <a
           href="/"
-          className="mt-8 inline-block border border-ink px-6 py-2.5 font-medium text-ink transition hover:bg-ink hover:text-paper"
+          className="mt-4 inline-block border border-ink px-6 py-2.5 font-medium text-ink transition hover:bg-ink hover:text-paper"
         >
           กลับหน้าหลัก
         </a>

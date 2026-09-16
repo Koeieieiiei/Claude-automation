@@ -7,6 +7,7 @@ import { config } from "./config";
 import { PRODUCTS } from "./catalog";
 import { GRACE_MS, Difficulty, roundScore } from "./exam-config";
 import { ExamDef, questionWeight } from "./exams";
+import { accessResetIso, afterReset } from "./access-reset";
 
 /**
  * ที่เก็บข้อมูลระบบทำข้อสอบ — ทุกอย่างแยกตาม "สนามสอบ" (ExamDef จาก lib/exams.ts)
@@ -348,7 +349,9 @@ export async function findEntitlementByEmail(
       .from("orders")
       .select("id,first_name,last_name,email,status,stripe_session_id")
       .ilike("email", emailPattern)
-      .eq("status", "delivered");
+      .eq("status", "delivered")
+      // ออเดอร์ก่อนวันรีเซ็ตสิทธิ์ไม่ให้สิทธิ์สอบ (ดู lib/access-reset.ts)
+      .gte("created_at", accessResetIso());
     if (error) {
       console.error("ค้นหาคำสั่งซื้อไม่สำเร็จ:", error.message);
     } else {
@@ -535,8 +538,17 @@ function rememberAttempt(exam: ExamDef, email: string, attempt: ExamAttempt | nu
   }
 }
 
-/** อ่าน attempt: ฐานข้อมูลก่อน → Storage (ข้อมูลยุคเก่า) → ไฟล์ local (dev) */
+/**
+ * อ่าน attempt ของอีเมลนี้ — รอบสอบที่เริ่มก่อนวันรีเซ็ตสิทธิ์ถือว่า "ไม่เคยสอบ"
+ * (ซื้อใหม่ = ได้โควตาใหม่; startAttempt จะ upsert ทับแถวเดิมใน exam_attempts)
+ */
 export async function getAttempt(exam: ExamDef, email: string): Promise<ExamAttempt | null> {
+  const a = await getAttemptAnyTime(exam, email);
+  return a && afterReset(a.startedAt) ? a : null;
+}
+
+/** อ่าน attempt ไม่สนวันรีเซ็ต: ฐานข้อมูลก่อน → Storage (ข้อมูลยุคเก่า) → ไฟล์ local (dev) */
+async function getAttemptAnyTime(exam: ExamDef, email: string): Promise<ExamAttempt | null> {
   const clean = normalizeEmail(email);
 
   const fromTable = await tableGetAttempt(exam, clean);

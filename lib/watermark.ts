@@ -12,7 +12,8 @@ const THAI_FONT = join(ASSETS, "fonts", "Sarabun-Regular.ttf");
 
 /** ตำแหน่งไฟล์ต้นฉบับของแต่ละไฟล์ในแคตตาล็อก (ดู lib/catalog.ts) */
 const MASTER_SOURCES: Record<FileId, { local: string; storage: string }> = {
-  questions: { local: join(ASSETS, "master-questions.pdf"), storage: "master/questions.pdf" },
+  // โจทย์ = ไฟล์เดิมทุกหน้า แต่เปลี่ยนหน้าปกเป็นปก "MOCK TPAT3" ชุดเดียวกับเฉลย Master Answers (2026-09-16)
+  questions: { local: join(ASSETS, "master-questions.pdf"), storage: "master/questions-2026-09-16.pdf" },
   // เฉลยฉบับ Master Answers ใหม่ (2026-09-16) — อัปขึ้น path ใหม่แทนการทับ master/answers.pdf
   // (CDN ของ Supabase คืนไฟล์เก่าที่แคชไว้ได้สักพักหลังอัปทับ + เก็บฉบับเก่าไว้เป็นสำรอง)
   answers: { local: join(ASSETS, "master-answers.pdf"), storage: "master/answers-2026-09-16.pdf" },
@@ -99,7 +100,7 @@ function fitSize(font: PDFFont, text: string, preferred: number, min: number, ma
 const NO_WATERMARK: ReadonlySet<FileId> = new Set(["answersheet"]);
 
 /** ไฟล์ที่ "ข้ามลายน้ำเฉพาะหน้าแรก" — หน้าแรกเป็นหน้าปก (เจ้าของขอให้ปกสะอาดไม่มีลายน้ำ)
- *  · questions    = หน้าปกที่แปะรูปไว้ (scripts/prepend-cover.mjs)
+ *  · questions    = ปก "MOCK TPAT3" (หน้า 1 ของ master-answers.pdf)
  *  · answers      = ปก "MOCK TPAT3" ของเฉลยฉบับ Master Answers (ฉบับก่อน 2026-09-16 ไม่มีปก)
  *  · tpat3content = ปก "เนื้อหา TPAT3"
  *  · sum4content  = ปก "สรุป TPAT3" ในตัว Mind Map รุ่นเก่า */

@@ -1,5 +1,12 @@
 // เพิ่ม "หน้าปก Mock TPAT3" เป็นหน้าแรกของไฟล์โจทย์ แล้วอัปโหลดขึ้น Supabase Storage
 //
+// ⚠️ ล้าสมัยแล้ว (2026-09-16) — ห้ามรันโดยไม่อ่านก่อน:
+//   - ไฟล์โจทย์ที่ขายตอนนี้อยู่ master/questions-2026-09-16.pdf (ดู MASTER_SOURCES ใน lib/watermark.ts)
+//     ปก = หน้า 1 ของ assets/master-answers.pdf (เวกเตอร์) ไม่ใช่รูป mock.png แล้ว
+//     สคริปต์นี้ยังอัปไป master/questions.pdf ซึ่งเว็บไม่ได้อ่านแล้ว
+//   - assets/master-questions.pdf ในเครื่อง (15 ก.ย. 56 หน้า) เป็นคนละฉบับกับที่ขายอยู่
+//     ถ้ารัน สคริปต์จะเอาฉบับในเครื่องมาทำเป็นไฟล์โจทย์ — ต้องเช็คห้องสอบออนไลน์ให้ตรงก่อน
+//
 // รัน: node --env-file=.env.local scripts/prepend-cover.mjs
 //
 // - ใช้รูปปกจาก public/covers/mock.png (หรือ .jpg/.jpeg)

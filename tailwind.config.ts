@@ -9,15 +9,15 @@ const config: Config = {
     extend: {
       colors: {
         ink: "#241016",
-        paper: "#F5F1EC",
+        paper: "#F9F7F4",
         maroon: { DEFAULT: "#6E1423", dark: "#4E0E19" },
         steel: "#8B9097",
         grid: "#E4DCD7",
       },
       fontFamily: {
-        sans: ['"IBM Plex Sans Thai"', "system-ui", "sans-serif"],
-        display: ['"IBM Plex Sans Thai"', "system-ui", "sans-serif"],
-        label: ['"IBM Plex Sans Thai"', "system-ui", "sans-serif"],
+        sans: ['"Anuphan"', "system-ui", "sans-serif"],
+        display: ['"Anuphan"', "system-ui", "sans-serif"],
+        label: ['"Anuphan"', "system-ui", "sans-serif"],
       },
     },
   },

@@ -6,12 +6,16 @@ export default function GoogleButton({
   next,
   label = "เข้าสู่ระบบด้วย Google",
   className = "",
+  hint = true,
 }: {
   next: string;
   label?: string;
   className?: string;
+  /** บรรทัดเตือนใต้ปุ่ม: บัญชีโรงเรียน (Google Workspace for Education) มักถูกผู้ดูแลบล็อกแอปภายนอก */
+  hint?: boolean;
 }) {
   return (
+    <>
     <a
       href={`/api/auth/google?next=${encodeURIComponent(next)}`}
       className={`flex w-full items-center justify-center gap-3 border border-ink/30 bg-white px-5 py-3.5 font-semibold text-ink transition hover:border-ink hover:bg-ink/[0.03] ${className}`}
@@ -19,6 +23,12 @@ export default function GoogleButton({
       <GoogleLogo />
       {label}
     </a>
+    {hint && (
+      <p className="mt-1.5 text-center font-label text-[11px] leading-snug text-ink/50">
+        แนะนำใช้ Gmail ส่วนตัว — บัญชีอีเมลโรงเรียนอาจถูกบล็อกไม่ให้ล็อกอิน
+      </p>
+    )}
+    </>
   );
 }
 

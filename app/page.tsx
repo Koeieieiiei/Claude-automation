@@ -159,36 +159,28 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ===== Spec strip ===== */}
+      {/* ===== แถบแดง: คำทักทายจากผู้สร้าง =====
+          เจ้าของขอ 2026-09-16: เอาข้อความเดิมในแถบแดงออก แล้วเอาคำทักทาย + ปุ่มบทความมาใส่แทน */}
       <section className="border-b border-maroon-dark bg-maroon text-paper">
-        <div className="mx-auto max-w-6xl px-5 py-[15px] text-center text-[15px] font-medium">
-          ล็อกอิน Google → ชำระเงิน → เข้าห้องสอบได้ทันที · ไฟล์อยู่ที่ “คอร์สของฉัน” กลับมาโหลดได้ตลอด
-        </div>
-      </section>
-
-      {/* คำทักทายจากผู้สร้าง — แถบเต็มความกว้างจอ ชนขอบซ้าย-ขวา อยู่ใต้แถบแดง ก่อนหัวข้อ Mock (เจ้าของขอ 2026-09-16)
-          ตัวหนังสือด้านในยังเรียงตรงกับคอลัมน์เนื้อหา (max-w-6xl) เหมือนส่วนอื่นของหน้า */}
-      <div className="border-b border-grid border-l-4 border-l-maroon bg-white shadow-[0_12px_30px_-22px_rgba(36,16,22,0.5)]">
-        <div className="mx-auto flex max-w-6xl flex-col gap-4 px-5 pb-6 pt-5 sm:flex-row sm:items-center sm:gap-6 md:py-6">
-          <div>
-          <p className="text-[1.05rem] leading-relaxed text-ink md:text-[1.15rem]">
-            สวัสดีครับน้อง ๆ พี่ชื่อ <strong className="text-maroon">มาโก้ ศุภวัฒน์</strong> กำลังศึกษาอยู่ที่
-            <strong> วิศวคอม จุฬาฯ</strong> พี่และเพื่อน ๆ ในกลุ่มได้รวมหัวกันออกแบบ{" "}
-            <strong>Mock TPAT3</strong> และ<strong>เนื้อหาสำหรับสอบ TPAT3</strong> หากน้องสนใจ
-            สามารถคลิกดูด้านล่างได้เลยครับ
+        <div className="mx-auto max-w-6xl px-5 py-6 md:py-7">
+          <p className="text-[1.05rem] leading-relaxed text-paper/90 md:text-[1.15rem]">
+            สวัสดีครับน้อง ๆ พี่ชื่อ <strong className="text-paper">มาโก้ ศุภวัฒน์</strong> กำลังศึกษาอยู่ที่
+            <strong className="text-paper"> วิศวคอม จุฬาฯ</strong> พี่และเพื่อน ๆ ในกลุ่มได้รวมหัวกันออกแบบ{" "}
+            <strong className="text-paper">Mock TPAT3</strong> และ
+            <strong className="text-paper">เนื้อหาสำหรับสอบ TPAT3</strong> หากน้องสนใจ
+            สามารถคลิกดูด้านล่าง<span className="whitespace-nowrap">ได้เลยครับ</span>
           </p>
           <a
             href="/about"
-            className="mt-3 inline-flex items-center gap-2 border border-maroon px-4 py-2 text-sm font-bold text-maroon transition hover:bg-maroon hover:text-paper"
+            className="mt-4 inline-flex items-center gap-2 border border-paper px-4 py-2 text-sm font-bold text-paper transition hover:bg-paper hover:text-maroon"
           >
             อ่านเรื่องราวของพี่
             <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} aria-hidden>
               <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
             </svg>
           </a>
-          </div>
         </div>
-      </div>
+      </section>
 
       {/* ===== Mock ===== */}
       <section id="mock" className="mx-auto max-w-6xl scroll-mt-20 px-5 pb-16 pt-20">

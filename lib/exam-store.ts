@@ -280,21 +280,24 @@ const LEGACY_PRODUCTS_WITHOUT_MOCK = new Set([
 ]);
 
 /**
- * ตาราง orders ไม่ได้เก็บว่าซื้อสินค้าตัวไหน — แหล่งความจริงคือ metadata.productId
- * ที่ฝังไว้ตอนสร้าง Stripe Checkout Session (ดู app/api/checkout/route.ts)
- * cache ไว้ระดับ module เพื่อไม่ต้องยิง Stripe ซ้ำภายใน instance เดียวกัน
+ * สินค้าของออเดอร์: คอลัมน์ product_id ก่อน (ออเดอร์ "รับฟรี" ตั้งแต่ 2026-09-26 และออเดอร์ตั้งแต่มี
+ * migration-product-id) — ออเดอร์เก่ากว่านั้นไม่มีคอลัมน์นี้ ต้องถาม metadata.productId ที่ฝังไว้ใน
+ * Stripe Checkout Session (ยุคขาย) cache ไว้ระดับ module เพื่อไม่ต้องยิง Stripe ซ้ำภายใน instance เดียวกัน
  */
 const orderProductCache = new Map<string, { productId: string | null; verified: boolean }>();
 
 async function lookupOrderProduct(order: {
   id: string;
   stripe_session_id: string | null;
+  product_id?: string | null;
 }): Promise<{ productId: string | null; verified: boolean }> {
   const cached = orderProductCache.get(order.id);
   if (cached) return cached;
 
   let result: { productId: string | null; verified: boolean };
-  if (!order.stripe_session_id) {
+  if (order.product_id) {
+    result = { productId: order.product_id, verified: true };
+  } else if (!order.stripe_session_id) {
     // order รุ่นเก่าก่อนมีระบบหลายสินค้า — ตอนนั้นขายแต่ชุด Mock TPAT3
     result = { productId: null, verified: true };
   } else {
@@ -315,9 +318,9 @@ async function lookupOrderProduct(order: {
   return result;
 }
 
-/** คำสั่งซื้อใบนี้ให้สิทธิ์สอบสนามนี้ไหม (ตรวจไม่ได้ = ไม่ให้สิทธิ์ เพื่อไม่แจกเกิน) */
+/** ออเดอร์ใบนี้ให้สิทธิ์สอบสนามนี้ไหม (ตรวจไม่ได้ = ไม่ให้สิทธิ์ เพื่อไม่แจกเกิน) */
 async function orderGrantsExam(
-  order: { id: string; stripe_session_id: string | null },
+  order: { id: string; stripe_session_id: string | null; product_id?: string | null },
   exam: ExamDef
 ): Promise<boolean> {
   const { productId, verified } = await lookupOrderProduct(order);
@@ -347,7 +350,7 @@ export async function findEntitlementByEmail(
     const emailPattern = clean.replace(/([\\%_])/g, "\\$1");
     const { data, error } = await supabase
       .from("orders")
-      .select("id,first_name,last_name,email,status,stripe_session_id")
+      .select("id,first_name,last_name,email,status,stripe_session_id,product_id")
       .ilike("email", emailPattern)
       .eq("status", "delivered")
       // ออเดอร์ก่อนวันรีเซ็ตสิทธิ์ไม่ให้สิทธิ์สอบ (ดู lib/access-reset.ts)

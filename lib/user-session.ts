@@ -93,7 +93,7 @@ export function verifyUserSession(
 
 /**
  * กันเปิด redirect ไปเว็บอื่น (open redirect): รับเฉพาะ path ภายในเว็บเราเท่านั้น
- * เช่น "/my-courses", "/?buy=mock1" — ของแปลก ("//evil.com", "https://…") = กลับหน้าคอร์สของฉัน
+ * เช่น "/my-courses", "/api/claim?product=mock1" — ของแปลก ("//evil.com", "https://…") = กลับหน้าคอร์สของฉัน
  */
 export function safeNextPath(next: string | null | undefined, fallback = "/my-courses"): string {
   if (!next || typeof next !== "string") return fallback;

@@ -72,7 +72,7 @@ export async function POST(req: NextRequest) {
     const payload = verifyExamToken(body.token);
     if (!payload) {
       return NextResponse.json(
-        { error: "ลิงก์เข้าห้องสอบหมดอายุแล้ว — กรอกชื่อ นามสกุล และอีเมลที่ใช้ซื้อเพื่อเข้าใหม่ได้เลย" },
+        { error: "ลิงก์เข้าห้องสอบหมดอายุแล้ว — ล็อกอินด้วย Google อีกครั้ง หรือกรอกชื่อ นามสกุล และอีเมลที่ใช้รับคอร์สเพื่อเข้าใหม่" },
         { status: 403 }
       );
     }
@@ -88,7 +88,7 @@ export async function POST(req: NextRequest) {
     };
     if (!typed.firstName.trim() || !typed.lastName.trim()) {
       return NextResponse.json(
-        { error: "กรุณากรอกทั้งชื่อและนามสกุล (ตามที่กรอกตอนสั่งซื้อ)" },
+        { error: "กรุณากรอกทั้งชื่อและนามสกุล (ตามชื่อบัญชีที่ใช้รับคอร์ส)" },
         { status: 400 }
       );
     }

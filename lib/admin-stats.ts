@@ -75,7 +75,7 @@ const OTHER_PRODUCT_NAME = "อื่น ๆ (ราคาเก่า / เล�
 export interface ResolvedProduct {
   id: string;
   name: string;
-  /** ราคาขายปัจจุบัน — null = ไม่ได้อยู่ในแคตตาล็อกแล้ว */
+  /** ราคาป้ายปัจจุบัน — 0 = แจกฟรี (ทุกคอร์สตั้งแต่ 2026-09-26) · null = ไม่ได้อยู่ในแคตตาล็อกแล้ว */
   price: number | null;
 }
 
@@ -84,7 +84,7 @@ export function resolveProduct(order: OrderRow): ResolvedProduct {
   const explicit = order.product_id;
   if (explicit && Object.prototype.hasOwnProperty.call(PRODUCTS, explicit)) {
     const p = PRODUCTS[explicit as ProductId];
-    return { id: p.id, name: p.name, price: p.price };
+    return { id: p.id, name: p.name, price: 0 };
   }
   if (explicit && RETIRED_PRODUCTS[explicit]) {
     return { id: explicit, name: RETIRED_PRODUCTS[explicit], price: null };
@@ -92,7 +92,7 @@ export function resolveProduct(order: OrderRow): ResolvedProduct {
   const guessed = LEGACY_PRICE_TO_PRODUCT[order.amount];
   if (guessed) {
     const p = PRODUCTS[guessed];
-    return { id: p.id, name: p.name, price: p.price };
+    return { id: p.id, name: p.name, price: 0 };
   }
   return { id: OTHER_PRODUCT_ID, name: OTHER_PRODUCT_NAME, price: null };
 }
@@ -381,7 +381,7 @@ export function summarizeSales(orders: OrderRow[], nowMs: number = Date.now()): 
       products.push({
         id: p.id,
         name: p.name,
-        price: p.price,
+        price: 0, // แจกฟรี (2026-09-26)
         units: 0,
         revenue: 0,
         unitShare: 0,

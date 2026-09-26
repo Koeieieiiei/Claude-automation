@@ -12,11 +12,9 @@ import { config, ready } from "./config";
  * ถ้ายังไม่ได้ตั้งค่า → คืน null (หน้าเว็บจะโชว์วิธีตั้งค่าแทน ไม่พัง)
  */
 
+// กรวยยุคแจกฟรี (2026-09-26): ไม่มีฟอร์มสั่งซื้อ/ชำระเงิน/เดโมแล้ว
 const FUNNEL_EVENTS = [
-  { event: "download_sample", label: "โหลดไฟล์ตัวอย่าง (เดโม)" },
-  { event: "open_buy_form", label: "เปิดฟอร์มสั่งซื้อ" },
-  { event: "begin_checkout", label: "ไปหน้าชำระเงิน" },
-  { event: "purchase_success", label: "ชำระเงินสำเร็จ" },
+  { event: "claim_free", label: "กดรับคอร์สฟรี" },
   { event: "click_exam_cta", label: "กดปุ่มทำข้อสอบ" },
   { event: "exam_start", label: "เริ่มทำข้อสอบ" },
   { event: "exam_submit", label: "ส่งข้อสอบ" },

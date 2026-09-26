@@ -81,11 +81,8 @@ async function handlePaid(session: Stripe.Checkout.Session) {
       lastName: meta.lastName ?? order?.last_name ?? "",
       email: meta.email ?? session.customer_email ?? order?.email ?? "",
       // ใช้ != null (ไม่ใช่ truthy) — ยอด 0 บาท (เช่น คูปองลด 100%) ต้องบันทึกเป็น 0 จริง
-      amount:
-        order?.amount ??
-        (session.amount_total != null
-          ? session.amount_total / 100
-          : getProduct(productId)?.price ?? 0),
+      // (แคตตาล็อกไม่มีราคาแล้วตั้งแต่แจกฟรี 2026-09-26 — ยอดจริงมาจาก order/Stripe เท่านั้น)
+      amount: order?.amount ?? (session.amount_total != null ? session.amount_total / 100 : 0),
       productId,
     });
   } catch (err) {

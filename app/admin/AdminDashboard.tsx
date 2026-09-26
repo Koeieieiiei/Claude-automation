@@ -363,7 +363,7 @@ function ProductCard({ p, rank }: { p: ProductStats; rank: number }) {
           <p className="eyebrow">อันดับ {rank}</p>
           <h3 className="mt-1 font-bold leading-6">{p.name}</h3>
           <p className="mt-0.5 text-xs text-ink/50">
-            {p.price !== null ? `ราคาป้าย ${baht(p.price)}` : "ไม่ได้ขายแล้ว"}
+            {p.price === null ? "ไม่ได้ขายแล้ว" : p.price === 0 ? "แจกฟรี (ตั้งแต่ 26 ก.ย. 2569)" : `ราคาป้าย ${baht(p.price)}`}
             {p.avgPrice > 0 && p.avgPrice !== p.price && ` · ขายได้จริงเฉลี่ย ${baht(p.avgPrice)}/ชุด`}
           </p>
         </div>
@@ -503,39 +503,42 @@ function RatiosBlock({ ga }: { ga: GaSummary | null }) {
       </p>
     );
   }
-  const buys = ga.events.find((e) => e.event === "purchase_success")?.count ?? 0;
-  const demo = ga.events.find((e) => e.event === "download_sample")?.count ?? 0;
+  // ยุคแจกฟรี (2026-09-26): กรวยคือ เข้าเว็บ → กดรับฟรี → เริ่มสอบ → ส่งข้อสอบ (ตัวเลข GA ล้วน ห้ามผสมยอดจาก orders)
+  const count = (name: string) => ga.events.find((e) => e.event === name)?.count ?? 0;
+  const claims = count("claim_free");
+  const starts = count("exam_start");
+  const submits = count("exam_submit");
   return (
     <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
       <RatioCard
-        title="คนเข้าเว็บ → ซื้อ"
-        numerator={buys}
+        title="คนเข้าเว็บ → กดรับฟรี"
+        numerator={claims}
         denominator={ga.activeUsers}
-        numLabel="ซื้อสำเร็จ"
+        numLabel="กดรับฟรี"
+        denLabel="ผู้เข้าชม"
+        hint="เริ่มนับตั้งแต่เปลี่ยนเป็นแจกฟรี 26 ก.ย. 2569"
+      />
+      <RatioCard
+        title="คนเข้าเว็บ → กดปุ่มทำข้อสอบ"
+        numerator={count("click_exam_cta")}
+        denominator={ga.activeUsers}
+        numLabel="กดปุ่มทำข้อสอบ"
         denLabel="ผู้เข้าชม"
       />
       <RatioCard
-        title="คนเข้าเว็บ → โหลดเดโม"
-        numerator={demo}
-        denominator={ga.activeUsers}
-        numLabel="โหลดเดโม"
-        denLabel="ผู้เข้าชม"
-        hint="เพิ่งเริ่มนับการโหลดเดโมวันนี้ — รอคนกดครั้งแรก"
+        title="กดรับฟรี → เริ่มสอบจริง"
+        numerator={starts}
+        denominator={claims}
+        numLabel="เริ่มสอบ"
+        denLabel="กดรับฟรี"
+        hint="เริ่มนับตั้งแต่เปลี่ยนเป็นแจกฟรี 26 ก.ย. 2569"
       />
       <RatioCard
-        title="โหลดเดโม → ซื้อ"
-        numerator={buys}
-        denominator={demo}
-        numLabel="ซื้อ"
-        denLabel="คนโหลดเดโม"
-        hint="เพิ่งเริ่มนับการโหลดเดโมวันนี้ — รอคนกดครั้งแรก"
-      />
-      <RatioCard
-        title="เปิดฟอร์ม → จ่ายจริง"
-        numerator={ga.events.find((e) => e.event === "purchase_success")?.count ?? 0}
-        denominator={ga.events.find((e) => e.event === "open_buy_form")?.count ?? 0}
-        numLabel="จ่ายสำเร็จ"
-        denLabel="เปิดฟอร์ม"
+        title="เริ่มสอบ → ส่งข้อสอบ"
+        numerator={submits}
+        denominator={starts}
+        numLabel="ส่งข้อสอบ"
+        denLabel="เริ่มสอบ"
       />
     </div>
   );
@@ -985,7 +988,7 @@ function GaBlock({ ga, configured }: { ga: GaSummary | null; configured: boolean
       </div>
 
       <Card>
-        <p className="mb-2 text-sm font-semibold">กรวยการขาย (นับจากอีเวนต์ใน GA)</p>
+        <p className="mb-2 text-sm font-semibold">กรวยการใช้งาน (นับจากอีเวนต์ใน GA)</p>
         <RankList
           rows={ga.events.map((e) => ({ label: e.label, value: e.count }))}
           unit="ครั้ง"

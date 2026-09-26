@@ -52,7 +52,7 @@ export function bkkStartOfToday(nowMs: number): number {
 const LEGACY_PRICE_TO_PRODUCT: Record<number, ProductId> = {
   99: "sum4",
   159: "mock1",
-  129: "mock1", // ราคาตั้งแต่ 2026-09-27
+  129: "mock1", // ราคาช่วงสั้น ๆ 2026-09-27 (กลับเป็น 199 วันเดียวกัน)
   199: "bundle-all",
   219: "sum4", // ราคาตั้งแต่ 2026-09-16 (sum4 = เนื้อหาทั้งหมดสำหรับสอบ TPAT3)
   299: "mock1",

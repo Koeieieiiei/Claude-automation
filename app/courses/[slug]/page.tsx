@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import CourseBuyButton from "@/components/CourseBuyButton";
+import ClaimButton from "@/components/ClaimButton";
 import CourseIcon from "@/components/CourseIcons";
 import Gear from "@/components/Gear";
 import { USER_COOKIE, verifyUserSession } from "@/lib/user-session";
@@ -16,12 +17,14 @@ export const dynamic = "force-dynamic";
 
 const SITE_URL = "https://tpat3mock.com";
 
+const priceText = (price: number) => (price === 0 ? "ฟรี" : `฿${price.toLocaleString()}`);
+
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
   const course = getCourse(slug);
   if (!course) return { title: "ไม่พบคอร์ส · Mr.tpat3" };
   const product = PRODUCTS[course.productId];
-  const description = `${course.tagline} — ${course.includes.join(" · ")} ราคา ฿${product.price.toLocaleString()} โดย Mr.tpat3`;
+  const description = `${course.tagline} — ${course.includes.join(" · ")} ${product.price === 0 ? "แจกฟรี" : `ราคา ${priceText(product.price)}`} โดย Mr.tpat3`;
   return {
     title: `${course.title} | Mr.tpat3`,
     description,
@@ -45,14 +48,16 @@ const TONE = {
 } as const;
 
 /**
- * หน้ารายละเอียดคอร์ส — โครงแบบเว็บคอร์สเรียน: แบนเนอร์ + การ์ดซื้อด้านขวา + รายละเอียด/สารบัญด้านล่าง
- * ซื้อแล้ว (ล็อกอินอยู่) → ปุ่มเปลี่ยนเป็น "เข้าเรียน" พาไปหน้าคอร์สของฉัน
+ * หน้ารายละเอียดคอร์ส — โครงแบบเว็บคอร์สเรียน: แบนเนอร์ + การ์ดซื้อ/รับฟรีด้านขวา + รายละเอียด/สารบัญด้านล่าง
+ * สินค้าราคา 0 (เล่มเนื้อหา — แจกฟรี 2026-09-27) โชว์ "ฟรี" + ปุ่มรับฟรี · สินค้าขายโชว์ราคา + ปุ่มสั่งซื้อ
+ * ซื้อ/รับแล้ว (ล็อกอินอยู่) → ปุ่มเปลี่ยนเป็น "เข้าเรียน" พาไปหน้าคอร์สของฉัน
  */
 export default async function CoursePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const course = getCourse(slug);
   if (!course) notFound();
   const product = PRODUCTS[course.productId];
+  const free = product.price === 0;
 
   const user = verifyUserSession((await cookies()).get(USER_COOKIE)?.value);
   let owned = false;
@@ -64,7 +69,6 @@ export default async function CoursePage({ params }: { params: Promise<{ slug: s
     }
   }
 
-  const save = product.compareAt ? product.compareAt - product.price : 0;
   const others = COURSES.filter((c) => c.slug !== course.slug);
 
   return (
@@ -88,7 +92,9 @@ export default async function CoursePage({ params }: { params: Promise<{ slug: s
                 <Gear teeth={12} className="pointer-events-none absolute -bottom-10 left-1/3 h-32 w-32 opacity-10" spin="ccw" />
                 <div className="relative grid items-center gap-6 px-7 py-9 sm:grid-cols-[1fr_auto] md:px-10 md:py-12">
                   <div>
-                    <p className="font-label text-[11px] font-semibold uppercase tracking-[0.22em] opacity-80">by Mr.tpat3</p>
+                    <p className="font-label text-[11px] font-semibold uppercase tracking-[0.22em] opacity-80">
+                      by Mr.tpat3{free && " · แจกฟรี"}
+                    </p>
                     <h1 className="mt-2 font-display text-[2rem] font-bold leading-[1.15] md:text-[2.5rem]">{course.title}</h1>
                     <p className="mt-3 max-w-md text-[1.05rem] font-medium leading-relaxed opacity-90">{course.tagline}</p>
                   </div>
@@ -109,7 +115,7 @@ export default async function CoursePage({ params }: { params: Promise<{ slug: s
                 </div>
               </div>
 
-            {/* ===== ขวา: ชื่อ + สถิติ + การ์ดซื้อ ===== */}
+            {/* ===== ขวา: ชื่อ + สถิติ + การ์ดซื้อ/รับฟรี ===== */}
             <aside className="lg:col-start-2 lg:row-start-1 lg:row-span-2 lg:sticky lg:top-20 lg:self-start">
               <h2 className="font-display text-xl font-bold leading-snug text-ink">{course.title}</h2>
               <p className="mt-1.5 font-label text-xs text-ink/50">รหัส: {product.id.toUpperCase()}</p>
@@ -144,17 +150,8 @@ export default async function CoursePage({ params }: { params: Promise<{ slug: s
                 </ul>
 
                 <div className="mt-5 flex flex-wrap items-baseline justify-end gap-2.5 border-t border-dashed border-grid pt-4">
-                  <span className="font-display text-[2.1rem] font-bold leading-none text-maroon">
-                    ฿{product.price.toLocaleString()}
-                  </span>
-                  {product.compareAt && (
-                    <>
-                      <span className="text-sm text-ink/45 line-through">฿{product.compareAt.toLocaleString()}</span>
-                      <span className="border border-maroon/40 px-2 py-0.5 font-label text-xs font-bold text-maroon">
-                        ประหยัด ฿{save.toLocaleString()}
-                      </span>
-                    </>
-                  )}
+                  <span className="font-display text-[2.1rem] font-bold leading-none text-maroon">{priceText(product.price)}</span>
+                  {free && <span className="text-sm text-ink/55">ไม่มีค่าใช้จ่าย</span>}
                 </div>
 
                 {owned ? (
@@ -167,25 +164,37 @@ export default async function CoursePage({ params }: { params: Promise<{ slug: s
                     </a>
                     <p className="mt-2 text-center font-label text-[11px] text-ink/55">บัญชีนี้มีคอร์สนี้แล้ว</p>
                   </>
+                ) : free ? (
+                  <>
+                    <ClaimButton
+                      productId={product.id}
+                      label={user ? "รับคอร์สนี้ฟรี" : "รับฟรี · เข้าสู่ระบบ / สมัคร"}
+                      source="course_page"
+                      className="mt-4 w-full py-3.5 font-bold"
+                    />
+                    <p className="mt-2 text-center font-label text-[11px] text-ink/50">
+                      ไม่มีค่าใช้จ่าย · ได้ทันทีที่หน้า “คอร์สของฉัน”
+                    </p>
+                  </>
                 ) : (
                   <>
                     <CourseBuyButton product={product} user={user} slug={course.slug} className="mt-4" />
                     <p className="mt-2 text-center font-label text-[11px] text-ink/50">
                       🔒 ชำระเงินปลอดภัยผ่าน Stripe · PromptPay
                     </p>
-                    {!user && (
-                      <p className="mt-3 text-center font-label text-xs text-ink/60">
-                        ซื้อไปแล้ว?{" "}
-                        <a
-                          href={`/api/auth/google?next=${encodeURIComponent(`/courses/${course.slug}`)}`}
-                          className="font-semibold text-maroon underline underline-offset-2"
-                        >
-                          ล็อกอินด้วย Google
-                        </a>{" "}
-                        เพื่อเข้าเรียน
-                      </p>
-                    )}
                   </>
+                )}
+                {!owned && !user && (
+                  <p className="mt-3 text-center font-label text-xs text-ink/60">
+                    {free ? "เคยรับไปแล้ว?" : "ซื้อไปแล้ว?"}{" "}
+                    <a
+                      href={`/login?next=${encodeURIComponent(`/courses/${course.slug}`)}`}
+                      className="font-semibold text-maroon underline underline-offset-2"
+                    >
+                      เข้าสู่ระบบ
+                    </a>{" "}
+                    เพื่อเข้าเรียน
+                  </p>
                 )}
               </div>
             </aside>
@@ -301,7 +310,7 @@ export default async function CoursePage({ params }: { params: Promise<{ slug: s
                       <span className="min-w-0">
                         <span className="block font-display font-bold text-ink">{c.title}</span>
                         <span className="mt-0.5 block text-sm text-ink/60">{c.tagline}</span>
-                        <span className="mt-1 block font-display font-bold text-maroon">฿{p.price.toLocaleString()}</span>
+                        <span className="mt-1 block font-display font-bold text-maroon">{priceText(p.price)}</span>
                       </span>
                     </a>
                   );

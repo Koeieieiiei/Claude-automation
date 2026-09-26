@@ -20,6 +20,8 @@ export type ExamEvent =
   | "download_sample"
   /** กดปุ่มใหญ่หน้าแรก "ทำข้อสอบ Mock TPAT3" */
   | "click_exam_cta"
+  /** กดปุ่ม "รับฟรี" (เล่มเนื้อหาแจกฟรีตั้งแต่ 2026-09-27) — params: product_id, source */
+  | "claim_free"
   /** เปิดฟอร์มสั่งซื้อ (กดปุ่มสั่งซื้อใบใดก็ได้) */
   | "open_buy_form"
   /** กดปุ่มไปหน้าชำระเงินจริงใน Stripe */

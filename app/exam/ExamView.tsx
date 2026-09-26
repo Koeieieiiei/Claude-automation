@@ -4,15 +4,15 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getExam, DEFAULT_EXAM_ID, ExamDef } from "@/lib/exams";
 import { trackEvent } from "@/lib/analytics";
-import GoogleButton from "@/components/GoogleButton";
+import LoginButton from "@/components/LoginButton";
 import { Avatar, ClientUser, fetchCurrentUser } from "@/components/AccountButton";
 
 /**
  * ห้องสอบออนไลน์ — เลือกสนามสอบผ่าน ?exam=<examId> (ไม่ระบุ = สนามหลัก TPAT3)
  * นิยามรายสนาม (จำนวนข้อ เวลา หน้าโจทย์) มาจาก lib/exams.ts
  *
- * ลำดับหน้าจอ: gate (ล็อกอิน Google / ลิงก์ / กรอกอีเมล) → instructions (คำชี้แจง + กติกา) → exam → ไปหน้าผล
- * เข้าด้วยการล็อกอิน Google บัญชีเดียวกับที่ซื้อเท่านั้น (ไม่ต้องกรอกอะไร) — ตั้งแต่ 2026-09-16 การซื้อ
+ * ลำดับหน้าจอ: gate (ล็อกอินอีเมล+รหัสผ่าน / ลิงก์ / กรอกอีเมล) → instructions (คำชี้แจง + กติกา) → exam → ไปหน้าผล
+ * เข้าด้วยการล็อกอิน (อีเมล+รหัสผ่าน) อีเมลเดียวกับที่ซื้อเท่านั้น (ไม่ต้องกรอกอะไร) — ตั้งแต่ 2026-09-16 การซื้อ
  * ต้องล็อกอินอยู่แล้ว จึงไม่มีฟอร์มกรอกชื่อ/อีเมลอีก (API ยังรับ token จาก localStorage ไว้ทำต่อรอบที่ค้าง)
  * เวลาอิงนาฬิกา server เสมอ (คำนวณ offset ตอน start) — แก้นาฬิกาเครื่องเองไม่มีผล
  */
@@ -91,7 +91,7 @@ export default function ExamView() {
       if (!data.state || data.state === "none") {
         setGateError(
           opts.session
-            ? "บัญชีนี้ยังไม่มีสิทธิ์ทำข้อสอบ — ถ้าซื้อด้วยบัญชี Google อื่น ให้กดเปลี่ยนบัญชี หรือสั่งซื้อชุดข้อสอบด้านล่าง"
+            ? "บัญชีนี้ยังไม่มีสิทธิ์ทำข้อสอบ — ถ้าซื้อด้วยอีเมลอื่น ให้กดเปลี่ยนบัญชี หรือสั่งซื้อชุดข้อสอบด้านล่าง"
             : "ไม่พบสิทธิ์ทำข้อสอบของชื่อและอีเมลนี้ — ถ้าซื้อแล้ว ลองตรวจตัวสะกดให้ตรงกับตอนสั่งซื้ออีกครั้ง"
         );
         // นับเฉพาะตอนผู้ใช้กรอกเองแล้วไม่ผ่าน (ไม่นับตอนเช็คโทเค็นเงียบ ๆ ตอนเปิดหน้า)
@@ -386,7 +386,7 @@ export default function ExamView() {
                   <span className="flex min-w-0 items-center gap-2.5">
                     <Avatar user={user} size="h-8 w-8" />
                     <span className="min-w-0">
-                      <span className="block truncate font-semibold text-ink">{user.name || "บัญชี Google"}</span>
+                      <span className="block truncate font-semibold text-ink">{user.name || "บัญชีของฉัน"}</span>
                       <span className="block truncate text-xs text-ink/60">{user.email}</span>
                     </span>
                   </span>
@@ -402,11 +402,11 @@ export default function ExamView() {
               <>
                 <h1 className="font-display text-2xl font-bold text-ink">โปรดล็อกอินก่อนเข้าห้องสอบ</h1>
                 <p className="mt-2 text-sm leading-relaxed text-ink/70">
-                  ล็อกอินด้วยบัญชี Google <strong>อีเมลเดียวกับที่ใช้สั่งซื้อ</strong>ชุด {exam.title}{" "}
+                  เข้าสู่ระบบด้วย<strong>อีเมลเดียวกับที่ใช้สั่งซื้อ</strong>ชุด {exam.title}{" "}
                   ระบบจะตรวจสิทธิ์และพาเข้าห้องสอบให้ทันที ({exam.totalQuestions} ข้อ · จับเวลา{" "}
                   {durationText(exam)} · ทำได้ 1 รอบ)
                 </p>
-                <GoogleButton next={examPath} className="mt-5" />
+                <LoginButton next={examPath} className="mt-5" />
               </>
             )}
 

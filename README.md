@@ -283,32 +283,40 @@ npx vercel --prod --yes
 
 ---
 
-## 🔐 ล็อกอินด้วย Google + "คอร์สของฉัน" + หน้ารายละเอียดคอร์ส (เพิ่ม 2026-09-16)
+## 🔐 ล็อกอินด้วยอีเมล+รหัสผ่าน (เปลี่ยนจาก Google 2026-09-27) + "คอร์สของฉัน" + หน้ารายละเอียดคอร์ส
 
-แนวคิด: **สิทธิ์ทุกอย่างผูกกับอีเมลในตาราง `orders` เหมือนเดิม** — ล็อกอินด้วยบัญชี Google
-อีเมลเดียวกับตอนสั่งซื้อ = เห็นคอร์ส/ไฟล์/ห้องสอบของตัวเอง การซื้อและการส่งไฟล์ทางอีเมลไม่เปลี่ยน
+แนวคิด: **สิทธิ์ทุกอย่างผูกกับอีเมลในตาราง `orders` เหมือนเดิม** — เข้าสู่ระบบด้วยอีเมล+รหัสผ่าน
+อีเมลเดียวกับตอนสั่งซื้อ = เห็นคอร์ส/ไฟล์/ห้องสอบของตัวเอง (เจ้าของสั่ง 2026-09-27 เลิกใช้ Google เพราะยืนยันหลายขั้นเกิน)
+
+**บัญชีผู้ใช้เก็บที่ไหน:** ไฟล์ JSON ต่อคนใน Supabase Storage บักเก็ต `ebooks` ที่ `auth/users/<sha256(email)>.json`
+(`lib/user-store.ts`) — รหัสผ่านเก็บเป็น scrypt hash (`lib/password.ts`) · **ไม่ได้ใช้ Supabase Auth** เพราะโปรเจกต์ปิด
+"Email logins" ไว้ (signInWithPassword ตอบ "Email logins are disabled") และวิธีนี้ไม่ต้องรัน migration/ตั้งค่า Dashboard
+· ลืมรหัสผ่าน = ลิงก์ HMAC อายุ 30 นาที (`lib/password-reset-token.ts`) ส่งผ่าน Resend (`sendPasswordResetEmail` ใน `lib/email.ts`)
+· กันเดารหัส: `lib/auth-rate-limit.ts` (ต่อ instance) · เทสต์: `tests/email-auth.test.ts`
+· **สมัครด้วยอีเมลที่ "มีคอร์สอยู่แล้ว" ไม่ได้ทันที** — ระบบส่งลิงก์ตั้งรหัสผ่านไปที่อีเมลนั้นแทน (กันคนอื่นสวมอีเมลลูกค้า)
+  ลูกค้ายุค Google (ยังไม่มีรหัสผ่าน) ใช้ "ลืมรหัสผ่าน" ตั้งรหัสครั้งแรกได้เลย
 
 | หน้า / API | ทำอะไร |
 |---|---|
 | `/my-courses` | คอร์สของฉัน — ทุกอย่างที่อีเมลนี้ซื้อ: ปุ่มเข้าห้องสอบ/ดูผล + ไฟล์ทุกไฟล์โหลดซ้ำได้ตลอด (ลายน้ำชื่อผู้ซื้อ) |
 | `/courses/<slug>` | รายละเอียดคอร์ส (mock-tpat3 / tpat3-content / complete-set) — ข้อความอยู่ใน [lib/courses.ts](lib/courses.ts) ซื้อแล้วปุ่มเปลี่ยนเป็น "เข้าเรียน" |
 | `/about` | บทความ "เกี่ยวกับพี่" (แก้ข้อความใน [app/about/page.tsx](app/about/page.tsx) รูปที่ `public/about/`) |
-| `/api/auth/google?next=` | เริ่มล็อกอิน (PKCE ผ่าน Supabase Auth → Google) |
-| `/api/auth/callback` | Supabase ส่งกลับ → แลก code เป็นอีเมลที่ยืนยันแล้ว → ออกคุกกี้ `mrtpat3_user` (httpOnly, เซ็น HMAC, 180 วัน) |
+| `/login?next=&mode=` | หน้าเข้าสู่ระบบ / สมัครสมาชิก (อีเมล + รหัสผ่าน อย่างเดียว) — `components/AuthForm.tsx` |
+| `/forgot-password` · `/reset-password?token=` | ขอลิงก์ตั้งรหัสผ่านทางอีเมล / ตั้งรหัสใหม่ (ล็อกอินให้ทันที) |
+| `POST /api/auth/login` · `signup` · `forgot` · `reset` | ตรวจรหัส / สมัคร / ส่งลิงก์ / ตั้งรหัส → สำเร็จออกคุกกี้ `mrtpat3_user` (httpOnly, เซ็น HMAC, 180 วัน) |
 | `/api/auth/me` · `/api/auth/logout` | ถามสถานะ / ออกจากระบบ (`?switch=1` = เปลี่ยนบัญชี) |
 
-- ห้องสอบ `/exam`: ทางหลักคือล็อกอิน Google (`/api/exam/access` รับ `{ useSession: true }`) —
-  ฟอร์มกรอกชื่อ+อีเมลยังอยู่เป็นทางสำรองสำหรับคนที่ซื้อด้วยอีเมลที่ไม่ใช่บัญชี Google
-- ฟอร์มสั่งซื้อ: ล็อกอินอยู่ → อีเมลล็อกตามบัญชี (มีปุ่มเปลี่ยนบัญชี) ชื่อเติมจาก Google แต่แก้ได้
+- ห้องสอบ `/exam`: ทางหลักคือล็อกอิน (`/api/exam/access` รับ `{ useSession: true }`) —
+  ฟอร์มกรอกชื่อ+อีเมลยังอยู่เป็นทางสำรอง
+- ฟอร์มสั่งซื้อ: ต้องล็อกอินก่อน → อีเมลล็อกตามบัญชี (มีปุ่มเปลี่ยนบัญชี) ชื่อในออเดอร์ = ส่วนหน้า @ ของอีเมล
 - คุกกี้ล็อกอินเซ็นด้วย `DOWNLOAD_SECRET + ":user-session"` และฝัง `t:"user"` — เอาโทเค็นดาวน์โหลด/
   โทเค็นห้องสอบมาสวมไม่ได้ (มี test ใน `tests/user-session.test.ts`)
 - ไม่มี anon key / Supabase client ฝั่ง browser — ทุกอย่างทำฝั่ง server ด้วย service role key
 - ออเดอร์ `sum4`/`bundle-all` ก่อน 2026-09-16 16:43 (ยุคไฟล์สรุป 2 ไฟล์) หน้าคอร์สของฉันจะโชว์ไฟล์รุ่นเก่า
   ตามที่ซื้อจริง (`CONTENT_SWITCH_AT` ใน [lib/library.ts](lib/library.ts))
 
-**ตั้งค่าที่ต้องมี (Supabase Dashboard):** Authentication → Providers → Google เปิด + Client ID + **Client Secret** ·
-URL Configuration → Site URL `https://tpat3mock.com` + Redirect URLs `https://tpat3mock.com/**` และ `http://localhost:3000/**` ·
-Google Cloud → OAuth consent screen ต้องเป็น **Production** (Testing = ล็อกอินได้เฉพาะ test users)
+**ตั้งค่าที่ต้องมี:** `RESEND_API_KEY` + `EMAIL_FROM` (สำหรับอีเมลลิงก์ตั้งรหัสผ่าน — ชื่อผู้ส่งภาษาไทยใน EMAIL_FROM ถูก Resend
+ปฏิเสธ โค้ดจึงใช้ "Mr.tpat3 <อีเมลใน EMAIL_FROM>" ให้เอง) · ไม่ต้องตั้งค่า Google/Supabase Auth อีกแล้ว
 
 ---
 

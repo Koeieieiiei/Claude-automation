@@ -363,7 +363,7 @@ function ProductCard({ p, rank }: { p: ProductStats; rank: number }) {
           <p className="eyebrow">อันดับ {rank}</p>
           <h3 className="mt-1 font-bold leading-6">{p.name}</h3>
           <p className="mt-0.5 text-xs text-ink/50">
-            {p.price !== null ? `ราคาป้าย ${baht(p.price)}` : "ไม่ได้ขายแล้ว"}
+            {p.price === null ? "ไม่ได้ขายแล้ว" : p.price === 0 ? "แจกฟรี (ตั้งแต่ 27 ก.ย. 2569)" : `ราคาป้าย ${baht(p.price)}`}
             {p.avgPrice > 0 && p.avgPrice !== p.price && ` · ขายได้จริงเฉลี่ย ${baht(p.avgPrice)}/ชุด`}
           </p>
         </div>

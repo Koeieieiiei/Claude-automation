@@ -1,0 +1,44 @@
+import type { Metadata } from "next";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+import AuthCard from "@/components/AuthCard";
+import AuthForm from "@/components/AuthForm";
+import { USER_COOKIE, safeNextPath, verifyUserSession } from "@/lib/user-session";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "เข้าสู่ระบบ / สมัครสมาชิก | Mr.tpat3",
+  robots: { index: false },
+};
+
+/**
+ * หน้าเข้าสู่ระบบ / สมัครสมาชิกด้วยอีเมล+รหัสผ่าน (แทนปุ่ม Google เดิม — เจ้าของสั่ง 2026-09-26)
+ * /login?next=/exam&mode=signup&email=… · ล็อกอินอยู่แล้ว → ข้ามไป next เลย
+ */
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ next?: string; mode?: string; email?: string }>;
+}) {
+  const { next: rawNext, mode, email } = await searchParams;
+  const next = safeNextPath(rawNext);
+  if (verifyUserSession((await cookies()).get(USER_COOKIE)?.value)) redirect(next);
+
+  return (
+    <AuthCard
+      badge="บัญชีผู้เรียน"
+      title="เข้าสู่ระบบ / สมัครสมาชิก"
+      intro={
+        <>
+          ใช้แค่ <strong>อีเมล + รหัสผ่าน</strong> — คอร์ส ไฟล์ และสิทธิ์ห้องสอบทั้งหมดผูกกับอีเมลนี้
+          กลับมาเปิดได้ทุกเครื่อง (เคยซื้อคอร์สไว้ ให้ใช้อีเมลเดียวกับตอนสั่งซื้อ)
+        </>
+      }
+      next={next}
+    >
+      <AuthForm next={next} initialMode={mode === "signup" ? "signup" : "signin"} initialEmail={(email ?? "").slice(0, 254)} />
+    </AuthCard>
+  );
+}

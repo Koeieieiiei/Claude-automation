@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import type { Product } from "@/lib/catalog";
 import { trackEvent } from "@/lib/analytics";
-import GoogleButton from "./GoogleButton";
+import LoginButton from "./LoginButton";
 import { Avatar, ClientUser } from "./AccountButton";
 
 interface Props {
@@ -18,8 +18,8 @@ interface Props {
 
 /**
  * ฟอร์มสั่งซื้อ — ไม่มีช่องกรอกอะไรเลย (เจ้าของสั่ง 2026-09-16):
- * ล็อกอินด้วย Google → กด "ไปหน้าชำระเงิน" → จ่าย PromptPay ผ่าน Stripe → คอร์สโผล่ที่ "คอร์สของฉัน"
- * ชื่อ/อีเมลของออเดอร์มาจากบัญชี Google ฝั่ง server (app/api/checkout) ไม่รับจากหน้าเว็บ
+ * เข้าสู่ระบบ (อีเมล+รหัสผ่าน) → กด "ไปหน้าชำระเงิน" → จ่าย PromptPay ผ่าน Stripe → คอร์สโผล่ที่ "คอร์สของฉัน"
+ * อีเมลของออเดอร์มาจากคุกกี้ล็อกอินฝั่ง server (app/api/checkout) ไม่รับจากหน้าเว็บ
  */
 export default function BuyModal({ product, onClose, user = null, returnTo }: Props) {
   const [loading, setLoading] = useState(false);
@@ -105,10 +105,10 @@ export default function BuyModal({ product, onClose, user = null, returnTo }: Pr
           ) : (
             <div>
               <p className="text-sm leading-relaxed text-ink/75">
-                ล็อกอินด้วยบัญชี Google ก่อนสั่งซื้อ — คอร์สและไฟล์จะผูกกับบัญชีนี้
-                กลับมาเข้าเรียนได้ทุกเครื่องที่หน้า “คอร์สของฉัน” ไม่ต้องกรอกอะไรเพิ่ม
+                เข้าสู่ระบบด้วยอีเมล + รหัสผ่านก่อนสั่งซื้อ (ยังไม่มีบัญชี สมัครได้ในหน้าเดียวกัน) —
+                คอร์สและไฟล์จะผูกกับอีเมลนี้ กลับมาเข้าเรียนได้ทุกเครื่องที่หน้า “คอร์สของฉัน”
               </p>
-              <GoogleButton next={next} label="เข้าสู่ระบบด้วย Google เพื่อสั่งซื้อ" className="mt-3" />
+              <LoginButton next={next} label="เข้าสู่ระบบ / สมัครสมาชิก เพื่อสั่งซื้อ" className="mt-3" />
               <p className="mt-2 font-label text-[11px] leading-snug text-ink/50">
                 การเข้าสู่ระบบและสั่งซื้อถือว่ายอมรับ{" "}
                 <a href="/terms" target="_blank" className="underline underline-offset-2 hover:text-maroon">ข้อกำหนดการใช้งาน</a> และ{" "}

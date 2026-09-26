@@ -18,7 +18,9 @@ const MASTER_SOURCES: Record<FileId, { local: string; storage: string }> = {
   // (CDN ของ Supabase คืนไฟล์เก่าที่แคชไว้ได้สักพักหลังอัปทับ + เก็บฉบับเก่าไว้เป็นสำรอง)
   answers: { local: join(ASSETS, "master-answers.pdf"), storage: "master/answers-2026-09-16.pdf" },
   answersheet: { local: join(ASSETS, "master-answersheet.pdf"), storage: "master/answersheet.pdf" },
-  tpat3content: { local: join(ASSETS, "master-tpat3-content.pdf"), storage: "master/tpat3-content.pdf" },
+  // เล่ม "เนื้อหา TPAT3" ฉบับ 174 หน้า (2026-09-26 เจ้าของส่งไฟล์ใหม่ ยืนยันอีกครั้ง 2026-09-27) — อัปขึ้น path ใหม่แทนการทับ
+  // (ฉบับ 160 หน้าเดิมยังอยู่ที่ master/tpat3-content.pdf เป็นสำรอง) อัปด้วย scripts/upload-pdfs.mjs tpat3content
+  tpat3content: { local: join(ASSETS, "master-tpat3-content.pdf"), storage: "master/tpat3-content-2026-09-26.pdf" },
   // สรุป TPAT3 รุ่นเก่า (เลิกขายแล้ว) — ไฟล์ยังอยู่บน Storage ให้ลิงก์ในอีเมลเก่าโหลดได้
   sum4content: { local: join(ASSETS, "master-sum4-content.pdf"), storage: "master/sum4-content.pdf" },
   sum4formula: { local: join(ASSETS, "master-sum4-formula.pdf"), storage: "master/sum4-formula.pdf" },

@@ -1,13 +1,14 @@
 import { cookies } from "next/headers";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
-import GoogleButton from "@/components/GoogleButton";
+import LoginButton from "@/components/LoginButton";
 import { Avatar } from "@/components/AccountButton";
 import { USER_COOKIE, verifyUserSession } from "@/lib/user-session";
 import { getLibrary, LibraryItem } from "@/lib/library";
 import { buildDownloadLinks, DownloadLink } from "@/lib/downloads";
+import ClaimButton from "@/components/ClaimButton";
 import { FileId, PRODUCTS } from "@/lib/catalog";
-import { COURSES, getCourse } from "@/lib/courses";
+import { COURSES, courseForProduct, getCourse } from "@/lib/courses";
 import { getExam } from "@/lib/exams";
 import { getAttemptState, isUnlimitedEmail, AttemptState } from "@/lib/exam-store";
 
@@ -58,16 +59,16 @@ const LOGIN_ERRORS: Record<string, string> = {
 };
 
 /**
- * "คอร์สของฉัน" — ทุกอย่างที่บัญชี Google นี้ซื้อไว้: ปุ่มเข้าห้องสอบ/ดูผล + ไฟล์ทุกไฟล์โหลดซ้ำได้ตลอด
+ * "คอร์สของฉัน" — ทุกอย่างที่อีเมลนี้ซื้อไว้: ปุ่มเข้าห้องสอบ/ดูผล + ไฟล์ทุกไฟล์โหลดซ้ำได้ตลอด
  * สิทธิ์ผูกกับอีเมล → ล็อกอินด้วยบัญชีอีเมลเดียวกับตอนสั่งซื้อ
  */
 export default async function MyCoursesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ login_error?: string }>;
+  searchParams: Promise<{ login_error?: string; claimed?: string; already?: string; claim_error?: string }>;
 }) {
   const user = verifyUserSession((await cookies()).get(USER_COOKIE)?.value);
-  const { login_error: loginError } = await searchParams;
+  const { login_error: loginError, claimed, already, claim_error: claimError } = await searchParams;
 
   if (!user) {
     return (
@@ -83,10 +84,10 @@ export default async function MyCoursesPage({
             <div className="px-6 py-8">
               <h1 className="font-display text-2xl font-bold text-ink">เข้าสู่ระบบเพื่อดูคอร์สของคุณ</h1>
               <p className="mt-2 text-sm leading-relaxed text-ink/70">
-                ล็อกอินด้วยบัญชี Google <strong>อีเมลเดียวกับที่ใช้สั่งซื้อ</strong> — ไฟล์ทุกไฟล์
+                เข้าสู่ระบบด้วย<strong>อีเมลเดียวกับที่ใช้สั่งซื้อ</strong> (สมัครใหม่ได้ในหน้าเดียวกัน) — ไฟล์ทุกไฟล์
                 สิทธิ์เข้าห้องสอบ และผลสอบ จะรวมอยู่ที่หน้านี้ เปิดได้ทุกเครื่อง
               </p>
-              <GoogleButton next="/my-courses" className="mt-5" />
+              <LoginButton next="/my-courses" className="mt-5" />
               {loginError && (
                 <p className="mt-4 border border-maroon/40 bg-maroon/[0.06] px-4 py-3 text-sm leading-relaxed text-maroon">
                   {LOGIN_ERRORS[loginError] ?? LOGIN_ERRORS.server}
@@ -116,6 +117,8 @@ export default async function MyCoursesPage({
   }
 
   const courses = deriveCourses(items);
+  // แถบแจ้งผลจากปุ่ม "รับฟรี" (/api/claim) — เพิ่งรับสำเร็จ / มีอยู่แล้ว / รับไม่สำเร็จ
+  const claimedTitle = claimed ? courseForProduct(claimed)?.title ?? "คอร์ส" : null;
 
   // สถานะห้องสอบ (สนามหลัก) — เฉพาะคนที่มีชุด Mock หรืออีเมลเจ้าของร้าน
   const exam = getExam();
@@ -176,6 +179,23 @@ export default async function MyCoursesPage({
         </section>
 
         <section className="mx-auto max-w-6xl px-5 py-12">
+          {claimedTitle && (
+            <p className="mb-6 border border-maroon/40 bg-maroon/[0.06] px-4 py-3 text-sm leading-relaxed text-ink">
+              {already ? (
+                <>บัญชีนี้มี <strong>“{claimedTitle}”</strong> อยู่แล้ว — เปิดใช้ได้เลยด้านล่าง</>
+              ) : (
+                <>
+                  <strong className="text-maroon">รับ “{claimedTitle}” เรียบร้อย ✓</strong> — ไม่มีค่าใช้จ่าย
+                  เปิดใช้ได้เลยด้านล่าง กลับมาเปิดได้ตลอดด้วยบัญชีนี้
+                </>
+              )}
+            </p>
+          )}
+          {claimError && (
+            <p className="mb-6 border border-maroon/40 bg-maroon/[0.06] px-4 py-3 text-sm text-maroon">
+              รับคอร์สไม่สำเร็จชั่วคราว — ลองกดรับใหม่อีกครั้ง ถ้ายังไม่ได้ติดต่อ mr.tpat3@gmail.com
+            </p>
+          )}
           {loadError && (
             <p className="mb-6 border border-maroon/40 bg-maroon/[0.06] px-4 py-3 text-sm text-maroon">
               โหลดรายการคอร์สไม่สำเร็จชั่วคราว — รีเฟรชหน้านี้อีกครั้ง
@@ -191,16 +211,19 @@ export default async function MyCoursesPage({
                   href={`/api/auth/logout?switch=1&next=${encodeURIComponent("/my-courses")}`}
                   className="font-semibold text-maroon underline underline-offset-2"
                 >
-                  เปลี่ยนบัญชี Google
+                  เปลี่ยนบัญชี
                 </a>{" "}
                 เป็นอีเมลที่ใช้สั่งซื้อ หรือติดต่อ mr.tpat3@gmail.com
               </p>
-              <a
-                href="/#mock"
-                className="mt-6 inline-block bg-maroon px-6 py-3 font-bold text-paper transition hover:bg-maroon-dark"
-              >
-                ดูคอร์สทั้งหมด →
-              </a>
+              <div className="mt-6 flex flex-wrap justify-center gap-3">
+                <ClaimButton productId="sum4" label="รับเล่มเนื้อหา TPAT3 ฟรี" source="my_courses_empty" />
+                <a
+                  href="/#mock"
+                  className="inline-flex items-center border border-maroon px-6 py-3 font-bold text-maroon transition hover:bg-maroon hover:text-paper"
+                >
+                  ดูชุด Mock TPAT3 →
+                </a>
+              </div>
             </div>
           )}
 
@@ -349,41 +372,43 @@ function OwnerExamCard({ examState }: { examState: AttemptState }) {
   );
 }
 
-/* ---------- คอร์สที่ยังไม่มีในบัญชี ---------- */
+/* ---------- คอร์สที่ยังไม่มีในบัญชี (เล่มเนื้อหาแจกฟรี → กดรับได้จากตรงนี้เลย · Mock → ไปหน้าคอร์ส) ---------- */
 function MoreCourses({ items }: { items: LibraryItem[] }) {
   const owned = new Set(items.flatMap((i) => i.files));
-  const missing = COURSES.filter((c) => !PRODUCTS[c.productId].files.every((f) => owned.has(f)));
-  // มีครบทุกไฟล์แล้ว → ไม่ต้องเสนออะไร · ไม่มีอะไรเลย → หน้าบนมีปุ่ม "ดูคอร์สทั้งหมด" อยู่แล้ว
+  const missing = COURSES.filter(
+    (c) => !PRODUCTS[c.productId].retired && !PRODUCTS[c.productId].files.every((f) => owned.has(f))
+  );
+  // มีครบทุกไฟล์แล้ว → ไม่ต้องเสนออะไร · ไม่มีอะไรเลย → กล่องด้านบนมีปุ่มอยู่แล้ว
   if (missing.length === 0 || items.length === 0) return null;
-  // ถ้ามีบางไฟล์แล้ว bundle จะซ้ำกับของที่มี — เสนอเฉพาะคอร์สเดี่ยวที่ยังขาด
-  const singles = missing.filter((c) => c.productId !== "bundle-all");
-  if (singles.length === 0) return null;
   return (
     <section className="border-t border-grid bg-paper">
       <div className="mx-auto max-w-6xl px-5 py-12">
         <h2 className="font-display text-xl font-bold text-ink">คอร์สที่ยังไม่มีในบัญชี</h2>
         <div className="mt-5 grid gap-4 sm:grid-cols-2">
-          {singles.map((c) => {
+          {missing.map((c) => {
             const p = PRODUCTS[c.productId];
             return (
-              <a
-                key={c.slug}
-                href={`/courses/${c.slug}`}
-                className="flex items-center gap-4 border border-grid bg-white p-4 transition hover:border-maroon"
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={c.covers[c.covers.length - 1].src}
-                  alt={c.covers[c.covers.length - 1].alt}
-                  className="w-14 border border-grid"
-                  style={{ aspectRatio: "1792 / 2400", objectFit: "cover" }}
-                />
-                <span className="min-w-0">
-                  <span className="block font-display font-bold text-ink">{c.title}</span>
-                  <span className="mt-0.5 block text-sm text-ink/60">{c.tagline}</span>
-                  <span className="mt-1 block font-display font-bold text-maroon">฿{p.price.toLocaleString()}</span>
-                </span>
-              </a>
+              <div key={c.slug} className="flex flex-wrap items-center gap-4 border border-grid bg-white p-4">
+                <a href={`/courses/${c.slug}`} className="flex min-w-0 flex-1 items-center gap-4">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={c.covers[c.covers.length - 1].src}
+                    alt={c.covers[c.covers.length - 1].alt}
+                    className="w-14 border border-grid"
+                    style={{ aspectRatio: "1792 / 2400", objectFit: "cover" }}
+                  />
+                  <span className="min-w-0">
+                    <span className="block font-display font-bold text-ink hover:text-maroon">{c.title}</span>
+                    <span className="mt-0.5 block text-sm text-ink/60">{c.tagline}</span>
+                    <span className="mt-1 block font-display font-bold text-maroon">
+                      {p.price === 0 ? "ฟรี" : `฿${p.price.toLocaleString()}`}
+                    </span>
+                  </span>
+                </a>
+                {p.price === 0 && (
+                  <ClaimButton productId={p.id} label="รับฟรี" source="my_courses_more" className="px-4 py-2.5 text-sm" />
+                )}
+              </div>
             );
           })}
         </div>

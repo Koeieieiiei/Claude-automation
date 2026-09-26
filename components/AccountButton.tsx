@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { GoogleLogo } from "./GoogleButton";
 
 export interface ClientUser {
   email: string;
@@ -47,10 +46,12 @@ export default function AccountButton({
   if (!user) {
     return (
       <a
-        href={`/api/auth/google?next=${encodeURIComponent(next)}`}
+        href={`/login?next=${encodeURIComponent(next)}`}
         className="inline-flex items-center gap-2 whitespace-nowrap border border-ink/25 bg-white px-3 py-1.5 text-sm font-semibold text-ink transition hover:border-ink"
       >
-        <GoogleLogo className="h-4 w-4" />
+        <svg className="h-4 w-4 text-maroon" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM4 20a8 8 0 1116 0H4z" />
+        </svg>
         เข้าสู่ระบบ
       </a>
     );

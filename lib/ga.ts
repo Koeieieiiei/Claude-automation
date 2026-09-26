@@ -17,6 +17,7 @@ const FUNNEL_EVENTS = [
   { event: "open_buy_form", label: "เปิดฟอร์มสั่งซื้อ" },
   { event: "begin_checkout", label: "ไปหน้าชำระเงิน" },
   { event: "purchase_success", label: "ชำระเงินสำเร็จ" },
+  { event: "claim_free", label: "กดรับเล่มเนื้อหาฟรี" },
   { event: "click_exam_cta", label: "กดปุ่มทำข้อสอบ" },
   { event: "exam_start", label: "เริ่มทำข้อสอบ" },
   { event: "exam_submit", label: "ส่งข้อสอบ" },

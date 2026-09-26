@@ -3,24 +3,26 @@
 import { useEffect, useState } from "react";
 import BuyModal from "@/components/BuyModal";
 import AccountButton, { ClientUser, fetchCurrentUser } from "@/components/AccountButton";
+import ClaimButton from "@/components/ClaimButton";
 import Gear from "@/components/Gear";
 import SiteFooter from "@/components/SiteFooter";
-import { getProduct, PRODUCTS, Product } from "@/lib/catalog";
+import { getProduct, isPurchasableProduct, PRODUCTS, Product } from "@/lib/catalog";
 import { courseForProduct } from "@/lib/courses";
 import { trackEvent } from "@/lib/analytics";
 
 type ExamState = "eligible" | "in_progress" | "submitted";
 
-/* หน้าแรกแบบใหม่ (เจ้าของอนุมัติ 2026-09-16 จากตัวอย่าง https://claude.ai/artifact/1ReGvb49DjfUFuTdJaq6gS)
+/* หน้าแรก (โครง "จดหมายจากพี่มาโก้" เจ้าของอนุมัติ 2026-09-16 จาก https://claude.ai/artifact/1ReGvb49DjfUFuTdJaq6gS)
    - คำทักทายของพี่มาโก้เป็น "จดหมาย" ตัวใหญ่แทน hero เดิม บนกระดาษตาราง + เฟืองหมุนแบบเดิม
    - สินค้า 2 อย่างเป็นการ์ดขาวบนพื้นขาว มี "ซื้อแล้วทำอะไรต่อ" 3 ขั้นคั่นใต้การ์ด Mock
-   - Bundles เหลือครบเซ็ตการ์ดเดียว ติดปกสองเล่ม ไม่มีเงาฟุ้ง
-   - เอาบรรทัดลายเซ็น/คะแนนออกตามที่เจ้าของสั่ง */
+   - 2026-09-27 (เจ้าของสั่ง): หัวข้อ "My Product" · Mock ขาย ฿199 (ไม่มีป้ายเหนือชื่อ) · เล่มเนื้อหา 174 หน้า "แจกฟรี"
+     (ปุ่มรับฟรี → /api/claim ไม่มีปุ่มตัวอย่าง) · เอาส่วน Bundles/ป้ายคุ้มสุดออกทั้งหมด · ข้อความจดหมายเติม "ซึ่งแจกฟรี" */
 export default function Home() {
   const [buying, setBuying] = useState<Product | null>(null);
   const [examState, setExamState] = useState<ExamState | null>(null);
   // undefined = กำลังถาม server · null = ยังไม่ล็อกอิน
   const [user, setUser] = useState<ClientUser | null | undefined>(undefined);
+  const [claimError, setClaimError] = useState(false);
 
   useEffect(() => {
     fetch("/api/track", {
@@ -30,11 +32,13 @@ export default function Home() {
     }).catch(() => {});
   }, []);
 
-  // มาจากลิงก์ "สั่งซื้อชุดข้อสอบ" (เช่น จากหน้าห้องสอบ) — เปิดฟอร์มสั่งซื้อให้เลย
+  // มาจากลิงก์ "สั่งซื้อชุดข้อสอบ" (เช่น จากหน้าห้องสอบ) — เปิดฟอร์มสั่งซื้อให้เลย (เฉพาะสินค้าที่ขายอยู่)
+  // /api/claim เด้งกลับมาพร้อม ?claim_error=unknown ถ้าคอร์สที่ขอรับไม่ได้แจกฟรี
   // อ่านจาก window แทน useSearchParams เพื่อไม่ต้องครอบหน้าแรกด้วย Suspense
   useEffect(() => {
-    const id = new URLSearchParams(window.location.search).get("buy");
-    const product = id ? getProduct(id) : null;
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get("buy");
+    const product = id && isPurchasableProduct(id) ? getProduct(id) : null;
     if (product) {
       // นับเหมือนกดปุ่มสั่งซื้อ (มาจากลิงก์ในหน้าห้องสอบ) ไม่งั้นกรวยการขายจะขาดช่วงนี้ไป
       trackEvent("open_buy_form", {
@@ -44,12 +48,15 @@ export default function Home() {
         source: "exam_gate_link",
       });
       setBuying(product);
+    }
+    if (params.has("claim_error")) setClaimError(true);
+    if (product || params.has("claim_error")) {
       window.history.replaceState(null, "", "/"); // เก็บ URL ให้สะอาด กันเปิดซ้ำตอนรีเฟรช
     }
   }, []);
 
   // เช็คสถานะผู้ซื้อแล้วเปลี่ยนปุ่ม hero: ยังไม่ทำ → "เข้าห้องสอบ", ทำแล้ว → "ดูผลสอบ"
-  // ล็อกอินอยู่ = เช็คจากบัญชี Google · ไม่ได้ล็อกอิน = ใช้โทเค็นที่เครื่องนี้เคยเข้าห้องสอบไว้
+  // ล็อกอินอยู่ = เช็คจากบัญชี (คุกกี้) · ไม่ได้ล็อกอิน = ใช้โทเค็นที่เครื่องนี้เคยเข้าห้องสอบไว้
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -95,9 +102,6 @@ export default function Home() {
     setBuying(p);
   };
 
-  const bundle = PRODUCTS["bundle-all"];
-  const bundleSave = bundle.compareAt ? bundle.compareAt - bundle.price : 0;
-
   return (
     <div className="min-h-screen">
       {/* ===== Top bar ===== */}
@@ -110,7 +114,6 @@ export default function Home() {
           <nav className="hidden items-center gap-8 md:flex" aria-label="เมนูหลัก">
             <a href="#mock" className="text-base font-semibold text-ink/60 transition hover:text-maroon">ข้อสอบ Mock</a>
             <a href="#content" className="text-base font-semibold text-ink/60 transition hover:text-maroon">ไฟล์เนื้อหา</a>
-            <a href="#bundles" className="text-base font-semibold text-ink/60 transition hover:text-maroon">Bundles</a>
             <a href="#faq" className="text-base font-semibold text-ink/60 transition hover:text-maroon">ข้อสงสัย</a>
             <a href="/about" className="text-base font-semibold text-ink/60 transition hover:text-maroon">เกี่ยวกับพี่</a>
           </nav>
@@ -118,7 +121,7 @@ export default function Home() {
         </div>
       </header>
 
-      {/* ===== Hero: จดหมายจากพี่ (คำทักทายเป็นพระเอกของหน้า) ===== */}
+      {/* ===== Hero: จดหมายจากพี่ (คำทักทายเป็นพระเอกของหน้า — ข้อความตามที่เจ้าของส่งมา 2026-09-27) ===== */}
       <section className="grid-paper relative overflow-hidden border-b border-grid">
         <Gear teeth={16} className="pointer-events-none absolute -right-16 -top-16 h-72 w-72 text-maroon/[0.07]" spin="cw" />
         <Gear teeth={12} className="pointer-events-none absolute right-28 top-40 hidden h-36 w-36 text-steel/20 md:block" spin="ccw" />
@@ -132,7 +135,8 @@ export default function Home() {
             พี่ชื่อ <strong className="font-semibold text-maroon">มาโก้ ศุภวัฒน์</strong> กำลังศึกษาอยู่ที่{" "}
             <strong className="font-semibold text-maroon">วิศวคอม จุฬาฯ</strong> พี่และเพื่อน ๆ ในกลุ่มได้รวมหัวกันออกแบบ{" "}
             <strong className="font-semibold text-maroon">Mock TPAT3</strong> และ
-            <strong className="font-semibold text-maroon">เนื้อหาสำหรับสอบ TPAT3</strong> หากน้องสนใจ
+            <strong className="font-semibold text-maroon">เนื้อหาสำหรับสอบ TPAT3</strong> ซึ่ง
+            <strong className="font-semibold text-maroon">แจกฟรี</strong> หากน้องสนใจ
             สามารถเลื่อนดูด้านล่าง<span className="whitespace-nowrap">ได้เลยครับ</span>
           </p>
 
@@ -170,14 +174,19 @@ export default function Home() {
       {/* ===== สินค้า 2 อย่าง (พื้นขาวเฉพาะส่วนนี้ — เจ้าของขอ) ===== */}
       <section id="mock" className="scroll-mt-20 bg-white">
         <div className="mx-auto max-w-6xl px-5 py-14 md:py-24">
-          <SectionHead title="พี่ทำไว้ให้ 2 อย่าง" />
+          <SectionHead title="My Product" />
+
+          {claimError && (
+            <p className="mb-6 border border-maroon/40 bg-maroon/[0.06] px-4 py-3 text-sm text-maroon">
+              คอร์สที่ขอรับไม่ได้แจกฟรี — กดปุ่มจากการ์ดด้านล่างอีกครั้งได้เลย
+            </p>
+          )}
 
           <div className="grid gap-5">
-            {/* การ์ด Mock */}
+            {/* การ์ด Mock (ขาย) */}
             <ProductCard
               cover={<MockStack />}
               courseHref={courseHref(PRODUCTS.mock1)}
-              kicker="ข้อสอบ Mock · ชุดที่ 1"
               title="ข้อสอบ Mock TPAT3"
               desc="ห้องสอบออนไลน์ 70 ข้อ จับเวลา 3 ชม. ส่งแล้วรู้คะแนน อันดับ และบทที่ต้องซ่อมทันที พร้อมไฟล์เฉลยละเอียดทีละขั้น"
               includes={["ห้องสอบออนไลน์ 1 ครั้ง", "ไฟล์โจทย์ + เฉลยละเอียด (PDF)", "กระดาษคำตอบ"]}
@@ -194,13 +203,13 @@ export default function Home() {
               <SectionHead
                 small
                 title="ซื้อแล้วทำอะไรต่อ"
-                note="ทุกอย่างอยู่ในบัญชี Google ที่ใช้ซื้อ กลับมาเปิดได้ตลอดทุกเครื่อง"
+                note="ทุกอย่างอยู่ในบัญชี (อีเมล) ที่ใช้ซื้อ กลับมาเปิดได้ตลอดทุกเครื่อง"
               />
               <div className="grid gap-6 md:grid-cols-3 md:gap-10 lg:gap-14">
                 <Step
                   n="ขั้นที่ 1"
                   title="ชำระเงินด้วย PromptPay"
-                  text="สแกน QR ผ่านแอปธนาคาร ดำเนินการอย่างปลอดภัยผ่าน Stripe ใช้บัญชี Google อีเมลเดียวกับที่จะเข้าสอบ"
+                  text="สแกน QR ผ่านแอปธนาคาร ดำเนินการอย่างปลอดภัยผ่าน Stripe สมัคร/เข้าสู่ระบบด้วยอีเมลเดียวกับที่จะเข้าสอบ"
                 />
                 <Step
                   n="ขั้นที่ 2"
@@ -215,7 +224,7 @@ export default function Home() {
               </div>
             </div>
 
-            {/* การ์ดเนื้อหา */}
+            {/* การ์ดเนื้อหา (แจกฟรี) */}
             <ProductCard
               id="content"
               cover={
@@ -224,28 +233,15 @@ export default function Home() {
                 </div>
               }
               courseHref={courseHref(PRODUCTS.sum4)}
-              kicker="ไฟล์เนื้อหา · Part 1–5"
+              kicker="ไฟล์เนื้อหา · Part 1–5 · แจกฟรี"
               title="เนื้อหาทั้งหมดสำหรับสอบ TPAT3"
-              desc="ครบทั้ง 5 พาร์ตของข้อสอบจริง รวมในไฟล์เดียว 160 หน้า อ่านจบแล้วไปทำ Mock ต่อได้เลย"
-              includes={["ไฟล์ PDF 1 ไฟล์ · 160 หน้า", "Part 1–5 ครบ", "อยู่ในบัญชี Google ของน้องถาวร"]}
+              desc="ครบทั้ง 5 พาร์ตของข้อสอบจริง รวมในไฟล์เดียว 174 หน้า อ่านจบแล้วไปทำ Mock ต่อได้เลย"
+              includes={["ไฟล์ PDF 1 ไฟล์ · 174 หน้า", "Part 1–5 ครบ 38 บท", "อยู่ในบัญชีของน้องถาวร"]}
               product={PRODUCTS.sum4}
-              unit="/ เล่ม"
-              buyLabel={`สั่งซื้อเล่มนี้ · ฿${PRODUCTS.sum4.price.toLocaleString()}`}
+              claimLabel="รับเล่มนี้ฟรี"
               onBuy={buy}
-              sample={{ href: "/samples/tpat3-summary1-sample.pdf", downloadName: "ตัวอย่างเนื้อหา TPAT3.pdf", label: "โหลดตัวอย่างเนื้อหาฟรี (PDF)" }}
             />
           </div>
-        </div>
-      </section>
-
-      {/* ===== Bundles: ครบเซ็ตการ์ดเดียว บนกระดาษตาราง ===== */}
-      <section id="bundles" className="grid-paper scroll-mt-20 border-y border-grid">
-        <div className="mx-auto max-w-6xl px-5 py-14 md:py-24">
-          <SectionHead
-            title="Bundles"
-            note={`ซื้อครบเซ็ตถูกกว่าซื้อแยก ฿${bundleSave.toLocaleString()} และคนส่วนใหญ่เลือกชุดนี้`}
-          />
-          <BundleCard product={bundle} upsellFrom={PRODUCTS.mock1} onBuy={buy} />
         </div>
       </section>
 
@@ -256,24 +252,28 @@ export default function Home() {
 
           <div className="mt-8 divide-y divide-grid border-y border-grid">
             <FaqItem
-              q="ซื้อแล้วทำอะไรต่อ?"
-              a="ชำระเงินสำเร็จ กด “เริ่มสอบ” เข้าห้องสอบออนไลน์ได้ทันที ไฟล์เฉลยละเอียดและไฟล์เนื้อหาอยู่ที่หน้า “คอร์สของฉัน” (ล็อกอินด้วยบัญชี Google ที่ใช้ซื้อ) กลับมาโหลดได้ตลอดทุกเครื่อง แนะนำให้เปิดเฉลยหลังทำข้อสอบเสร็จ ผลวิเคราะห์จะได้ตรงกับฝีมือจริง"
+              q="เนื้อหา TPAT3 ฟรีจริงไหม? รับยังไง?"
+              a="ฟรีจริง ไม่มีค่าใช้จ่าย กดปุ่ม “รับเล่มนี้ฟรี” แล้วสมัคร/เข้าสู่ระบบด้วยอีเมลและรหัสผ่าน ไฟล์ PDF 174 หน้าจะอยู่ที่หน้า “คอร์สของฉัน” ทันที กลับมาโหลดได้ตลอดทุกเครื่อง"
+            />
+            <FaqItem
+              q="ซื้อชุด Mock แล้วทำอะไรต่อ?"
+              a="ชำระเงินสำเร็จ กด “เริ่มสอบ” เข้าห้องสอบออนไลน์ได้ทันที ไฟล์เฉลยละเอียดอยู่ที่หน้า “คอร์สของฉัน” (เข้าสู่ระบบด้วยอีเมลที่ใช้ซื้อ) กลับมาโหลดได้ตลอดทุกเครื่อง แนะนำให้เปิดเฉลยหลังทำข้อสอบเสร็จ ผลวิเคราะห์จะได้ตรงกับฝีมือจริง"
             />
             <FaqItem
               q="ทำข้อสอบออนไลน์ยังไง? ต้องเตรียมอะไร?"
-              a="เข้าหน้าห้องสอบแล้วล็อกอินด้วยบัญชี Google อีเมลเดียวกับที่สั่งซื้อ จากนั้นกดเริ่ม ระบบจะจับเวลา 3 ชั่วโมงและบันทึกคำตอบให้อัตโนมัติ (เน็ตหลุดหรือรีเฟรชก็ทำต่อได้) แนะนำให้ทำในคอมพิวเตอร์หรือ iPad เพื่อให้เห็นโจทย์ชัดเต็มตา"
+              a="เข้าหน้าห้องสอบแล้วเข้าสู่ระบบด้วยอีเมลเดียวกับที่สั่งซื้อ จากนั้นกดเริ่ม ระบบจะจับเวลา 3 ชั่วโมงและบันทึกคำตอบให้อัตโนมัติ (เน็ตหลุดหรือรีเฟรชก็ทำต่อได้) แนะนำให้ทำในคอมพิวเตอร์หรือ iPad เพื่อให้เห็นโจทย์ชัดเต็มตา"
             />
             <FaqItem
               q="ทำข้อสอบออนไลน์ได้กี่รอบ? ทำเสร็จแล้วได้อะไร?"
               a="1 อีเมลมีสิทธิ์สอบ 1 รอบ เหมือนสอบจริง ส่งกระดาษคำตอบแล้วรู้ผลทันที — คะแนนเต็ม 100 อันดับเทียบผู้สอบคนอื่น ค่าเฉลี่ย ส่วนเบี่ยงเบนมาตรฐาน กราฟการแจกแจงคะแนน คะแนนรายตอน และวิเคราะห์รายข้อครบ 70 ข้อ พร้อมคำแนะนำเฉพาะข้อว่าควรซ่อมตรงไหน"
             />
             <FaqItem
-              q="มีตัวอย่างให้ดูก่อนไหม?"
-              a="มี — โหลดตัวอย่างโจทย์/เฉลย และตัวอย่างไฟล์เนื้อหาได้ฟรี ไม่ต้องกรอกอะไร เป็น PDF แบบเดียวกับไฟล์จริง"
+              q="มีตัวอย่างข้อสอบให้ดูก่อนไหม?"
+              a="มี — โหลดตัวอย่างโจทย์ + เฉลยของชุด Mock ได้ฟรี ไม่ต้องกรอกอะไร เป็น PDF แบบเดียวกับไฟล์จริง ส่วนไฟล์เนื้อหาแจกฟรีทั้งเล่มอยู่แล้ว"
             />
             <FaqItem
-              q="ซื้อแล้วแต่ไม่เห็นคอร์ส ทำยังไงดี?"
-              a="ตรวจว่าล็อกอินด้วยบัญชี Google เดียวกับตอนสั่งซื้อ (กด “เปลี่ยนบัญชี” ที่หน้าคอร์สของฉันได้) ถ้ายังไม่เห็น ติดต่อ mr.tpat3@gmail.com พร้อมแจ้งอีเมลที่ใช้ซื้อ"
+              q="ซื้อ/รับแล้วแต่ไม่เห็นคอร์ส ทำยังไงดี?"
+              a="ตรวจว่าเข้าสู่ระบบด้วยอีเมลเดียวกับตอนสั่งซื้อ (กด “เปลี่ยนบัญชี” ที่หน้าคอร์สของฉันได้) ถ้ายังไม่เห็น ติดต่อ mr.tpat3@gmail.com พร้อมแจ้งอีเมลที่ใช้ซื้อ"
             />
             <FaqItem
               q="จ่ายเงินยังไงได้บ้าง?"
@@ -281,7 +281,7 @@ export default function Home() {
             />
             <FaqItem
               q="ได้อะไรบ้าง?"
-              a="ชุด Mock ได้ห้องสอบ TPAT3 ออนไลน์ 1 ครั้งพร้อมผลวิเคราะห์ + ไฟล์เฉลยละเอียด (PDF) · เนื้อหาทั้งหมดสำหรับสอบ TPAT3 ได้ไฟล์ PDF 1 ไฟล์ (Part 1–5 ครบ 160 หน้า) · ทุกอย่างอยู่ในบัญชี Google ของคุณถาวร ไม่มีวันหมดอายุ"
+              a={`ชุด Mock (฿${PRODUCTS.mock1.price.toLocaleString()}) ได้ห้องสอบ TPAT3 ออนไลน์ 1 ครั้งพร้อมผลวิเคราะห์ + ไฟล์เฉลยละเอียด (PDF) · เนื้อหาทั้งหมดสำหรับสอบ TPAT3 แจกฟรี ได้ไฟล์ PDF 1 ไฟล์ (Part 1–5 ครบ 174 หน้า) · ทุกอย่างอยู่ในบัญชี (อีเมล) ของน้องถาวร ไม่มีวันหมดอายุ`}
             />
             <FaqItem
               q="ขอคืนเงินได้ไหม?"
@@ -346,33 +346,37 @@ function Step({ n, title, text }: { n: string; title: string; text: string }) {
   );
 }
 
-/* ---------- การ์ดสินค้า: ปกซ้าย รายละเอียด+ราคา+ปุ่มขวา ---------- */
+/* ---------- การ์ดสินค้า: ปกซ้าย รายละเอียด + ราคา (หรือ "ฟรี") + ปุ่มขวา ---------- */
 function ProductCard({
-  id, cover, courseHref, kicker, title, desc, includes, product, unit, buyLabel, onBuy, sample,
+  id, cover, courseHref, kicker, title, desc, includes, product, unit = "", buyLabel = "", claimLabel = "รับฟรี", onBuy, sample,
 }: {
   id?: string;
   cover: React.ReactNode;
   courseHref: string;
-  kicker: string;
+  /** ป้ายเล็กเหนือชื่อ (ไม่ใส่ = ไม่โชว์ — การ์ด Mock เจ้าของสั่งเอาออก 2026-09-27) */
+  kicker?: string;
   title: string;
   desc: string;
   includes: string[];
   product: Product;
-  unit: string;
-  buyLabel: string;
+  unit?: string;
+  buyLabel?: string;
+  /** ข้อความปุ่มของสินค้าแจกฟรี (price 0) */
+  claimLabel?: string;
   onBuy: (p: Product) => void;
-  sample: { href: string; label: string; downloadName: string };
+  sample?: { href: string; label: string; downloadName: string };
 }) {
+  const free = product.price === 0;
   return (
     // คลิกตรงไหนของการ์ดก็ได้ = ไปหน้ารายละเอียดคอร์ส (เจ้าของขอ 2026-09-16)
-    // ทำด้วยลิงก์ "ดูรายละเอียดคอร์ส" ที่ขยาย ::after คลุมทั้งการ์ด — ปุ่มสั่งซื้อ/โหลดตัวอย่างลอยอยู่บน (z-10) เลยยังกดของตัวเองได้
+    // ทำด้วยลิงก์ "ดูรายละเอียดคอร์ส" ที่ขยาย ::after คลุมทั้งการ์ด — ปุ่มสั่งซื้อ/รับฟรี/โหลดตัวอย่างลอยอยู่บน (z-10) เลยยังกดของตัวเองได้
     <article
       id={id}
       className="group relative grid scroll-mt-20 items-center gap-7 border border-grid bg-white p-7 transition hover:border-maroon sm:grid-cols-[220px_1fr] md:grid-cols-[300px_1fr] md:gap-12 md:p-11"
     >
       <div>{cover}</div>
       <div>
-        <p className="font-label text-xs font-semibold uppercase tracking-[0.22em] text-maroon">{kicker}</p>
+        {kicker && <p className="font-label text-xs font-semibold uppercase tracking-[0.22em] text-maroon">{kicker}</p>}
         <h3 className="mt-2 font-display text-[clamp(1.5rem,2.6vw,1.95rem)] font-semibold leading-snug text-ink">{title}</h3>
         <p className="mt-3 max-w-[52ch] text-[1.1rem] leading-relaxed text-ink">{desc}</p>
         <ul className="mt-4 flex flex-wrap gap-x-4 gap-y-1.5 text-[0.95rem] text-ink/60">
@@ -385,16 +389,28 @@ function ProductCard({
         </ul>
         <div className="mt-6 h-1 w-10 bg-maroon" />
         <p className="mt-4 font-display text-[2rem] font-bold leading-none tracking-tight text-maroon">
-          ฿{product.price.toLocaleString()} <span className="text-[0.95rem] font-medium tracking-normal text-ink/50">{unit}</span>
+          {free ? (
+            <>
+              ฟรี <span className="text-[0.95rem] font-medium tracking-normal text-ink/50">ไม่มีค่าใช้จ่าย · แค่เข้าสู่ระบบแล้วกดรับ</span>
+            </>
+          ) : (
+            <>
+              ฿{product.price.toLocaleString()} <span className="text-[0.95rem] font-medium tracking-normal text-ink/50">{unit}</span>
+            </>
+          )}
         </p>
         <div className="mt-5 flex flex-wrap items-center gap-3">
-          <button
-            onClick={() => onBuy(product)}
-            className="relative z-10 bg-maroon px-5 py-3.5 font-semibold text-white transition hover:bg-maroon-dark"
-          >
-            {buyLabel}
-          </button>
-          <SampleButton href={sample.href} downloadName={sample.downloadName} label={sample.label} />
+          {free ? (
+            <ClaimButton productId={product.id} label={claimLabel} source="home" className="relative z-10" />
+          ) : (
+            <button
+              onClick={() => onBuy(product)}
+              className="relative z-10 bg-maroon px-5 py-3.5 font-semibold text-white transition hover:bg-maroon-dark"
+            >
+              {buyLabel}
+            </button>
+          )}
+          {sample && <SampleButton href={sample.href} downloadName={sample.downloadName} label={sample.label} />}
           <a
             href={courseHref}
             aria-label={`ดูรายละเอียดคอร์ส ${title}`}
@@ -470,91 +486,6 @@ function SampleButton({ href, label, downloadName }: { href: string; label: stri
       <DownloadIcon className="h-[17px] w-[17px]" />
       {label}
     </a>
-  );
-}
-
-/* ---------- การ์ดครบเซ็ต: ปกสองเล่มซ้าย ราคา+รายการขวา (กรอบเลือดหมู ไม่มีเงา) ---------- */
-function BundleCard({
-  product, upsellFrom, onBuy,
-}: {
-  product: Product;
-  /** ชูราคาส่วนต่างจากสินค้านี้ ("เพิ่ม +170") — คำนวณสด กันลืมแก้ตอนเปลี่ยนราคา */
-  upsellFrom: Product;
-  onBuy: (p: Product) => void;
-}) {
-  const save = product.compareAt ? product.compareAt - product.price : 0;
-  const upsell = product.price - upsellFrom.price;
-  const href = courseHref(product);
-  return (
-    // คลิกตรงไหนของการ์ดก็ได้ = ไปหน้ารายละเอียดคอร์ส (ลิงก์ที่ชื่อชุดขยาย ::after คลุมทั้งการ์ด ปุ่มสั่งซื้อลอยบน z-10)
-    <div className="group relative mt-2 grid items-center gap-7 border-2 border-maroon bg-white p-7 md:grid-cols-[360px_1fr] md:gap-12 md:p-12">
-      <span className="absolute -top-3.5 left-6 bg-maroon px-3 py-1 font-label text-[11px] font-bold uppercase tracking-[0.18em] text-white">
-        คุ้มสุด · คนซื้อเยอะสุด
-      </span>
-      {/* ปกสองเล่มวางเหลื่อมซ้อนกัน เอียงคนละทาง */}
-      <div className="flex items-start justify-center py-3">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/covers/mock.png"
-          alt="ปกข้อสอบ Mock TPAT3"
-          loading="lazy"
-          className="w-[52%] max-w-[190px] -rotate-[5deg] border border-grid bg-white shadow-[0_14px_30px_-16px_rgba(36,16,22,0.5)] transition group-hover:-translate-y-1"
-          style={{ aspectRatio: "1792 / 2400", objectFit: "cover" }}
-        />
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/covers/tpat3-content.png"
-          alt="ปกเนื้อหาทั้งหมดสำหรับสอบ TPAT3"
-          loading="lazy"
-          className="relative -ml-[8%] mt-3.5 w-[52%] max-w-[190px] rotate-[5deg] border border-grid bg-white shadow-[0_14px_30px_-16px_rgba(36,16,22,0.5)] transition group-hover:-translate-y-1"
-          style={{ aspectRatio: "1792 / 2400", objectFit: "cover" }}
-        />
-      </div>
-      <div>
-        <p className="font-label text-xs font-semibold uppercase tracking-[0.22em] text-maroon">รวมแพควิศวะ</p>
-        <h3 className="mt-2 font-display text-[clamp(1.5rem,2.6vw,1.95rem)] font-semibold leading-snug text-ink">
-          <a
-            href={href}
-            aria-label="ดูรายละเอียดคอร์ส ครบเซ็ตพร้อมสอบ"
-            className="after:absolute after:inset-0 after:z-[1] after:content-[''] group-hover:text-maroon"
-          >
-            ครบเซ็ตพร้อมสอบ
-          </a>
-        </h3>
-        <div className="mt-5 flex flex-wrap items-baseline gap-2.5">
-          <span className="font-display text-[2rem] font-bold leading-none tracking-tight text-maroon">
-            ฿{product.price.toLocaleString()}
-          </span>
-          {product.compareAt && (
-            <>
-              <span className="text-[0.95rem] text-ink/45 line-through">฿{product.compareAt.toLocaleString()}</span>
-              <span className="border border-maroon/40 px-2 py-0.5 font-label text-xs font-bold text-maroon">
-                ประหยัด ฿{save.toLocaleString()}
-              </span>
-            </>
-          )}
-        </div>
-        {upsell > 0 && (
-          <p className="mt-1.5 text-[1.05rem] font-semibold text-maroon">
-            เพิ่มเนื้อหาทั้งหมดแค่ +฿{upsell.toLocaleString()} จาก Mock เดี่ยว
-          </p>
-        )}
-        <ul className="mb-6 mt-5 max-w-[460px]">
-          {["Mock TPAT3 (ห้องสอบออนไลน์ + เฉลยละเอียด)", "โควตาเข้าสอบ TPAT3 ออนไลน์ 1 ครั้ง", "เนื้อหาทั้งหมดสำหรับสอบ TPAT3"].map((item) => (
-            <li key={item} className="relative border-b border-dashed border-grid py-2 pl-6 text-[0.97rem] text-ink">
-              <span className="absolute left-0 font-bold text-maroon">✓</span>
-              {item}
-            </li>
-          ))}
-        </ul>
-        <button
-          onClick={() => onBuy(product)}
-          className="relative z-10 bg-maroon px-6 py-3.5 font-semibold text-white transition hover:bg-maroon-dark"
-        >
-          สั่งซื้อครบเซ็ต · ฿{product.price.toLocaleString()}
-        </button>
-      </div>
-    </div>
   );
 }
 

@@ -6,6 +6,9 @@
  *
  * ราคาที่ Stripe เรียกเก็บอ่านจากที่นี่เสมอ ฝั่ง client ส่งมาแค่ productId
  * (กันการปลอมราคาจากหน้าเว็บ และกันโชว์ราคาหนึ่งแต่เก็บอีกราคา)
+ *
+ * โมเดลปัจจุบัน (เจ้าของสั่ง 2026-09-27): Mock TPAT3 ขาย ฿199 · เล่มเนื้อหา TPAT3 (174 หน้า) **แจกฟรี**
+ * (price 0 = กด "รับฟรี" ผ่าน lib/claim.ts ไม่ผ่าน Stripe) · ครบเซ็ต bundle-all เลิกขาย (คงไว้ให้ออเดอร์เก่า)
  */
 
 /** ไฟล์ PDF แต่ละตัวที่ระบบส่งมอบได้ */
@@ -46,34 +49,51 @@ export type ProductId = "mock1" | "sum4" | "bundle-all";
 export interface Product {
   id: ProductId;
   name: string;
-  price: number; // บาท
+  /** บาท — 0 = แจกฟรี (กด "รับฟรี" ไม่ผ่าน Stripe) */
+  price: number;
   /** ราคารวมถ้าซื้อแยก (ไว้โชว์ส่วนลดของ bundle) — ไม่ใส่ = ไม่ใช่ bundle */
   compareAt?: number;
   files: FileId[];
+  /** เลิกขาย/เลิกแจกแล้ว — คงไว้ให้ออเดอร์เก่าและหลังร้านอ้างถึง ห้ามซื้อ/รับใหม่ */
+  retired?: boolean;
 }
 
 export const PRODUCTS: Record<ProductId, Product> = {
   mock1: {
     id: "mock1",
     name: "Mock TPAT3 ชุดที่ 1 (โจทย์ + เฉลย + กระดาษคำตอบ)",
-    price: 159,
+    price: 199, // 2026-09-27 เจ้าของสั่ง (เดิม 159)
     files: ["questions", "answers", "answersheet"],
   },
-  // id "sum4" คงไว้ตามเดิม (ออเดอร์เก่า/สถิติหลังร้านอ้างถึง) แต่ตัวสินค้าเปลี่ยนเป็นเล่มเนื้อหาทั้งหมดแล้ว
+  // id "sum4" คงไว้ตามเดิม (ออเดอร์เก่า/สถิติหลังร้านอ้างถึง) — ตัวสินค้าเป็นเล่มเนื้อหาทั้งหมด และแจกฟรีตั้งแต่ 2026-09-27
   sum4: {
     id: "sum4",
     name: "เนื้อหาทั้งหมดสำหรับสอบ TPAT3",
-    price: 219,
+    price: 0,
     files: ["tpat3content"],
   },
+  // ครบเซ็ตยุคขาย (159 + 219) — เลิกขาย 2026-09-27 เพราะเล่มเนื้อหาแจกฟรีแล้ว
   "bundle-all": {
     id: "bundle-all",
     name: "ครบเซ็ตพร้อมสอบ (Mock + เนื้อหาทั้งหมดสำหรับสอบ TPAT3)",
     price: 329,
-    compareAt: 378, // 159 + 219
+    compareAt: 378,
     files: ["questions", "answers", "answersheet", "tpat3content"],
+    retired: true,
   },
 };
+
+/** สินค้าที่กด "รับฟรี" ได้ (แจกฟรีและยังไม่เลิกแจก) */
+export function isClaimableProduct(id: string): boolean {
+  const p = getProduct(id);
+  return Boolean(p && !p.retired && p.price === 0);
+}
+
+/** สินค้าที่ซื้อผ่าน Stripe ได้ (มีราคาและยังขายอยู่) */
+export function isPurchasableProduct(id: string): boolean {
+  const p = getProduct(id);
+  return Boolean(p && !p.retired && p.price > 0);
+}
 
 export function getProduct(id: string): Product | null {
   return Object.prototype.hasOwnProperty.call(PRODUCTS, id)

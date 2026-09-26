@@ -116,7 +116,7 @@ export default function ResultsView() {
       if (!token) token = await tokenFromSession();
       if (cancelled) return;
       if (!token) {
-        setError("ไม่พบสิทธิ์ดูผลสอบ — ล็อกอินด้วยบัญชี Google อีเมลเดียวกับที่ซื้อ หรือเข้าห้องสอบด้วยอีเมลที่ซื้อก่อน");
+        setError("ไม่พบสิทธิ์ดูผลสอบ — เข้าสู่ระบบด้วยอีเมลเดียวกับที่ซื้อ หรือเข้าห้องสอบด้วยอีเมลที่ซื้อก่อน");
         return;
       }
       load(5);
@@ -135,7 +135,7 @@ export default function ResultsView() {
           <p className="text-ink/75">{error}</p>
           <p className="mt-3 text-sm leading-relaxed text-ink/55">
             ถ้าเพิ่งกดส่งไปแล้วเห็นข้อความนี้ ให้กดปุ่มด้านล่างแล้ว
-            <strong>ล็อกอินด้วยบัญชี Google อีเมลที่ใช้สอบ</strong> — ระบบจะพาไปหน้าผลสอบให้เอง
+            <strong>เข้าสู่ระบบด้วยอีเมลที่ใช้สอบ</strong> — ระบบจะพาไปหน้าผลสอบให้เอง
             (ผลสอบไม่หายไปไหน)
           </p>
           <a

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { config, ready } from "@/lib/config";
-import { getProduct } from "@/lib/catalog";
+import { getProduct, isPurchasableProduct } from "@/lib/catalog";
 import { createOrder, updateOrder } from "@/lib/orders";
 import { getStripe } from "@/lib/stripe";
 import { fulfillOrder } from "@/lib/fulfillment";
@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
   const user = verifyUserSession(req.cookies.get(USER_COOKIE)?.value);
   if (!user) {
     return NextResponse.json(
-      { error: "กรุณาเข้าสู่ระบบด้วย Google ก่อนสั่งซื้อ", loginRequired: true },
+      { error: "กรุณาเข้าสู่ระบบก่อนสั่งซื้อ", loginRequired: true },
       { status: 401 }
     );
   }
@@ -46,6 +46,13 @@ export async function POST(req: NextRequest) {
   const product = getProduct(productId);
   if (!product) {
     return NextResponse.json({ error: "ไม่พบสินค้าที่เลือก กรุณารีเฟรชหน้าเว็บแล้วลองใหม่" }, { status: 400 });
+  }
+  // เล่มเนื้อหาแจกฟรี (price 0 → /api/claim) และครบเซ็ตเลิกขายแล้ว — ไม่เปิด Stripe ให้ (2026-09-27)
+  if (!isPurchasableProduct(product.id)) {
+    return NextResponse.json(
+      { error: product.price === 0 ? "คอร์สนี้แจกฟรี — กดปุ่ม “รับฟรี” ที่หน้าแรกได้เลย" : "สินค้านี้เลิกขายแล้ว" },
+      { status: 400 }
+    );
   }
 
   try {

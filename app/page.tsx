@@ -189,7 +189,6 @@ export default function Home() {
               courseHref={courseHref(PRODUCTS.mock1)}
               title="ข้อสอบ Mock TPAT3"
               desc="ห้องสอบออนไลน์ 70 ข้อ จับเวลา 3 ชม. ส่งแล้วรู้คะแนน อันดับ และบทที่ต้องซ่อมทันที พร้อมไฟล์เฉลยละเอียดทีละขั้น"
-              includes={["ห้องสอบออนไลน์ 1 ครั้ง", "ไฟล์โจทย์ + เฉลยละเอียด (PDF)", "กระดาษคำตอบ"]}
               product={PRODUCTS.mock1}
               unit="/ ชุด"
               buyLabel={`สั่งซื้อชุดข้อสอบ · ฿${PRODUCTS.mock1.price.toLocaleString()}`}

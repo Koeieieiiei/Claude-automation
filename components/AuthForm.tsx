@@ -81,8 +81,8 @@ export default function AuthForm({
   return (
     <form onSubmit={submit} className="space-y-4">
       <div className="flex border-b border-grid">
-        {tab("signin", "เข้าสู่ระบบ")}
-        {tab("signup", "สมัครสมาชิก")}
+        {tab("signin", "Sign In")}
+        {tab("signup", "Sign Up")}
       </div>
 
       <label className="block">
@@ -138,7 +138,7 @@ export default function AuthForm({
         disabled={loading}
         className="w-full bg-maroon py-3.5 font-semibold text-white transition hover:bg-maroon-dark disabled:cursor-not-allowed disabled:bg-ink/30"
       >
-        {loading ? "กำลังดำเนินการ…" : mode === "signin" ? "เข้าสู่ระบบ" : "สมัครสมาชิกและเข้าสู่ระบบ"}
+        {loading ? "กำลังดำเนินการ…" : mode === "signin" ? "Sign In" : "Sign Up"}
       </button>
 
       <div className="flex flex-wrap items-center justify-between gap-2 font-label text-xs text-ink/60">
@@ -152,14 +152,14 @@ export default function AuthForm({
           <span>
             ยังไม่มีบัญชี?{" "}
             <button type="button" onClick={() => setMode("signup")} className="font-semibold text-maroon underline underline-offset-2 hover:no-underline">
-              สมัครสมาชิก
+              Sign Up
             </button>
           </span>
         ) : (
           <span>
             มีบัญชีแล้ว?{" "}
             <button type="button" onClick={() => setMode("signin")} className="font-semibold text-maroon underline underline-offset-2 hover:no-underline">
-              เข้าสู่ระบบ
+              Sign In
             </button>
           </span>
         )}

@@ -9,7 +9,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "เข้าสู่ระบบ / สมัครสมาชิก | Mr.tpat3",
+  title: "Sign In / Sign Up | Mr.tpat3",
   robots: { index: false },
 };
 
@@ -29,7 +29,7 @@ export default async function LoginPage({
   return (
     <AuthCard
       badge="บัญชีผู้เรียน"
-      title="เข้าสู่ระบบ / สมัครสมาชิก"
+      title="Sign In / Sign Up"
       intro={
         <>
           ใช้แค่ <strong>อีเมล + รหัสผ่าน</strong> — คอร์ส ไฟล์ และสิทธิ์ห้องสอบทั้งหมดผูกกับอีเมลนี้

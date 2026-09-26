@@ -207,10 +207,7 @@ export default function Home() {
                 </div>
               }
               courseHref={courseHref(PRODUCTS.sum4)}
-              kicker="ไฟล์เนื้อหา · Part 1–5 · แจกฟรี"
               title="เนื้อหาทั้งหมดสำหรับสอบ TPAT3"
-              desc="ครบทั้ง 5 พาร์ตของข้อสอบจริง รวมในไฟล์เดียว 174 หน้า อ่านจบแล้วไปทำ Mock ต่อได้เลย"
-              includes={["ไฟล์ PDF 1 ไฟล์ · 174 หน้า", "Part 1–5 ครบ 38 บท", "อยู่ในบัญชีของน้องถาวร"]}
               product={PRODUCTS.sum4}
               claimLabel="รับเล่มนี้ฟรี"
               onBuy={buy}
@@ -319,8 +316,9 @@ function ProductCard({
   /** ป้ายเล็กเหนือชื่อ (ไม่ใส่ = ไม่โชว์ — การ์ด Mock เจ้าของสั่งเอาออก 2026-09-27) */
   kicker?: string;
   title: string;
-  desc: string;
-  includes: string[];
+  /** คำอธิบาย/รายการ ✓ — ไม่ใส่ = ไม่โชว์ (การ์ดเนื้อหาเจ้าของสั่งให้เหลือแค่ชื่อ + "ฟรี" 2026-09-27) */
+  desc?: string;
+  includes?: string[];
   product: Product;
   unit?: string;
   buyLabel?: string;
@@ -341,21 +339,21 @@ function ProductCard({
       <div>
         {kicker && <p className="font-label text-xs font-semibold uppercase tracking-[0.22em] text-maroon">{kicker}</p>}
         <h3 className="mt-2 font-display text-[clamp(1.5rem,2.6vw,1.95rem)] font-semibold leading-snug text-ink">{title}</h3>
-        <p className="mt-3 max-w-[52ch] text-[1.1rem] leading-relaxed text-ink">{desc}</p>
-        <ul className="mt-4 flex flex-wrap gap-x-4 gap-y-1.5 text-[0.95rem] text-ink/60">
-          {includes.map((item) => (
-            <li key={item}>
-              <span className="mr-1.5 font-bold text-maroon">✓</span>
-              {item}
-            </li>
-          ))}
-        </ul>
+        {desc && <p className="mt-3 max-w-[52ch] text-[1.1rem] leading-relaxed text-ink">{desc}</p>}
+        {includes && includes.length > 0 && (
+          <ul className="mt-4 flex flex-wrap gap-x-4 gap-y-1.5 text-[0.95rem] text-ink/60">
+            {includes.map((item) => (
+              <li key={item}>
+                <span className="mr-1.5 font-bold text-maroon">✓</span>
+                {item}
+              </li>
+            ))}
+          </ul>
+        )}
         <div className="mt-6 h-1 w-10 bg-maroon" />
         <p className="mt-4 font-display text-[2rem] font-bold leading-none tracking-tight text-maroon">
           {free ? (
-            <>
-              ฟรี <span className="text-[0.95rem] font-medium tracking-normal text-ink/50">ไม่มีค่าใช้จ่าย · แค่เข้าสู่ระบบแล้วกดรับ</span>
-            </>
+            <>ฟรี</>
           ) : (
             <>
               ฿{product.price.toLocaleString()} <span className="text-[0.95rem] font-medium tracking-normal text-ink/50">{unit}</span>

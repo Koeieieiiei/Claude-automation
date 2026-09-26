@@ -166,7 +166,7 @@ export default function Home() {
           </div>
 
           {examState !== "submitted" && (
-            <p className="mt-4 text-sm text-ink/60">แนะนำให้ทำในคอมพิวเตอร์ หรือ iPad · 1 บัญชีมีสิทธิ์สอบ 1 รอบ</p>
+            <p className="mt-4 text-sm text-ink/60">แนะนำให้ทำในคอมพิวเตอร์ หรือ iPad</p>
           )}
         </div>
       </section>

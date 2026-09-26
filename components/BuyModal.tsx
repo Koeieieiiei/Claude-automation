@@ -134,9 +134,6 @@ export default function BuyModal({ product, onClose, user = null, returnTo }: Pr
               {loading ? "รอสักครู่…" : "ไปหน้าชำระเงิน"}
             </button>
           )}
-          <p className="text-center font-label text-[11px] text-ink/50">
-            PromptPay ผ่าน Stripe · ไม่มีการคืนเงิน
-          </p>
         </form>
       </div>
     </div>,

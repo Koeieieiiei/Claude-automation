@@ -300,7 +300,9 @@ function CourseCard({ course: lc, examState }: { course: LibraryCourse; examStat
           <h2 className="mt-1 font-display text-xl font-bold leading-snug text-ink">
             {course ? <a href={`/courses/${course.slug}`} className="hover:text-maroon">{course.title}</a> : item.productName}
           </h2>
-          <p className="mt-1.5 font-label text-xs text-ink/55">ซื้อเมื่อ {purchased}</p>
+          <p className="mt-1.5 font-label text-xs text-ink/55">
+            {PRODUCTS[item.productId].price === 0 ? "รับเมื่อ" : "ซื้อเมื่อ"} {purchased}
+          </p>
         </div>
       </div>
 

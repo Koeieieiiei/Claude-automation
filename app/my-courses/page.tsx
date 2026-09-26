@@ -6,9 +6,8 @@ import { Avatar } from "@/components/AccountButton";
 import { USER_COOKIE, verifyUserSession } from "@/lib/user-session";
 import { getLibrary, LibraryItem } from "@/lib/library";
 import { buildDownloadLinks, DownloadLink } from "@/lib/downloads";
-import ClaimButton from "@/components/ClaimButton";
 import { FileId, PRODUCTS } from "@/lib/catalog";
-import { COURSES, courseForProduct, getCourse } from "@/lib/courses";
+import { COURSES, getCourse } from "@/lib/courses";
 import { getExam } from "@/lib/exams";
 import { getAttemptState, isUnlimitedEmail, AttemptState } from "@/lib/exam-store";
 
@@ -21,16 +20,15 @@ export const metadata = {
 };
 
 /**
- * "คอร์ส" ในหน้านี้มีแค่ 2 ตัวตายตัว (เจ้าของกำหนด 2026-09-16) ไม่ใช่รายการออเดอร์:
- *   mock-tpat3    = ห้องสอบ + ไฟล์เฉลย        ← ได้เมื่อมีไฟล์ questions (รับ Mock ฟรี / ซื้อ Mock หรือ bundle ยุคขาย)
+ * "คอร์ส" ในหน้านี้มีแค่ 2 ตัวตายตัว (เจ้าของกำหนด 2026-09-16) ไม่ใช่รายการสั่งซื้อ:
+ *   mock-tpat3    = ห้องสอบ + ไฟล์เฉลย        ← ได้เมื่อมีไฟล์ questions (ซื้อ Mock หรือ bundle)
  *   tpat3-content = ไฟล์เล่มเนื้อหา            ← ได้เมื่อมี tpat3content (หรือ sum4content รุ่นเก่า)
- * ออเดอร์ bundle ยุคขาย = ได้ 2 การ์ดนี้เหมือนคนรับแยก ไม่มีการ์ด "ครบเซ็ต"
+ * ซื้อ bundle = ได้ 2 การ์ดนี้เหมือนคนซื้อแยก ไม่มีการ์ด "ครบเซ็ต"
  * ไฟล์โจทย์/กระดาษคำตอบ/สูตรล้วนไม่โชว์ที่นี่ (ยังโหลดได้จากลิงก์ในอีเมลตามเดิม)
- * ตั้งแต่ 2026-09-26 ทุกคอร์สแจกฟรี — ?claimed=<productId> คือเพิ่งกดรับมาจาก /api/claim
  */
 interface LibraryCourse {
   slug: "mock-tpat3" | "tpat3-content";
-  /** ออเดอร์ที่ให้สิทธิ์ (ใช้ชื่อ-อีเมลใส่ลายน้ำ + วันที่รับ) */
+  /** ออเดอร์ที่ให้สิทธิ์ (ใช้ชื่อ-อีเมลใส่ลายน้ำ + วันที่ซื้อ) */
   item: LibraryItem;
   files: FileId[];
   hasExam: boolean;
@@ -60,16 +58,16 @@ const LOGIN_ERRORS: Record<string, string> = {
 };
 
 /**
- * "คอร์สของฉัน" — ทุกอย่างที่บัญชี Google นี้รับไว้: ปุ่มเข้าห้องสอบ/ดูผล + ไฟล์ทุกไฟล์โหลดซ้ำได้ตลอด
- * สิทธิ์ผูกกับอีเมล → ล็อกอินด้วยบัญชีเดียวกับตอนกดรับ
+ * "คอร์สของฉัน" — ทุกอย่างที่บัญชี Google นี้ซื้อไว้: ปุ่มเข้าห้องสอบ/ดูผล + ไฟล์ทุกไฟล์โหลดซ้ำได้ตลอด
+ * สิทธิ์ผูกกับอีเมล → ล็อกอินด้วยบัญชีอีเมลเดียวกับตอนสั่งซื้อ
  */
 export default async function MyCoursesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ login_error?: string; claimed?: string; already?: string; claim_error?: string }>;
+  searchParams: Promise<{ login_error?: string }>;
 }) {
   const user = verifyUserSession((await cookies()).get(USER_COOKIE)?.value);
-  const { login_error: loginError, claimed, already, claim_error: claimError } = await searchParams;
+  const { login_error: loginError } = await searchParams;
 
   if (!user) {
     return (
@@ -85,7 +83,7 @@ export default async function MyCoursesPage({
             <div className="px-6 py-8">
               <h1 className="font-display text-2xl font-bold text-ink">เข้าสู่ระบบเพื่อดูคอร์สของคุณ</h1>
               <p className="mt-2 text-sm leading-relaxed text-ink/70">
-                ล็อกอินด้วยบัญชี Google <strong>เดียวกับที่ใช้กดรับคอร์ส</strong> — ไฟล์ทุกไฟล์
+                ล็อกอินด้วยบัญชี Google <strong>อีเมลเดียวกับที่ใช้สั่งซื้อ</strong> — ไฟล์ทุกไฟล์
                 สิทธิ์เข้าห้องสอบ และผลสอบ จะรวมอยู่ที่หน้านี้ เปิดได้ทุกเครื่อง
               </p>
               <GoogleButton next="/my-courses" className="mt-5" />
@@ -95,9 +93,9 @@ export default async function MyCoursesPage({
                 </p>
               )}
               <p className="mt-5 border-t border-dashed border-grid pt-4 text-sm leading-relaxed text-ink/75">
-                ยังไม่มีคอร์ส? ทุกคอร์สแจกฟรี{" "}
+                ยังไม่มีคอร์ส?{" "}
                 <a href="/#mock" className="font-bold text-maroon underline underline-offset-2 hover:no-underline">
-                  กดรับได้ที่หน้าแรก →
+                  ดูคอร์สทั้งหมด →
                 </a>
               </p>
             </div>
@@ -118,8 +116,6 @@ export default async function MyCoursesPage({
   }
 
   const courses = deriveCourses(items);
-  // แถบแจ้งผลจากปุ่ม "รับฟรี" (/api/claim) — เพิ่งรับสำเร็จ / มีอยู่แล้ว / รับไม่สำเร็จ
-  const claimedTitle = claimed ? courseForProduct(claimed)?.title ?? "คอร์ส" : null;
 
   // สถานะห้องสอบ (สนามหลัก) — เฉพาะคนที่มีชุด Mock หรืออีเมลเจ้าของร้าน
   const exam = getExam();
@@ -180,23 +176,6 @@ export default async function MyCoursesPage({
         </section>
 
         <section className="mx-auto max-w-6xl px-5 py-12">
-          {claimedTitle && (
-            <p className="mb-6 border border-maroon/40 bg-maroon/[0.06] px-4 py-3 text-sm leading-relaxed text-ink">
-              {already ? (
-                <>บัญชีนี้มี <strong>“{claimedTitle}”</strong> อยู่แล้ว — เปิดใช้ได้เลยด้านล่าง</>
-              ) : (
-                <>
-                  <strong className="text-maroon">รับ “{claimedTitle}” เรียบร้อย ✓</strong> — ไม่มีค่าใช้จ่าย
-                  เปิดใช้ได้เลยด้านล่าง กลับมาเปิดได้ตลอดด้วยบัญชีนี้
-                </>
-              )}
-            </p>
-          )}
-          {claimError && (
-            <p className="mb-6 border border-maroon/40 bg-maroon/[0.06] px-4 py-3 text-sm text-maroon">
-              รับคอร์สไม่สำเร็จชั่วคราว — ลองกดรับใหม่อีกครั้ง ถ้ายังไม่ได้ติดต่อ mr.tpat3@gmail.com
-            </p>
-          )}
           {loadError && (
             <p className="mb-6 border border-maroon/40 bg-maroon/[0.06] px-4 py-3 text-sm text-maroon">
               โหลดรายการคอร์สไม่สำเร็จชั่วคราว — รีเฟรชหน้านี้อีกครั้ง
@@ -205,24 +184,23 @@ export default async function MyCoursesPage({
 
           {items.length === 0 && !loadError && (
             <div className="border border-dashed border-maroon/40 bg-white px-6 py-10 text-center">
-              <p className="font-display text-xl font-bold text-ink">บัญชีนี้ยังไม่มีคอร์ส — รับฟรีได้เลย</p>
+              <p className="font-display text-xl font-bold text-ink">บัญชีนี้ยังไม่มีคอร์ส</p>
               <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-ink/65">
-                ทุกคอร์สแจกฟรี ไม่ต้องกรอกอะไร กดรับแล้วโผล่ที่หน้านี้ทันที
-              </p>
-              <div className="mt-6 flex flex-wrap justify-center gap-3">
-                <ClaimButton productId="mock1" label="รับชุด Mock TPAT3 ฟรี" source="my_courses_empty" />
-                <ClaimButton productId="sum4" label="รับเล่มเนื้อหา TPAT3 ฟรี" source="my_courses_empty" variant="outline" />
-              </div>
-              <p className="mx-auto mt-6 max-w-md border-t border-dashed border-grid pt-4 text-xs leading-relaxed text-ink/55">
-                เคยรับด้วยบัญชี Google อื่น?{" "}
+                ถ้าซื้อไปแล้วแต่ไม่เห็นคอร์ส — น่าจะซื้อด้วยอีเมลอื่น ลอง{" "}
                 <a
                   href={`/api/auth/logout?switch=1&next=${encodeURIComponent("/my-courses")}`}
                   className="font-semibold text-maroon underline underline-offset-2"
                 >
-                  เปลี่ยนบัญชี
+                  เปลี่ยนบัญชี Google
                 </a>{" "}
-                หรือติดต่อ mr.tpat3@gmail.com
+                เป็นอีเมลที่ใช้สั่งซื้อ หรือติดต่อ mr.tpat3@gmail.com
               </p>
+              <a
+                href="/#mock"
+                className="mt-6 inline-block bg-maroon px-6 py-3 font-bold text-paper transition hover:bg-maroon-dark"
+              >
+                ดูคอร์สทั้งหมด →
+              </a>
             </div>
           )}
 
@@ -253,7 +231,7 @@ export default async function MyCoursesPage({
   );
 }
 
-/* ---------- การ์ดคอร์สที่รับแล้ว ---------- */
+/* ---------- การ์ดคอร์สที่ซื้อแล้ว ---------- */
 function CourseCard({ course: lc, examState }: { course: LibraryCourse; examState: AttemptState }) {
   const { item, hasExam } = lc;
   const course = getCourse(lc.slug);
@@ -299,7 +277,7 @@ function CourseCard({ course: lc, examState }: { course: LibraryCourse; examStat
           <h2 className="mt-1 font-display text-xl font-bold leading-snug text-ink">
             {course ? <a href={`/courses/${course.slug}`} className="hover:text-maroon">{course.title}</a> : item.productName}
           </h2>
-          <p className="mt-1.5 font-label text-xs text-ink/55">รับเมื่อ {purchased}</p>
+          <p className="mt-1.5 font-label text-xs text-ink/55">ซื้อเมื่อ {purchased}</p>
         </div>
       </div>
 
@@ -322,7 +300,7 @@ function CourseCard({ course: lc, examState }: { course: LibraryCourse; examStat
             </a>
           ))}
           {links.length === 0 && (
-            <p className="text-sm text-maroon">เตรียมลิงก์ไม่สำเร็จชั่วคราว — รีเฟรชอีกครั้ง</p>
+            <p className="text-sm text-maroon">เตรียมลิงก์ไม่สำเร็จชั่วคราว — รีเฟรชอีกครั้ง หรือใช้ลิงก์ในอีเมล</p>
           )}
         </div>
         {hasExam && examState !== "submitted" && (
@@ -359,7 +337,7 @@ function ExamButton({ state }: { state: AttemptState }) {
   );
 }
 
-/* ---------- เจ้าของร้าน: เข้าห้องสอบได้เสมอแม้ไม่ได้กดรับ ---------- */
+/* ---------- เจ้าของร้าน: เข้าห้องสอบได้เสมอแม้ไม่มีคำสั่งซื้อ ---------- */
 function OwnerExamCard({ examState }: { examState: AttemptState }) {
   return (
     <article className="flex flex-col border border-dashed border-maroon/50 bg-white p-6 md:p-7">
@@ -371,22 +349,28 @@ function OwnerExamCard({ examState }: { examState: AttemptState }) {
   );
 }
 
-/* ---------- คอร์สที่ยังไม่ได้รับ (ฟรีเหมือนกัน — กดรับได้จากตรงนี้เลย) ---------- */
+/* ---------- คอร์สที่ยังไม่มีในบัญชี ---------- */
 function MoreCourses({ items }: { items: LibraryItem[] }) {
   const owned = new Set(items.flatMap((i) => i.files));
-  const missing = COURSES.filter(
-    (c) => !PRODUCTS[c.productId].retired && !PRODUCTS[c.productId].files.every((f) => owned.has(f))
-  );
-  // มีครบแล้ว → ไม่ต้องเสนออะไร · ไม่มีอะไรเลย → กล่องด้านบนมีปุ่มรับฟรีอยู่แล้ว
+  const missing = COURSES.filter((c) => !PRODUCTS[c.productId].files.every((f) => owned.has(f)));
+  // มีครบทุกไฟล์แล้ว → ไม่ต้องเสนออะไร · ไม่มีอะไรเลย → หน้าบนมีปุ่ม "ดูคอร์สทั้งหมด" อยู่แล้ว
   if (missing.length === 0 || items.length === 0) return null;
+  // ถ้ามีบางไฟล์แล้ว bundle จะซ้ำกับของที่มี — เสนอเฉพาะคอร์สเดี่ยวที่ยังขาด
+  const singles = missing.filter((c) => c.productId !== "bundle-all");
+  if (singles.length === 0) return null;
   return (
     <section className="border-t border-grid bg-paper">
       <div className="mx-auto max-w-6xl px-5 py-12">
-        <h2 className="font-display text-xl font-bold text-ink">คอร์สที่ยังไม่ได้รับ (ฟรีเหมือนกัน)</h2>
+        <h2 className="font-display text-xl font-bold text-ink">คอร์สที่ยังไม่มีในบัญชี</h2>
         <div className="mt-5 grid gap-4 sm:grid-cols-2">
-          {missing.map((c) => (
-            <div key={c.slug} className="flex flex-wrap items-center gap-4 border border-grid bg-white p-4">
-              <a href={`/courses/${c.slug}`} className="flex min-w-0 flex-1 items-center gap-4">
+          {singles.map((c) => {
+            const p = PRODUCTS[c.productId];
+            return (
+              <a
+                key={c.slug}
+                href={`/courses/${c.slug}`}
+                className="flex items-center gap-4 border border-grid bg-white p-4 transition hover:border-maroon"
+              >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={c.covers[c.covers.length - 1].src}
@@ -395,13 +379,13 @@ function MoreCourses({ items }: { items: LibraryItem[] }) {
                   style={{ aspectRatio: "1792 / 2400", objectFit: "cover" }}
                 />
                 <span className="min-w-0">
-                  <span className="block font-display font-bold text-ink hover:text-maroon">{c.title}</span>
+                  <span className="block font-display font-bold text-ink">{c.title}</span>
                   <span className="mt-0.5 block text-sm text-ink/60">{c.tagline}</span>
+                  <span className="mt-1 block font-display font-bold text-maroon">฿{p.price.toLocaleString()}</span>
                 </span>
               </a>
-              <ClaimButton productId={c.productId} label="รับฟรี" source="my_courses_more" className="px-4 py-2.5 text-sm" />
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </section>

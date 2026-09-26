@@ -1,11 +1,10 @@
 /**
  * เนื้อหาหน้า "รายละเอียดคอร์ส" (/courses/<slug>) — แก้ข้อความบนหน้าได้ที่ไฟล์นี้ที่เดียว
- * ไฟล์ที่ได้รับยังอ่านจาก lib/catalog.ts เหมือนเดิม (ไฟล์นี้เก็บแค่คำบรรยาย) — ทุกคอร์สแจกฟรี ไม่มีราคา
+ * ราคา/ไฟล์ที่ได้รับยังอ่านจาก lib/catalog.ts เหมือนเดิม (ไฟล์นี้เก็บแค่คำบรรยาย)
  *
  * import ได้ทั้ง client และ server
- * สารบัญเนื้อหาถอดจากไฟล์จริง: เล่มเนื้อหา (assets/master-tpat3-content.pdf ฉบับ 174 หน้า 2026-09-26
- * — 38 บทเท่าฉบับก่อน เปลี่ยนแค่จำนวนหน้า) และโครงข้อสอบจาก lib/exam-manifests/tpat3-1.json
- * — เปลี่ยนไฟล์เมื่อไหร่ต้องแก้ตรงนี้ด้วย
+ * สารบัญเนื้อหาถอดจากไฟล์จริง: เล่มเนื้อหา (assets/master-tpat3-content.pdf, 160 หน้า)
+ * และโครงข้อสอบจาก lib/exam-manifests/tpat3-1.json — เปลี่ยนไฟล์เมื่อไหร่ต้องแก้ตรงนี้ด้วย
  */
 import type { ProductId } from "./catalog";
 
@@ -40,6 +39,7 @@ export interface CourseInfo {
   highlights: string[];
   contentsTitle: string;
   contents: CourseChapterGroup[];
+  sample?: { href: string; downloadName: string; label: string };
 }
 
 const MOCK_SECTIONS: CourseChapterGroup[] = [
@@ -180,6 +180,11 @@ export const COURSES: CourseInfo[] = [
     ],
     contentsTitle: "โครงข้อสอบ (ตรงตามสนามจริง)",
     contents: MOCK_SECTIONS,
+    sample: {
+      href: "/samples/tpat3-mock-sample.pdf",
+      downloadName: "TPat3 Mock Sample.pdf",
+      label: "โหลดตัวอย่างโจทย์ + เฉลยฟรี",
+    },
   },
   {
     slug: "tpat3-content",
@@ -190,7 +195,7 @@ export const COURSES: CourseInfo[] = [
     covers: [CONTENT_COVER],
     bannerTone: "rose",
     stats: [
-      { icon: "pages", label: "ความยาว", value: "174 หน้า" },
+      { icon: "pages", label: "ความยาว", value: "160 หน้า" },
       { icon: "chapters", label: "เนื้อหา", value: "5 Part · 38 บท" },
       { icon: "infinity", label: "อายุคอร์ส", value: "ไม่มีวันหมดอายุ" },
     ],
@@ -204,7 +209,7 @@ export const COURSES: CourseInfo[] = [
       },
       { label: "รูปแบบ", value: "ไฟล์ PDF 1 เล่ม โหลดเก็บไว้อ่านได้ทุกอุปกรณ์" },
     ],
-    includes: ["ไฟล์เนื้อหาทั้งหมดสำหรับสอบ TPAT3 Part 1–5 (PDF 174 หน้า)"],
+    includes: ["ไฟล์เนื้อหาทั้งหมดสำหรับสอบ TPAT3 Part 1–5 (PDF 160 หน้า)"],
     highlights: [
       "ครบทั้ง 5 พาร์ตของข้อสอบจริง รวมในไฟล์เดียว",
       "ทุกบทเปิดด้วยกล่อง Key สรุปหัวใจของบท + ศัพท์ที่ข้อสอบใช้",
@@ -215,6 +220,52 @@ export const COURSES: CourseInfo[] = [
     ],
     contentsTitle: "เนื้อหาในคอร์ส",
     contents: CONTENT_PARTS,
+    sample: {
+      href: "/samples/tpat3-summary1-sample.pdf",
+      downloadName: "ตัวอย่างเนื้อหา TPAT3.pdf",
+      label: "โหลดตัวอย่างเนื้อหาฟรี",
+    },
+  },
+  {
+    slug: "complete-set",
+    productId: "bundle-all",
+    title: "ครบเซ็ตพร้อมสอบ TPAT3",
+    subject: "TPAT3 ความถนัดทางวิทยาศาสตร์ เทคโนโลยี และวิศวกรรมศาสตร์",
+    tagline: "เนื้อหาครบ + ข้อสอบเสมือนจริง",
+    covers: [MOCK_COVERS[1], CONTENT_COVER],
+    bannerTone: "maroon",
+    stats: [
+      { icon: "exam", label: "ข้อสอบ Mock", value: "70 ข้อ · 3 ชม." },
+      { icon: "pages", label: "เล่มเนื้อหา", value: "160 หน้า" },
+      { icon: "infinity", label: "อายุคอร์ส", value: "ไม่มีวันหมดอายุ" },
+    ],
+    facts: [
+      { label: "คอร์ส", value: "ครบเซ็ตพร้อมสอบ (Mock TPAT3 + เนื้อหาทั้งหมดสำหรับสอบ TPAT3)" },
+      { label: "วิชา", value: "TPAT3 (ความถนัดวิศวกรรมศาสตร์)" },
+      { label: "ผู้สอน", value: "Mr.tpat3" },
+      { label: "เหมาะสำหรับ", value: "น้องที่อยากเก็บเนื้อหาให้ครบ แล้ววัดผลด้วยข้อสอบเสมือนจริง" },
+      { label: "รูปแบบ", value: "สอบออนไลน์บนเว็บ + ไฟล์ PDF โหลดเก็บไว้ได้" },
+    ],
+    includes: [
+      "ห้องสอบ Mock TPAT3 ออนไลน์ 70 ข้อ (สอบได้ 1 ครั้ง) พร้อมผลวิเคราะห์",
+      "ไฟล์เฉลยละเอียด Mock TPAT3 (PDF)",
+      "ไฟล์เนื้อหาทั้งหมดสำหรับสอบ TPAT3 Part 1–5 (PDF 160 หน้า)",
+    ],
+    highlights: [
+      "อ่านเนื้อหาครบ 5 พาร์ตก่อน แล้วจับเวลาทำ Mock รวดเดียวเหมือนสนามจริง",
+      "ส่งข้อสอบแล้วรู้คะแนน อันดับ และบทที่ต้องซ่อม — กลับไปอ่านบทนั้นในเล่มเนื้อหาได้ทันที",
+      "ถูกกว่าซื้อแยก",
+      "กลับมาเข้าเรียน/โหลดไฟล์ได้ตลอดที่หน้า “คอร์สของฉัน” ไม่มีวันหมดอายุ",
+    ],
+    contentsTitle: "เนื้อหาในคอร์ส",
+    contents: [
+      {
+        title: "ข้อสอบ Mock TPAT3 ชุดที่ 1",
+        meta: "70 ข้อ · 100 คะแนน",
+        items: MOCK_SECTIONS.map((s) => `${s.title} (${s.meta})`),
+      },
+      ...CONTENT_PARTS,
+    ],
   },
 ];
 

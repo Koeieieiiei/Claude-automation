@@ -36,7 +36,7 @@ export default function Analytics({ gaId }: { gaId?: string }) {
   return (
     <>
       {/* ตัวตั้งต้นต้องมาก่อน hydration — ไม่งั้นเหตุการณ์ที่ยิงทันทีตอนเปิดหน้า
-          (เช่น claim_free, click_exam_cta จากลิงก์) จะหายเพราะ gtag ยังไม่เกิด
+          (เช่น purchase_success, open_buy_form จากลิงก์) จะหายเพราะ gtag ยังไม่เกิด
           เป็นสคริปต์สั้น ๆ ไม่โหลดอะไรจากเน็ต จึงไม่ถ่วงเว็บ */}
       <Script id="ga-init" strategy="beforeInteractive">
         {`window.dataLayer = window.dataLayer || [];

@@ -30,8 +30,6 @@ npm-debug.log*
 google-service-account.json
 
 # ไฟล์ต้นฉบับ (สินค้า) — ห้าม commit ขึ้น repo (เก็บบน Supabase Storage แทน)
-# รวมไฟล์ที่เจ้าของวางไว้ชื่ออื่น เช่น "TPAT3 เนื้อหา.pdf" — PDF ทุกไฟล์ในโฟลเดอร์นี้คือของจริง
-/assets/*.pdf
 /assets/master-*.pdf
 
 # typescript

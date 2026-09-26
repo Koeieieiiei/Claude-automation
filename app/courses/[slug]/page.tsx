@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
-import ClaimButton from "@/components/ClaimButton";
+import CourseBuyButton from "@/components/CourseBuyButton";
 import CourseIcon from "@/components/CourseIcons";
 import Gear from "@/components/Gear";
 import { USER_COOKIE, verifyUserSession } from "@/lib/user-session";
@@ -20,9 +20,10 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { slug } = await params;
   const course = getCourse(slug);
   if (!course) return { title: "ไม่พบคอร์ส · Mr.tpat3" };
-  const description = `${course.tagline} — ${course.includes.join(" · ")} แจกฟรี แค่ล็อกอิน Google โดย Mr.tpat3`;
+  const product = PRODUCTS[course.productId];
+  const description = `${course.tagline} — ${course.includes.join(" · ")} ราคา ฿${product.price.toLocaleString()} โดย Mr.tpat3`;
   return {
-    title: `${course.title} (ฟรี) | Mr.tpat3`,
+    title: `${course.title} | Mr.tpat3`,
     description,
     alternates: { canonical: `/courses/${course.slug}` },
     openGraph: {
@@ -44,9 +45,8 @@ const TONE = {
 } as const;
 
 /**
- * หน้ารายละเอียดคอร์ส — โครงแบบเว็บคอร์สเรียน: แบนเนอร์ + การ์ด "รับฟรี" ด้านขวา + รายละเอียด/สารบัญด้านล่าง
- * ทุกคอร์สแจกฟรี (2026-09-26) — ไม่มีราคา ไม่มีขั้นชำระเงิน
- * รับแล้ว (ล็อกอินอยู่) → ปุ่มเปลี่ยนเป็น "เข้าเรียน" พาไปหน้าคอร์สของฉัน
+ * หน้ารายละเอียดคอร์ส — โครงแบบเว็บคอร์สเรียน: แบนเนอร์ + การ์ดซื้อด้านขวา + รายละเอียด/สารบัญด้านล่าง
+ * ซื้อแล้ว (ล็อกอินอยู่) → ปุ่มเปลี่ยนเป็น "เข้าเรียน" พาไปหน้าคอร์สของฉัน
  */
 export default async function CoursePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -60,10 +60,11 @@ export default async function CoursePage({ params }: { params: Promise<{ slug: s
     try {
       owned = ownsProduct(await getLibrary(user.email), product);
     } catch (err) {
-      console.error("เช็คว่ารับคอร์สแล้วหรือยังไม่สำเร็จ:", err);
+      console.error("เช็คว่าซื้อคอร์สแล้วหรือยังไม่สำเร็จ:", err);
     }
   }
 
+  const save = product.compareAt ? product.compareAt - product.price : 0;
   const others = COURSES.filter((c) => c.slug !== course.slug);
 
   return (
@@ -79,7 +80,7 @@ export default async function CoursePage({ params }: { params: Promise<{ slug: s
             ย้อนกลับ
           </a>
 
-          {/* มือถือเรียง: แบนเนอร์ → การ์ดรับฟรี → รายละเอียด · จอใหญ่: ซ้าย (แบนเนอร์+รายละเอียด) ขวา (การ์ด sticky) */}
+          {/* มือถือเรียง: แบนเนอร์ → การ์ดซื้อ → รายละเอียด · จอใหญ่: ซ้าย (แบนเนอร์+รายละเอียด) ขวา (การ์ดซื้อ sticky) */}
           <div className="mt-4 grid gap-8 lg:grid-cols-[1.45fr_1fr] lg:grid-rows-[auto_1fr]">
             {/* ===== แบนเนอร์ ===== */}
               <div className={`relative overflow-hidden border border-grid lg:col-start-1 lg:row-start-1 ${TONE[course.bannerTone]}`}>
@@ -87,7 +88,7 @@ export default async function CoursePage({ params }: { params: Promise<{ slug: s
                 <Gear teeth={12} className="pointer-events-none absolute -bottom-10 left-1/3 h-32 w-32 opacity-10" spin="ccw" />
                 <div className="relative grid items-center gap-6 px-7 py-9 sm:grid-cols-[1fr_auto] md:px-10 md:py-12">
                   <div>
-                    <p className="font-label text-[11px] font-semibold uppercase tracking-[0.22em] opacity-80">by Mr.tpat3 · แจกฟรี</p>
+                    <p className="font-label text-[11px] font-semibold uppercase tracking-[0.22em] opacity-80">by Mr.tpat3</p>
                     <h1 className="mt-2 font-display text-[2rem] font-bold leading-[1.15] md:text-[2.5rem]">{course.title}</h1>
                     <p className="mt-3 max-w-md text-[1.05rem] font-medium leading-relaxed opacity-90">{course.tagline}</p>
                   </div>
@@ -108,7 +109,7 @@ export default async function CoursePage({ params }: { params: Promise<{ slug: s
                 </div>
               </div>
 
-            {/* ===== ขวา: ชื่อ + สถิติ + การ์ดรับฟรี ===== */}
+            {/* ===== ขวา: ชื่อ + สถิติ + การ์ดซื้อ ===== */}
             <aside className="lg:col-start-2 lg:row-start-1 lg:row-span-2 lg:sticky lg:top-20 lg:self-start">
               <h2 className="font-display text-xl font-bold leading-snug text-ink">{course.title}</h2>
               <p className="mt-1.5 font-label text-xs text-ink/50">รหัส: {product.id.toUpperCase()}</p>
@@ -143,8 +144,17 @@ export default async function CoursePage({ params }: { params: Promise<{ slug: s
                 </ul>
 
                 <div className="mt-5 flex flex-wrap items-baseline justify-end gap-2.5 border-t border-dashed border-grid pt-4">
-                  <span className="font-display text-[2.1rem] font-bold leading-none text-maroon">ฟรี</span>
-                  <span className="text-sm text-ink/55">ไม่มีค่าใช้จ่าย</span>
+                  <span className="font-display text-[2.1rem] font-bold leading-none text-maroon">
+                    ฿{product.price.toLocaleString()}
+                  </span>
+                  {product.compareAt && (
+                    <>
+                      <span className="text-sm text-ink/45 line-through">฿{product.compareAt.toLocaleString()}</span>
+                      <span className="border border-maroon/40 px-2 py-0.5 font-label text-xs font-bold text-maroon">
+                        ประหยัด ฿{save.toLocaleString()}
+                      </span>
+                    </>
+                  )}
                 </div>
 
                 {owned ? (
@@ -159,18 +169,13 @@ export default async function CoursePage({ params }: { params: Promise<{ slug: s
                   </>
                 ) : (
                   <>
-                    <ClaimButton
-                      productId={product.id}
-                      label={user ? "รับคอร์สนี้ฟรี" : "รับฟรี · ล็อกอินด้วย Google"}
-                      source="course_page"
-                      className="mt-4 w-full py-3.5 font-bold"
-                    />
+                    <CourseBuyButton product={product} user={user} slug={course.slug} className="mt-4" />
                     <p className="mt-2 text-center font-label text-[11px] text-ink/50">
-                      ไม่ต้องกรอกอะไร · ได้ทันทีที่หน้า “คอร์สของฉัน”
+                      🔒 ชำระเงินปลอดภัยผ่าน Stripe · PromptPay
                     </p>
                     {!user && (
                       <p className="mt-3 text-center font-label text-xs text-ink/60">
-                        เคยรับไปแล้ว?{" "}
+                        ซื้อไปแล้ว?{" "}
                         <a
                           href={`/api/auth/google?next=${encodeURIComponent(`/courses/${course.slug}`)}`}
                           className="font-semibold text-maroon underline underline-offset-2"
@@ -255,36 +260,52 @@ export default async function CoursePage({ params }: { params: Promise<{ slug: s
                     </details>
                   ))}
                 </div>
+
+                {course.sample && (
+                  <a
+                    href={course.sample.href}
+                    download={course.sample.downloadName}
+                    className="mt-8 inline-flex items-center gap-2.5 border border-ink px-5 py-3 font-semibold text-ink transition hover:bg-ink hover:text-paper"
+                  >
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2} aria-hidden>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v12m0 0l-4.5-4.5M12 16l4.5-4.5M4 20h16" />
+                    </svg>
+                    {course.sample.label} (PDF)
+                  </a>
+                )}
               </section>
             </div>
 
           </div>
 
-          {/* ===== คอร์สอื่น (ฟรีเหมือนกัน) ===== */}
+          {/* ===== คอร์สอื่น ===== */}
           {others.length > 0 && (
             <section className="mt-16 border-t border-grid pt-10">
-              <h2 className="font-display text-xl font-bold text-ink">คอร์สอื่นของ Mr.tpat3 (ฟรีเหมือนกัน)</h2>
+              <h2 className="font-display text-xl font-bold text-ink">คอร์สอื่นของ Mr.tpat3</h2>
               <div className="mt-5 grid gap-4 sm:grid-cols-2">
-                {others.map((c) => (
-                  <a
-                    key={c.slug}
-                    href={`/courses/${c.slug}`}
-                    className="flex items-center gap-4 border border-grid bg-white p-4 transition hover:border-maroon"
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={c.covers[c.covers.length - 1].src}
-                      alt={c.covers[c.covers.length - 1].alt}
-                      className="w-14 border border-grid"
-                      style={{ aspectRatio: "1792 / 2400", objectFit: "cover" }}
-                    />
-                    <span className="min-w-0">
-                      <span className="block font-display font-bold text-ink">{c.title}</span>
-                      <span className="mt-0.5 block text-sm text-ink/60">{c.tagline}</span>
-                      <span className="mt-1 block font-display font-bold text-maroon">ฟรี</span>
-                    </span>
-                  </a>
-                ))}
+                {others.map((c) => {
+                  const p = PRODUCTS[c.productId];
+                  return (
+                    <a
+                      key={c.slug}
+                      href={`/courses/${c.slug}`}
+                      className="flex items-center gap-4 border border-grid bg-white p-4 transition hover:border-maroon"
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={c.covers[c.covers.length - 1].src}
+                        alt={c.covers[c.covers.length - 1].alt}
+                        className="w-14 border border-grid"
+                        style={{ aspectRatio: "1792 / 2400", objectFit: "cover" }}
+                      />
+                      <span className="min-w-0">
+                        <span className="block font-display font-bold text-ink">{c.title}</span>
+                        <span className="mt-0.5 block text-sm text-ink/60">{c.tagline}</span>
+                        <span className="mt-1 block font-display font-bold text-maroon">฿{p.price.toLocaleString()}</span>
+                      </span>
+                    </a>
+                  );
+                })}
               </div>
             </section>
           )}

@@ -1,42 +1,47 @@
-# Mr.tpat3 — เว็บแจกฟรี Mock TPAT3 + เนื้อหา TPAT3 (อัตโนมัติเต็มรูปแบบ)
+# ร้านขาย Ebook ข้อสอบ Mock TPAT3 (อัตโนมัติเต็มรูปแบบ)
 
-เว็บแจก ebook/ห้องสอบออนไลน์สำหรับเตรียมสอบ TPAT3 **ฟรีทั้งหมด** (เปลี่ยนจากขายเป็นแจกฟรี 2026-09-26 ตามที่เจ้าของสั่ง) —
-ผู้เรียนล็อกอิน Google → กด "รับฟรี" → ระบบสร้าง order ยอด 0 ให้ทันที → เข้าห้องสอบ/โหลดไฟล์ (ลายน้ำแบรนด์) ที่ "คอร์สของฉัน"
-โดยที่เจ้าของไม่ต้องแตะอะไรเลย
+เว็บขายข้อสอบ Mock TPAT3 แบบ ebook ที่ทำงานอัตโนมัติทุกขั้นตอน — ลูกค้าจ่ายเงินผ่าน
+**PromptPay** แล้วระบบจะ **ฝังลายน้ำชื่อ-อีเมลผู้ซื้อลง PDF + ส่งอีเมลลิงก์ดาวน์โหลด** ให้เอง
+โดยที่เจ้าของร้านไม่ต้องแตะอะไรเลย
 
 - **เว็บจริง:** https://tpat3mock.com
-- **สถานะ:** 🟢 เปิดใช้งานจริง (production) — ทุกคอร์สแจกฟรี ไม่มีการชำระเงิน (Stripe เหลือไว้เฉพาะ webhook/หน้า success ของออเดอร์ยุคขาย)
-- **สแตก:** Next.js 15 (App Router) · Supabase (orders + Storage + Google login) · pdf-lib · Vercel · Google Analytics/Sheets
+- **สถานะ:** 🟢 เปิดใช้งานจริง (production) — Stripe โหมด Live, รับเงินจริงได้แล้ว
+- **สแตก:** Next.js 15 (App Router) · Stripe · Supabase · Resend · pdf-lib · Vercel
 
 > 📄 รายละเอียดบริการแต่ละตัว (ราคา/เมื่อไหร่ควรอัปเกรด) ดูที่ [SERVICES.md](SERVICES.md)
 
 ---
 
-## 🔄 ระบบทำงานยังไง — ตั้งแต่กด "รับฟรี" จนได้ไฟล์ (ยุคแจกฟรี ตั้งแต่ 2026-09-26)
+## 🔄 ระบบทำงานยังไง — ตั้งแต่ลูกค้ากดซื้อ จนได้ไฟล์
 
+### ภาพรวม
 ```
-[1] กดปุ่ม "รับฟรี" (หน้าแรก / หน้าคอร์ส / หน้าห้องสอบ / คอร์สของฉัน)
-        │  components/ClaimButton.tsx → GET /api/claim?product=mock1|sum4
+[1] ลูกค้ากดซื้อ + กรอกชื่อ/นามสกุล/อีเมล
+        │  (BuyModal.tsx → POST /api/checkout)
         ▼
-[2] ยังไม่ล็อกอิน → /api/auth/google?next=/api/claim?product=… → ล็อกอินเสร็จเด้งกลับมาทำต่อเอง
+[2] สร้าง order สถานะ "pending" ในฐานข้อมูล + สร้าง Stripe Checkout Session
+        │  เก็บชื่อ/อีเมลผู้ซื้อไว้ใน metadata ของ session
         ▼
-[3] lib/claim.ts claimProduct(): มีคอร์สนี้แล้ว → ข้าม · ยังไม่มี → createOrder(amount 0, product_id)
-        │  → fulfillOrder() เช็คไฟล์ต้นฉบับครบ + บันทึก Google Sheets → status = "delivered"
+[3] ลูกค้าถูกพาไปหน้า Stripe → สแกน QR PromptPay จ่ายเงิน
+        │
+        ├──(จ่ายสำเร็จ)──► Stripe ยิง webhook กลับมาที่ /api/stripe/webhook
+        │
         ▼
-[4] redirect /my-courses?claimed=<id> — คอร์สโผล่ทันที (สิทธิ์ห้องสอบ/ดาวน์โหลดอ่านจากตาราง orders เหมือนเดิม)
+[4] webhook ตรวจลายเซ็น Stripe → เช็คว่าจ่ายจริง (payment_status = paid)
+        │  กันส่งซ้ำ: ถ้า order = "delivered" แล้ว → ข้าม
         ▼
-[5] ดาวน์โหลด GET /api/download/{file}/{token} → โหลด PDF ต้นฉบับจาก Supabase Storage → ใส่ลายน้ำแบรนด์ on-the-fly ✅
+[5] fulfillOrder() ทำงานอัตโนมัติ:
+        ├─ สร้าง "download token" เซ็นด้วย HMAC (ฝังชื่อ/อีเมล + ไฟล์ที่ซื้อ)
+        ├─ ส่งอีเมลพร้อมลิงก์ดาวน์โหลด 2 ไฟล์ (โจทย์ + เฉลย) ผ่าน Resend
+        └─ อัปเดต order เป็น "delivered"
+        ▼
+[6] ลูกค้าเปิดอีเมล → กดลิงก์ → GET /api/download/{file}/{token}
+        │  ตรวจ token (ลายเซ็น + สิทธิ์ไฟล์) ถ้าไม่ผ่าน → 403
+        ▼
+[7] โหลด PDF ต้นฉบับจาก Supabase Storage → ฝังลายน้ำ (ชื่อ+อีเมล) แบบ on-the-fly
+        ▼
+[8] ส่งไฟล์ PDF ที่มีลายน้ำกลับให้ลูกค้าดาวน์โหลด ✅
 ```
-
-- ไม่มีราคา ไม่มีฟอร์มสั่งซื้อ ไม่มี Bundles ไม่มีไฟล์ตัวอย่าง/เดโม (ลบ `public/samples/` + สคริปต์สร้างตัวอย่างแล้ว
-  `/samples/*` redirect ไปหน้าแรกใน `next.config.mjs`)
-- `lib/catalog.ts` ไม่มี `price` แล้ว — `CLAIMABLE_PRODUCTS = ["mock1", "sum4"]` · `bundle-all` คงไว้ (`retired`) ให้ออเดอร์เก่า
-- สิทธิ์ห้องสอบ (`lib/exam-store.ts`) อ่าน `product_id` จากตาราง orders ก่อน — ออเดอร์รับฟรีไม่มี Stripe session
-- หลังร้าน `/admin` ยังใช้ได้: ออเดอร์รับฟรี = ยอด 0 (นับ "ชุด" ได้ รายได้ 0) · กรวย GA เปลี่ยนเป็น `claim_free → exam_start → exam_submit`
-- เทสต์: `tests/claim.test.ts`
-
-### ยุคขาย (ก่อน 2026-09-26) — เก็บไว้เป็นประวัติ ออเดอร์เก่ายังใช้สิทธิ์ได้ตามเดิม
-`app/api/checkout` + `components/BuyModal.tsx` ถูกลบแล้ว · `app/api/stripe/webhook` + `app/success` ยังอยู่เผื่อ event/ลิงก์เก่า
 
 ### รายละเอียดทีละขั้น
 
@@ -286,7 +291,7 @@ npx vercel --prod --yes
 | หน้า / API | ทำอะไร |
 |---|---|
 | `/my-courses` | คอร์สของฉัน — ทุกอย่างที่อีเมลนี้ซื้อ: ปุ่มเข้าห้องสอบ/ดูผล + ไฟล์ทุกไฟล์โหลดซ้ำได้ตลอด (ลายน้ำชื่อผู้ซื้อ) |
-| `/courses/<slug>` | รายละเอียดคอร์ส (mock-tpat3 / tpat3-content — complete-set ลบแล้ว 2026-09-26) — ข้อความอยู่ใน [lib/courses.ts](lib/courses.ts) ซื้อแล้วปุ่มเปลี่ยนเป็น "เข้าเรียน" |
+| `/courses/<slug>` | รายละเอียดคอร์ส (mock-tpat3 / tpat3-content / complete-set) — ข้อความอยู่ใน [lib/courses.ts](lib/courses.ts) ซื้อแล้วปุ่มเปลี่ยนเป็น "เข้าเรียน" |
 | `/about` | บทความ "เกี่ยวกับพี่" (แก้ข้อความใน [app/about/page.tsx](app/about/page.tsx) รูปที่ `public/about/`) |
 | `/api/auth/google?next=` | เริ่มล็อกอิน (PKCE ผ่าน Supabase Auth → Google) |
 | `/api/auth/callback` | Supabase ส่งกลับ → แลก code เป็นอีเมลที่ยืนยันแล้ว → ออกคุกกี้ `mrtpat3_user` (httpOnly, เซ็น HMAC, 180 วัน) |
@@ -309,6 +314,6 @@ Google Cloud → OAuth consent screen ต้องเป็น **Production** (T
 
 ## ⚠️ ข้อจำกัดที่ควรรู้
 - **ลายน้ำกันแชร์ได้ระดับหนึ่ง ไม่ 100%** — ช่วยสืบหาต้นตอคนแชร์ แต่กันแคป/ส่งต่อไม่ได้ทั้งหมด
-- **ทุกคอร์สแจกฟรี** (ตั้งแต่ 2026-09-26) — ไม่มีการชำระเงิน/คืนเงิน ออเดอร์ยุคขายก่อนหน้านั้นใช้สิทธิ์ได้ตามเดิม
+- **ไม่รับคืนเงิน** — เป็นสินค้าดิจิทัลที่ส่งทันที (ระบุใน FAQ บนเว็บแล้ว)
 - **ความเสี่ยงคงเหลือ (volume ต่ำยอมรับได้):** webhook ยังไม่มี idempotency ด้วย `event.id`, และยังไม่มี timeout บนการเรียก service ภายนอก
 - **ลิขสิทธิ์เนื้อหา** — ข้อสอบที่ขายต้องเป็นผลงานของคุณเอง

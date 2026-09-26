@@ -22,7 +22,8 @@ export default function SiteHeader({
         </a>
         <nav className="hidden items-center gap-6 md:flex" aria-label="เมนูหลัก">
           <a href="/#mock" className="text-sm font-semibold text-ink/60 transition hover:text-maroon">ข้อสอบ Mock</a>
-          <a href="/#content" className="text-sm font-semibold text-ink/60 transition hover:text-maroon">ไฟล์เนื้อหา</a>
+          <a href="/#summaries" className="text-sm font-semibold text-ink/60 transition hover:text-maroon">ไฟล์เนื้อหา</a>
+          <a href="/#bundles" className="text-sm font-semibold text-ink/60 transition hover:text-maroon">Bundles</a>
           <a href="/#faq" className="text-sm font-semibold text-ink/60 transition hover:text-maroon">ข้อสงสัย</a>
           <a href="/about" className="text-sm font-semibold text-ink/60 transition hover:text-maroon">เกี่ยวกับพี่</a>
         </nav>

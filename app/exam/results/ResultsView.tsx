@@ -116,7 +116,7 @@ export default function ResultsView() {
       if (!token) token = await tokenFromSession();
       if (cancelled) return;
       if (!token) {
-        setError("ไม่พบสิทธิ์ดูผลสอบ — ล็อกอินด้วยบัญชี Google ที่ใช้รับชุด Mock หรือเข้าห้องสอบด้วยบัญชีนั้นก่อน");
+        setError("ไม่พบสิทธิ์ดูผลสอบ — ล็อกอินด้วยบัญชี Google อีเมลเดียวกับที่ซื้อ หรือเข้าห้องสอบด้วยอีเมลที่ซื้อก่อน");
         return;
       }
       load(5);

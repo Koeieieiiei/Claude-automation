@@ -5,7 +5,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { getExam, DEFAULT_EXAM_ID, ExamDef } from "@/lib/exams";
 import { trackEvent } from "@/lib/analytics";
 import GoogleButton from "@/components/GoogleButton";
-import ClaimButton from "@/components/ClaimButton";
 import { Avatar, ClientUser, fetchCurrentUser } from "@/components/AccountButton";
 
 /**
@@ -92,8 +91,8 @@ export default function ExamView() {
       if (!data.state || data.state === "none") {
         setGateError(
           opts.session
-            ? "บัญชีนี้ยังไม่มีชุดข้อสอบ — กดรับชุด Mock ฟรีด้านล่างได้เลย (หรือถ้าเคยรับด้วยบัญชี Google อื่น ให้กดเปลี่ยนบัญชี)"
-            : "ไม่พบสิทธิ์ทำข้อสอบของชื่อและอีเมลนี้ — ลองตรวจตัวสะกดให้ตรงกับที่ใช้รับคอร์สอีกครั้ง หรือกดรับชุด Mock ฟรีด้านล่าง"
+            ? "บัญชีนี้ยังไม่มีสิทธิ์ทำข้อสอบ — ถ้าซื้อด้วยบัญชี Google อื่น ให้กดเปลี่ยนบัญชี หรือสั่งซื้อชุดข้อสอบด้านล่าง"
+            : "ไม่พบสิทธิ์ทำข้อสอบของชื่อและอีเมลนี้ — ถ้าซื้อแล้ว ลองตรวจตัวสะกดให้ตรงกับตอนสั่งซื้ออีกครั้ง"
         );
         // นับเฉพาะตอนผู้ใช้กรอกเองแล้วไม่ผ่าน (ไม่นับตอนเช็คโทเค็นเงียบ ๆ ตอนเปิดหน้า)
         if (opts.verified) trackEvent("exam_access_denied", { exam_id: exam.id });
@@ -403,7 +402,7 @@ export default function ExamView() {
               <>
                 <h1 className="font-display text-2xl font-bold text-ink">โปรดล็อกอินก่อนเข้าห้องสอบ</h1>
                 <p className="mt-2 text-sm leading-relaxed text-ink/70">
-                  ล็อกอินด้วยบัญชี Google <strong>เดียวกับที่ใช้กดรับ</strong>ชุด {exam.title}{" "}
+                  ล็อกอินด้วยบัญชี Google <strong>อีเมลเดียวกับที่ใช้สั่งซื้อ</strong>ชุด {exam.title}{" "}
                   ระบบจะตรวจสิทธิ์และพาเข้าห้องสอบให้ทันที ({exam.totalQuestions} ข้อ · จับเวลา{" "}
                   {durationText(exam)} · ทำได้ 1 รอบ)
                 </p>
@@ -418,11 +417,16 @@ export default function ExamView() {
             )}
 
 
-            {/* ทางรับสิทธิ์ (ฟรี) — โชว์ตั้งแต่เปิดหน้า ไม่ต้องรอให้เช็คไม่ผ่านก่อน */}
-            <div className="mt-5 border-t border-dashed border-grid pt-4 text-sm leading-relaxed text-ink/75">
-              <p>ยังไม่มีชุดข้อสอบในบัญชี? ชุด Mock TPAT3 แจกฟรี — กดรับแล้วเข้าสอบได้เลย</p>
-              <ClaimButton productId="mock1" label="รับชุด Mock TPAT3 ฟรี" source="exam_gate" className="mt-3 w-full" />
-            </div>
+            {/* ทางไปซื้อ — โชว์ตั้งแต่เปิดหน้า ไม่ต้องรอให้กรอกผิดก่อน */}
+            <p className="mt-5 border-t border-dashed border-grid pt-4 text-sm leading-relaxed text-ink/75">
+              ยังไม่ได้ซื้อชุดข้อสอบ?{" "}
+              <a
+                href="/?buy=mock1"
+                className="font-bold text-maroon underline underline-offset-2 hover:no-underline"
+              >
+                สั่งซื้อชุดข้อสอบ Mock TPAT3 →
+              </a>
+            </p>
 
             <p className="mt-4 font-label text-xs leading-relaxed text-ink/50">
               💻 แนะนำให้ทำข้อสอบในคอมพิวเตอร์หรือ iPad เพื่อเห็นโจทย์ชัดเต็มตา
@@ -467,7 +471,7 @@ export default function ExamView() {
               {[
                 [`${exam.totalQuestions} ข้อ`, `ปรนัย ${exam.choices} ตัวเลือก ครบ ${exam.sections.length} ตอนตามสอบจริง`],
                 [durationText(exam), "จับเวลาอัตโนมัติ หมดเวลาระบบส่งให้ทันที"],
-                ["1 รอบเท่านั้น", "1 บัญชี ทำได้ครั้งเดียว เหมือนสอบจริง"],
+                ["1 รอบเท่านั้น", "1 อีเมลที่ซื้อ ทำได้ครั้งเดียว เหมือนสอบจริง"],
               ].map(([t, d]) => (
                 <div key={t} className="border border-grid bg-white p-4">
                   <p className="font-display text-xl font-bold text-maroon">{t}</p>

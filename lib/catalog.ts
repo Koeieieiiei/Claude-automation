@@ -1,12 +1,11 @@
 /**
- * แคตตาล็อกคอร์ส — "แหล่งความจริงเดียว" ของชื่อและไฟล์ที่ผู้เรียนได้รับ
+ * แคตตาล็อกสินค้า — "แหล่งความจริงเดียว" ของชื่อ ราคา และไฟล์ที่ลูกค้าได้รับ
  *
- * ⚠️ ตั้งแต่ 2026-09-26 (เจ้าของสั่ง): ทุกคอร์ส **แจกฟรี** — ไม่มีราคา ไม่มีการชำระเงิน ไม่มี Stripe
- * ผู้เรียนล็อกอิน Google แล้วกด "รับฟรี" → ระบบสร้าง order ยอด 0 สถานะ delivered ให้ (lib/claim.ts)
- * ระบบสิทธิ์/ดาวน์โหลด/ห้องสอบยังอ่านจากตาราง orders เหมือนเดิมทุกอย่าง
- *
- * ไฟล์นี้ต้อง import ได้ทั้งฝั่ง client (หน้าเว็บ) และ server (ส่งไฟล์)
+ * ไฟล์นี้ต้อง import ได้ทั้งฝั่ง client (หน้าเว็บโชว์ราคา) และ server (คิดเงิน/ส่งไฟล์)
  * จึงห้ามมี dependency ของ Node (fs, path ฯลฯ) — path ไฟล์ต้นฉบับอยู่ใน lib/watermark.ts
+ *
+ * ราคาที่ Stripe เรียกเก็บอ่านจากที่นี่เสมอ ฝั่ง client ส่งมาแค่ productId
+ * (กันการปลอมราคาจากหน้าเว็บ และกันโชว์ราคาหนึ่งแต่เก็บอีกราคา)
  */
 
 /** ไฟล์ PDF แต่ละตัวที่ระบบส่งมอบได้ */
@@ -42,47 +41,39 @@ export function isFileId(v: string): v is FileId {
   return v in FILE_INFO;
 }
 
-/**
- * id คงไว้ตามเดิมทั้งหมด (ตาราง orders / สถิติหลังร้าน / Stripe metadata เก่าอ้างถึง):
- *   mock1      = ชุด Mock TPAT3
- *   sum4       = เล่มเนื้อหา TPAT3 (ชื่อ id มาจากยุค "สรุปชุดที่ 4" — ตัวสินค้าเปลี่ยนไปแล้ว)
- *   bundle-all = ครบเซ็ตยุคขาย (เลิกแจกแบบเซ็ตแล้ว — คงไว้ให้ออเดอร์เก่าโชว์ถูก)
- */
 export type ProductId = "mock1" | "sum4" | "bundle-all";
 
 export interface Product {
   id: ProductId;
   name: string;
+  price: number; // บาท
+  /** ราคารวมถ้าซื้อแยก (ไว้โชว์ส่วนลดของ bundle) — ไม่ใส่ = ไม่ใช่ bundle */
+  compareAt?: number;
   files: FileId[];
-  /** ไม่เปิดให้กดรับแล้ว (คงไว้ให้ออเดอร์เก่า/หลังร้านอ้างถึง) */
-  retired?: boolean;
 }
 
 export const PRODUCTS: Record<ProductId, Product> = {
   mock1: {
     id: "mock1",
     name: "Mock TPAT3 ชุดที่ 1 (โจทย์ + เฉลย + กระดาษคำตอบ)",
+    price: 159,
     files: ["questions", "answers", "answersheet"],
   },
+  // id "sum4" คงไว้ตามเดิม (ออเดอร์เก่า/สถิติหลังร้านอ้างถึง) แต่ตัวสินค้าเปลี่ยนเป็นเล่มเนื้อหาทั้งหมดแล้ว
   sum4: {
     id: "sum4",
     name: "เนื้อหาทั้งหมดสำหรับสอบ TPAT3",
+    price: 219,
     files: ["tpat3content"],
   },
   "bundle-all": {
     id: "bundle-all",
     name: "ครบเซ็ตพร้อมสอบ (Mock + เนื้อหาทั้งหมดสำหรับสอบ TPAT3)",
+    price: 329,
+    compareAt: 378, // 159 + 219
     files: ["questions", "answers", "answersheet", "tpat3content"],
-    retired: true,
   },
 };
-
-/** คอร์สที่กด "รับฟรี" ได้ (ทีละคอร์ส — รับครบสองคอร์สก็ได้ทุกไฟล์เท่าครบเซ็ตเดิม) */
-export const CLAIMABLE_PRODUCTS: readonly ProductId[] = ["mock1", "sum4"];
-
-export function isClaimableProduct(id: string): id is ProductId {
-  return (CLAIMABLE_PRODUCTS as readonly string[]).includes(id);
-}
 
 export function getProduct(id: string): Product | null {
   return Object.prototype.hasOwnProperty.call(PRODUCTS, id)

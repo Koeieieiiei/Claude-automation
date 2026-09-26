@@ -14,7 +14,7 @@ type ExamState = "eligible" | "in_progress" | "submitted";
 
 /* หน้าแรก (โครง "จดหมายจากพี่มาโก้" เจ้าของอนุมัติ 2026-09-16 จาก https://claude.ai/artifact/1ReGvb49DjfUFuTdJaq6gS)
    - คำทักทายของพี่มาโก้เป็น "จดหมาย" ตัวใหญ่แทน hero เดิม บนกระดาษตาราง + เฟืองหมุนแบบเดิม
-   - สินค้า 2 อย่างเป็นการ์ดขาวบนพื้นขาว มี "ซื้อแล้วทำอะไรต่อ" 3 ขั้นคั่นใต้การ์ด Mock
+   - สินค้า 2 อย่างเป็นการ์ดขาวบนพื้นขาว (ส่วน "ซื้อแล้วทำอะไรต่อ" 3 ขั้น เจ้าของสั่งเอาออก 2026-09-27)
    - 2026-09-27 (เจ้าของสั่ง): หัวข้อ "My Product" · Mock ขาย ฿199 (ไม่มีป้ายเหนือชื่อ) · เล่มเนื้อหา 174 หน้า "แจกฟรี"
      (ปุ่มรับฟรี → /api/claim ไม่มีปุ่มตัวอย่าง) · เอาส่วน Bundles/ป้ายคุ้มสุดออกทั้งหมด · ข้อความจดหมายเติม "ซึ่งแจกฟรี" */
 export default function Home() {
@@ -198,32 +198,6 @@ export default function Home() {
               sample={{ href: "/samples/tpat3-mock-sample.pdf", downloadName: "TPat3 Mock Sample.pdf", label: "โหลดตัวอย่างโจทย์ + เฉลยฟรี (PDF)" }}
             />
 
-            {/* ซื้อแล้วทำอะไรต่อ (ลำดับจริง 3 ขั้น) — วางใต้การ์ด Mock ตามที่เจ้าของขอ */}
-            <div id="how" className="scroll-mt-20 py-4 md:py-7">
-              <SectionHead
-                small
-                title="ซื้อแล้วทำอะไรต่อ"
-                note="ทุกอย่างอยู่ในบัญชี (อีเมล) ที่ใช้ซื้อ กลับมาเปิดได้ตลอดทุกเครื่อง"
-              />
-              <div className="grid gap-6 md:grid-cols-3 md:gap-10 lg:gap-14">
-                <Step
-                  n="ขั้นที่ 1"
-                  title="ชำระเงินด้วย PromptPay"
-                  text="สแกน QR ผ่านแอปธนาคาร ดำเนินการอย่างปลอดภัยผ่าน Stripe สมัคร/เข้าสู่ระบบด้วยอีเมลเดียวกับที่จะเข้าสอบ"
-                />
-                <Step
-                  n="ขั้นที่ 2"
-                  title="เข้าห้องสอบออนไลน์"
-                  text="กด “เริ่มสอบ” ได้ทันที ระบบจับเวลา 3 ชั่วโมงและบันทึกคำตอบให้อัตโนมัติ เน็ตหลุดหรือรีเฟรชก็ทำต่อได้"
-                />
-                <Step
-                  n="ขั้นที่ 3"
-                  title="รู้ผลทันทีที่ส่ง"
-                  text="คะแนนเต็ม 100 อันดับเทียบผู้สอบคนอื่น วิเคราะห์รายข้อครบ 70 ข้อ แล้วเปิดเฉลยละเอียดที่หน้า “คอร์สของฉัน”"
-                />
-              </div>
-            </div>
-
             {/* การ์ดเนื้อหา (แจกฟรี) */}
             <ProductCard
               id="content"
@@ -331,17 +305,6 @@ function SectionHead({ title, note, small = false }: { title: string; note?: str
         {title}
       </h2>
       {note && <p className="max-w-[40ch] text-[1.05rem] text-ink/60">{note}</p>}
-    </div>
-  );
-}
-
-/* ---------- ขั้นตอนหลังซื้อ (ขีดบนสีเลือดหมู + เลขขั้น) ---------- */
-function Step({ n, title, text }: { n: string; title: string; text: string }) {
-  return (
-    <div className="border-t-2 border-maroon pt-4">
-      <p className="font-label text-xs font-bold uppercase tracking-[0.22em] text-maroon">{n}</p>
-      <h3 className="mt-1 font-display text-[1.3rem] font-semibold text-ink">{title}</h3>
-      <p className="mt-2 text-ink/60">{text}</p>
     </div>
   );
 }

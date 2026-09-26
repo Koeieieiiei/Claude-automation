@@ -106,7 +106,6 @@ export default function Home() {
           <a href="/" className="flex items-center gap-2.5" aria-label="Mr.tpat3 หน้าแรก">
             <Gear teeth={10} className="h-7 w-7 text-maroon" spin="cw" />
             <span className="font-display text-xl font-bold tracking-tight text-ink">Mr.tpat3</span>
-            <span className="hidden font-label text-[0.8rem] font-semibold tracking-[0.22em] text-maroon sm:inline">TPAT3 · ฟิสิกส์</span>
           </a>
           <nav className="hidden items-center gap-8 md:flex" aria-label="เมนูหลัก">
             <a href="#mock" className="text-base font-semibold text-ink/60 transition hover:text-maroon">ข้อสอบ Mock</a>
@@ -126,10 +125,7 @@ export default function Home() {
         <Gear teeth={14} className="pointer-events-none absolute -bottom-16 left-[-3rem] h-56 w-56 text-maroon/[0.06]" spin="ccw" />
 
         <div className="relative mx-auto max-w-6xl px-5 py-16 md:py-24 lg:py-32">
-          <p className="font-label text-xs font-semibold uppercase tracking-[0.22em] text-maroon">
-            Mock TPAT3 · Physics A-Level · by Mr.tpat3
-          </p>
-          <h1 className="mt-5 font-display text-[clamp(2.5rem,6vw,4.25rem)] font-bold leading-[1.2] tracking-tight text-maroon md:mt-8">
+          <h1 className="font-display text-[clamp(2.5rem,6vw,4.25rem)] font-bold leading-[1.2] tracking-tight text-maroon">
             สวัสดีครับน้อง ๆ
           </h1>
           <p className="mt-5 max-w-[960px] text-[clamp(1.4rem,2.7vw,2.15rem)] leading-[1.6] text-ink md:mt-7">
@@ -174,7 +170,7 @@ export default function Home() {
       {/* ===== สินค้า 2 อย่าง (พื้นขาวเฉพาะส่วนนี้ — เจ้าของขอ) ===== */}
       <section id="mock" className="scroll-mt-20 bg-white">
         <div className="mx-auto max-w-6xl px-5 py-14 md:py-24">
-          <SectionHead title="พี่ทำไว้ให้ 2 อย่าง" note="ทั้งสองอย่างมีตัวอย่างให้โหลดดูฟรีก่อนตัดสินใจ ไม่ต้องกรอกอะไร" />
+          <SectionHead title="พี่ทำไว้ให้ 2 อย่าง" />
 
           <div className="grid gap-5">
             {/* การ์ด Mock */}

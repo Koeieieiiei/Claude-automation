@@ -19,9 +19,6 @@ export default function SiteHeader({
         <a href="/" className="flex items-center gap-2.5">
           <Gear teeth={10} className="h-6 w-6 text-maroon" spin="cw" />
           <span className="font-display text-lg font-bold tracking-tight text-ink">Mr.tpat3</span>
-          <span className="hidden font-label text-xs font-semibold tracking-[0.22em] text-maroon sm:inline">
-            TPAT3 · ฟิสิกส์
-          </span>
         </a>
         <nav className="hidden items-center gap-6 md:flex" aria-label="เมนูหลัก">
           <a href="/#mock" className="text-sm font-semibold text-ink/60 transition hover:text-maroon">ข้อสอบ Mock</a>

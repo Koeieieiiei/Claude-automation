@@ -109,14 +109,14 @@ export default function ResultsView() {
           setTimeout(() => !cancelled && load(retriesLeft - 1), 2000);
           return;
         }
-        setError("เชื่อมต่อไม่สำเร็จ — รีเฟรชหน้านี้อีกครั้ง");
+        setError("เชื่อมต่อไม่สำเร็จ รีเฟรชอีกครั้ง");
       }
     };
     (async () => {
       if (!token) token = await tokenFromSession();
       if (cancelled) return;
       if (!token) {
-        setError("ไม่พบสิทธิ์ดูผลสอบ — เข้าสู่ระบบด้วยอีเมลเดียวกับที่ซื้อ หรือเข้าห้องสอบด้วยอีเมลที่ซื้อก่อน");
+        setError("ไม่พบผลสอบ เข้าสู่ระบบด้วยอีเมลที่ใช้สอบ");
         return;
       }
       load(5);
@@ -134,15 +134,13 @@ export default function ResultsView() {
         <div className="max-w-md border border-ink bg-paper px-8 py-10 text-center">
           <p className="text-ink/75">{error}</p>
           <p className="mt-3 text-sm leading-relaxed text-ink/55">
-            ถ้าเพิ่งกดส่งไปแล้วเห็นข้อความนี้ ให้กดปุ่มด้านล่างแล้ว
-            <strong>เข้าสู่ระบบด้วยอีเมลที่ใช้สอบ</strong> — ระบบจะพาไปหน้าผลสอบให้เอง
-            (ผลสอบไม่หายไปไหน)
+            เพิ่งกดส่ง? กดปุ่มด้านล่างแล้ว<strong>เข้าสู่ระบบด้วยอีเมลที่ใช้สอบ</strong> ผลสอบไม่หาย
           </p>
           <a
             href="/exam"
             className="mt-6 inline-block bg-maroon px-6 py-3 font-bold text-paper transition hover:bg-maroon-dark"
           >
-            ไปหน้าเข้าห้องสอบ
+            ไปห้องสอบ
           </a>
         </div>
       </main>
@@ -208,7 +206,7 @@ export default function ResultsView() {
                 </span>
               </p>
               <p className="text-sm leading-relaxed text-ink/65">
-                ทำคะแนนได้ดีกว่าผู้สอบราว <strong className="text-maroon">{pctBeat}%</strong> ของทั้งหมด
+                ดีกว่าผู้สอบราว <strong className="text-maroon">{pctBeat}%</strong> ของทั้งหมด
               </p>
             </div>
           </div>
@@ -216,7 +214,7 @@ export default function ResultsView() {
 
         {/* ===== สถิติภาพรวม ===== */}
         <section className="mt-10">
-          <h2 className="font-display text-2xl font-bold text-ink">ภาพรวมผู้สอบทุกคน</h2>
+          <h2 className="font-display text-2xl font-bold text-ink">ภาพรวมผู้สอบ</h2>
           <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
             <StatTile label="ค่าเฉลี่ย (Mean)" value={overall.mean} />
             <StatTile label="ส่วนเบี่ยงเบน (SD)" value={overall.sd} />
@@ -226,14 +224,14 @@ export default function ResultsView() {
 
           <div className="mt-5 border border-grid bg-white p-5 md:p-7">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
-              <h3 className="font-semibold text-ink">การแจกแจงคะแนนผู้สอบทั้งหมด</h3>
+              <h3 className="font-semibold text-ink">การแจกแจงคะแนน</h3>
               <span className="font-label text-xs text-ink/50">
                 ผู้สอบ {overall.nTotal.toLocaleString()} คน · คะแนนเต็ม {score.maxScore}
               </span>
             </div>
             <ScoreHistogram bins={overall.histogram} myScore={score.scaled} maxScore={score.maxScore} />
             <p className="mt-2 font-label text-xs text-ink/50">
-              แท่งสีเข้ม = ช่วงคะแนนของคุณ · เส้นแนวตั้ง = ตำแหน่งคะแนนคุณ ({score.scaled.toFixed(2)})
+              แท่งสีเข้ม = ช่วงคะแนนของคุณ · เส้น = คะแนนคุณ ({score.scaled.toFixed(2)})
             </p>
           </div>
         </section>
@@ -269,7 +267,7 @@ export default function ResultsView() {
         {/* ===== วิเคราะห์รายข้อ ===== */}
         <section className="mt-10">
           <h2 className="font-display text-2xl font-bold text-ink">
-            วิเคราะห์รายข้อทั้ง {score.totalQuestions} ข้อ
+            วิเคราะห์รายข้อ
           </h2>
           <div className="mt-5 space-y-4">
             {data.sections.map((s) => (
@@ -285,9 +283,9 @@ export default function ResultsView() {
         {/* ===== ไฟล์แนบท้าย (ไม่มีลิงก์ = ข้ามทั้งบล็อก ไม่ต้องโชว์กล่องว่าง) ===== */}
         {data.downloads.length > 0 && (
         <section className="mt-10 border-2 border-maroon bg-white p-6 md:p-8">
-          <h2 className="font-display text-2xl font-bold text-ink">ไฟล์แนบท้ายผลสอบ</h2>
+          <h2 className="font-display text-2xl font-bold text-ink">ไฟล์โจทย์และเฉลย</h2>
           <p className="mt-2 text-sm leading-relaxed text-ink/70">
-            ดาวน์โหลด<strong>ไฟล์โจทย์</strong>และ<strong>ไฟล์เฉลยละเอียด</strong>ไว้ทบทวนคู่กับผลวิเคราะห์ด้านบน
+            โหลดไว้ทบทวนคู่กับผลวิเคราะห์ด้านบน
           </p>
           <div className="mt-5 grid gap-3 sm:grid-cols-2">
             {data.downloads.map((d) => (
@@ -305,7 +303,7 @@ export default function ResultsView() {
             ))}
           </div>
           <p className="mt-3 font-label text-[12px] text-ink/50">
-            ระบบเตรียมไฟล์ตอนกดดาวน์โหลด อาจใช้เวลา 2–3 วินาทีต่อไฟล์ ·{" "}
+            ดาวน์โหลดอาจใช้เวลา 2–3 วินาที ·{" "}
             {formatExpiry(data.downloadExpiryHours)
               ? `ลิงก์ใช้ได้อีก ${formatExpiry(data.downloadExpiryHours)}`
               : "ลิงก์ไม่มีวันหมดอายุ"}
@@ -314,7 +312,7 @@ export default function ResultsView() {
         )}
 
         <p className="mt-10 text-center font-label text-sm text-ink/50 print:hidden">
-          มีข้อสงสัยเกี่ยวกับผลสอบ? ติดต่อ{" "}
+          สงสัยเรื่องผลสอบ ติดต่อ{" "}
           <a href="mailto:mr.tpat3@gmail.com" className="font-medium text-maroon underline-offset-2 hover:underline">
             mr.tpat3@gmail.com
           </a>

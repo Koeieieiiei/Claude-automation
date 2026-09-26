@@ -132,12 +132,11 @@ export default function Home() {
             สวัสดีครับน้อง ๆ
           </h1>
           <p className="mt-5 max-w-[960px] text-[clamp(1.4rem,2.7vw,2.15rem)] leading-[1.6] text-ink md:mt-7">
-            พี่ชื่อ <strong className="font-semibold text-maroon">มาโก้ ศุภวัฒน์</strong> กำลังศึกษาอยู่ที่{" "}
-            <strong className="font-semibold text-maroon">วิศวคอม จุฬาฯ</strong> พี่และเพื่อน ๆ ในกลุ่มได้รวมหัวกันออกแบบ{" "}
+            พี่ชื่อ <strong className="font-semibold text-maroon">มาโก้ ศุภวัฒน์</strong> เรียนอยู่{" "}
+            <strong className="font-semibold text-maroon">วิศวคอม จุฬาฯ</strong> พี่กับเพื่อน ๆ รวมหัวกันออกแบบ{" "}
             <strong className="font-semibold text-maroon">Mock TPAT3</strong> และ
             <strong className="font-semibold text-maroon">เนื้อหาสำหรับสอบ TPAT3</strong> ซึ่ง
-            <strong className="font-semibold text-maroon">แจกฟรี</strong> หากน้องสนใจ
-            สามารถเลื่อนดูด้านล่าง<span className="whitespace-nowrap">ได้เลยครับ</span>
+            <strong className="font-semibold text-maroon">แจกฟรี</strong> สนใจเลื่อนดูด้านล่าง<span className="whitespace-nowrap">ได้เลยครับ</span>
           </p>
 
           <div className="mt-9 flex flex-wrap gap-3.5 md:mt-14">
@@ -152,7 +151,7 @@ export default function Home() {
               {examState === "in_progress"
                 ? "ทำข้อสอบต่อ — เวลากำลังเดิน"
                 : examState === "submitted"
-                  ? "ดูผลสอบ + บทวิเคราะห์"
+                  ? "ดูผลสอบ"
                   : "เข้าห้องสอบ TPAT3"}
               <Arrow />
             </a>
@@ -166,7 +165,7 @@ export default function Home() {
           </div>
 
           {examState !== "submitted" && (
-            <p className="mt-4 text-sm text-ink/60">แนะนำให้ทำในคอมพิวเตอร์ หรือ iPad</p>
+            <p className="mt-4 text-sm text-ink/60">แนะนำทำในคอมพิวเตอร์หรือ iPad</p>
           )}
         </div>
       </section>
@@ -178,7 +177,7 @@ export default function Home() {
 
           {claimError && (
             <p className="mb-6 border border-maroon/40 bg-maroon/[0.06] px-4 py-3 text-sm text-maroon">
-              คอร์สที่ขอรับไม่ได้แจกฟรี — กดปุ่มจากการ์ดด้านล่างอีกครั้งได้เลย
+              คอร์สนี้ไม่ได้แจกฟรี — กดรับจากการ์ดด้านล่าง
             </p>
           )}
 
@@ -188,13 +187,13 @@ export default function Home() {
               cover={<MockStack />}
               courseHref={courseHref(PRODUCTS.mock1)}
               title="ข้อสอบ Mock TPAT3"
-              desc="ห้องสอบออนไลน์ 70 ข้อ จับเวลา 3 ชม. ส่งแล้วรู้คะแนน อันดับ และบทที่ต้องซ่อมทันที พร้อมไฟล์เฉลยละเอียดทีละขั้น"
+              desc="สอบออนไลน์ 70 ข้อ จับเวลา 3 ชม. รู้คะแนน อันดับ และจุดที่ต้องซ่อมทันที พร้อมเฉลยละเอียด"
               product={PRODUCTS.mock1}
               unit="/ ชุด"
-              buyLabel={`สั่งซื้อชุดข้อสอบ · ฿${PRODUCTS.mock1.price.toLocaleString()}`}
+              buyLabel={`สั่งซื้อ · ฿${PRODUCTS.mock1.price.toLocaleString()}`}
               onBuy={buy}
               // ไฟล์เดียว = โจทย์ 4 ข้อ + เฉลยละเอียด (สร้างด้วย Desktop/Project/MOCK/_build-sarabun/demo/make_sample.py)
-              sample={{ href: "/samples/tpat3-mock-sample.pdf", downloadName: "TPat3 Mock Sample.pdf", label: "โหลดตัวอย่างโจทย์ + เฉลยฟรี (PDF)" }}
+              sample={{ href: "/samples/tpat3-mock-sample.pdf", downloadName: "TPat3 Mock Sample.pdf", label: "ตัวอย่างข้อสอบฟรี (PDF)" }}
             />
 
             {/* การ์ดเนื้อหา (แจกฟรี) */}
@@ -208,7 +207,6 @@ export default function Home() {
               courseHref={courseHref(PRODUCTS.sum4)}
               title="เนื้อหาทั้งหมดสำหรับสอบ TPAT3"
               product={PRODUCTS.sum4}
-              claimLabel="รับเล่มนี้ฟรี"
               onBuy={buy}
             />
           </div>
@@ -222,45 +220,45 @@ export default function Home() {
 
           <div className="mt-8 divide-y divide-grid border-y border-grid">
             <FaqItem
-              q="เนื้อหา TPAT3 ฟรีจริงไหม? รับยังไง?"
-              a="ฟรีจริง ไม่มีค่าใช้จ่าย กดปุ่ม “รับเล่มนี้ฟรี” แล้วสมัคร/เข้าสู่ระบบด้วยอีเมลและรหัสผ่าน ไฟล์ PDF 174 หน้าจะอยู่ที่หน้า “คอร์สของฉัน” ทันที กลับมาโหลดได้ตลอดทุกเครื่อง"
+              q="เนื้อหา TPAT3 ฟรีจริงไหม?"
+              a="ฟรีจริง กด “รับฟรี” แล้วเข้าสู่ระบบ ไฟล์จะอยู่ที่ “คอร์สของฉัน” ทันที"
             />
             <FaqItem
               q="ซื้อชุด Mock แล้วทำอะไรต่อ?"
-              a="ชำระเงินสำเร็จ กด “เริ่มสอบ” เข้าห้องสอบออนไลน์ได้ทันที ไฟล์เฉลยละเอียดอยู่ที่หน้า “คอร์สของฉัน” (เข้าสู่ระบบด้วยอีเมลที่ใช้ซื้อ) กลับมาโหลดได้ตลอดทุกเครื่อง แนะนำให้เปิดเฉลยหลังทำข้อสอบเสร็จ ผลวิเคราะห์จะได้ตรงกับฝีมือจริง"
+              a="ชำระเงินแล้วกด “เริ่มสอบ” ได้ทันที ไฟล์เฉลยอยู่ที่ “คอร์สของฉัน” แนะนำเปิดเฉลยหลังสอบเสร็จ"
             />
             <FaqItem
-              q="ทำข้อสอบออนไลน์ยังไง? ต้องเตรียมอะไร?"
-              a="เข้าหน้าห้องสอบแล้วเข้าสู่ระบบด้วยอีเมลเดียวกับที่สั่งซื้อ จากนั้นกดเริ่ม ระบบจะจับเวลา 3 ชั่วโมงและบันทึกคำตอบให้อัตโนมัติ (เน็ตหลุดหรือรีเฟรชก็ทำต่อได้) แนะนำให้ทำในคอมพิวเตอร์หรือ iPad เพื่อให้เห็นโจทย์ชัดเต็มตา"
+              q="ทำข้อสอบออนไลน์ยังไง?"
+              a="เข้าห้องสอบด้วยอีเมลที่ใช้ซื้อ แล้วกดเริ่ม ระบบจับเวลา 3 ชั่วโมงและบันทึกคำตอบให้อัตโนมัติ แนะนำทำในคอมพิวเตอร์หรือ iPad"
             />
             <FaqItem
-              q="ทำข้อสอบออนไลน์ได้กี่รอบ? ทำเสร็จแล้วได้อะไร?"
-              a="1 อีเมลมีสิทธิ์สอบ 1 รอบ เหมือนสอบจริง ส่งกระดาษคำตอบแล้วรู้ผลทันที — คะแนนเต็ม 100 อันดับเทียบผู้สอบคนอื่น ค่าเฉลี่ย ส่วนเบี่ยงเบนมาตรฐาน กราฟการแจกแจงคะแนน คะแนนรายตอน และวิเคราะห์รายข้อครบ 70 ข้อ พร้อมคำแนะนำเฉพาะข้อว่าควรซ่อมตรงไหน"
+              q="สอบได้กี่รอบ? ได้ผลอะไรบ้าง?"
+              a="1 บัญชีสอบได้ 1 รอบ ส่งแล้วรู้ผลทันที: คะแนนเต็ม 100 อันดับ ค่าเฉลี่ย กราฟการแจกแจง คะแนนรายตอน และวิเคราะห์รายข้อพร้อมคำแนะนำ"
             />
             <FaqItem
               q="มีตัวอย่างข้อสอบให้ดูก่อนไหม?"
-              a="มี — โหลดตัวอย่างโจทย์ + เฉลยของชุด Mock ได้ฟรี ไม่ต้องกรอกอะไร เป็น PDF แบบเดียวกับไฟล์จริง ส่วนไฟล์เนื้อหาแจกฟรีทั้งเล่มอยู่แล้ว"
+              a="มี โหลดตัวอย่างโจทย์ + เฉลยของชุด Mock ได้ฟรี ไม่ต้องกรอกอะไร"
             />
             <FaqItem
-              q="ซื้อ/รับแล้วแต่ไม่เห็นคอร์ส ทำยังไงดี?"
-              a="ตรวจว่าเข้าสู่ระบบด้วยอีเมลเดียวกับตอนสั่งซื้อ (กด “เปลี่ยนบัญชี” ที่หน้าคอร์สของฉันได้) ถ้ายังไม่เห็น ติดต่อ mr.tpat3@gmail.com พร้อมแจ้งอีเมลที่ใช้ซื้อ"
+              q="ซื้อแล้วแต่ไม่เห็นคอร์ส?"
+              a="เช็คว่าเข้าสู่ระบบด้วยอีเมลเดียวกับตอนซื้อ ถ้ายังไม่เห็น ติดต่อ mr.tpat3@gmail.com พร้อมแจ้งอีเมลที่ใช้ซื้อ"
             />
             <FaqItem
-              q="จ่ายเงินยังไงได้บ้าง?"
-              a="PromptPay สแกน QR ผ่านแอปธนาคาร ดำเนินการอย่างปลอดภัยผ่าน Stripe"
+              q="จ่ายเงินยังไง?"
+              a="สแกน QR PromptPay ผ่าน Stripe"
             />
             <FaqItem
-              q="ได้อะไรบ้าง?"
-              a={`ชุด Mock (฿${PRODUCTS.mock1.price.toLocaleString()}) ได้ห้องสอบ TPAT3 ออนไลน์ 1 ครั้งพร้อมผลวิเคราะห์ + ไฟล์เฉลยละเอียด (PDF) · เนื้อหาทั้งหมดสำหรับสอบ TPAT3 แจกฟรี ได้ไฟล์ PDF 1 ไฟล์ (Part 1–5 ครบ 174 หน้า) · ทุกอย่างอยู่ในบัญชี (อีเมล) ของน้องถาวร ไม่มีวันหมดอายุ`}
+              q="ซื้อแล้วได้อะไร?"
+              a={`ชุด Mock (฿${PRODUCTS.mock1.price.toLocaleString()}): ห้องสอบออนไลน์ 1 ครั้ง + ผลวิเคราะห์ + เฉลยละเอียด (PDF) · เนื้อหา TPAT3 (ฟรี): PDF 174 หน้า · ทุกอย่างอยู่ในบัญชีถาวร ไม่มีวันหมดอายุ`}
             />
             <FaqItem
               q="ขอคืนเงินได้ไหม?"
-              a="เป็นสินค้าดิจิทัลที่ได้รับไฟล์ทันที จึงขอสงวนสิทธิ์ไม่คืนเงินทุกกรณี กรุณาพิจารณาก่อนสั่งซื้อ"
+              a="ไม่ได้ เป็นสินค้าดิจิทัลที่ได้รับทันที กรุณาดูตัวอย่างก่อนสั่งซื้อ"
             />
           </div>
 
           <p className="mt-8 text-center font-label text-sm text-ink/55">
-            มีคำถามเพิ่มเติม? ติดต่อ{" "}
+            ติดต่อ{" "}
             <a href="mailto:mr.tpat3@gmail.com" className="font-semibold text-maroon underline-offset-2 hover:underline">
               mr.tpat3@gmail.com
             </a>
@@ -373,10 +371,10 @@ function ProductCard({
           {sample && <SampleButton href={sample.href} downloadName={sample.downloadName} label={sample.label} />}
           <a
             href={courseHref}
-            aria-label={`ดูรายละเอียดคอร์ส ${title}`}
+            aria-label={`รายละเอียด ${title}`}
             className="ml-1 inline-flex items-center gap-1.5 font-semibold text-maroon underline-offset-4 after:absolute after:inset-0 after:z-[1] after:content-[''] group-hover:underline"
           >
-            ดูรายละเอียดคอร์ส
+            รายละเอียด
             <Arrow className="h-3.5 w-3.5" />
           </a>
         </div>

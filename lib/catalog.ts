@@ -23,11 +23,11 @@ export type FileId =
   | "sum4formula"; // สรุป TPAT3 รุ่นเก่า (ไฟล์สูตรล้วน)
 
 export const FILE_INFO: Record<FileId, { label: string; downloadName: string }> = {
-  questions: { label: "ไฟล์โจทย์ Mock TPAT3 (ข้อ 1–70)", downloadName: "mock-tpat3-questions.pdf" },
-  answers: { label: "ไฟล์เฉลย Mock TPAT3 (ข้อ 1–70)", downloadName: "mock-tpat3-answers.pdf" },
+  questions: { label: "โจทย์ Mock TPAT3 (PDF)", downloadName: "mock-tpat3-questions.pdf" },
+  answers: { label: "เฉลยละเอียด Mock TPAT3 (PDF)", downloadName: "mock-tpat3-answers.pdf" },
   answersheet: { label: "กระดาษคำตอบ Mock TPAT3", downloadName: "mock-tpat3-answer-sheet.pdf" },
   tpat3content: {
-    label: "เนื้อหาทั้งหมดสำหรับสอบ TPAT3 (Part 1–5)",
+    label: "เนื้อหา TPAT3 Part 1–5 (PDF)",
     downloadName: "mrtpat3-tpat3-content.pdf",
   },
   sum4content: {
@@ -61,7 +61,7 @@ export interface Product {
 export const PRODUCTS: Record<ProductId, Product> = {
   mock1: {
     id: "mock1",
-    name: "Mock TPAT3 ชุดที่ 1 (โจทย์ + เฉลย + กระดาษคำตอบ)",
+    name: "Mock TPAT3 ชุดที่ 1",
     price: 199, // 2026-09-27 เจ้าของสั่ง (เดิม 159; เคยลดเป็น 129 แล้วขอกลับ 199 วันเดียวกัน)
     files: ["questions", "answers", "answersheet"],
   },

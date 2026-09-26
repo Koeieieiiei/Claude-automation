@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
 
   try {
     if (await getUser(email)) {
-      return jsonError("อีเมลนี้สมัครไว้แล้ว — กด “เข้าสู่ระบบ” หรือ “ลืมรหัสผ่าน”", 409, { code: "exists" });
+      return jsonError("อีเมลนี้สมัครแล้ว กด Sign In หรือ “ลืมรหัสผ่าน”", 409, { code: "exists" });
     }
 
     const items = await getLibrary(email);
@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
           ok: true,
           verifySent: true,
           message:
-            "อีเมลนี้มีคอร์สอยู่แล้ว เราส่งลิงก์ตั้งรหัสผ่านไปที่อีเมลนี้เพื่อยืนยันว่าเป็นของน้องจริง — เปิดอีเมลแล้วกดลิงก์ (ใช้ได้ 30 นาที ดูในกล่องสแปมด้วย)",
+            "อีเมลนี้มีคอร์สอยู่แล้ว เราส่งลิงก์ตั้งรหัสผ่านไปให้เพื่อยืนยันตัวตน กดลิงก์ภายใน 30 นาที (ดูในสแปมด้วย)",
         },
         { headers: { "Cache-Control": "no-store" } }
       );
@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
 
     const r = await createUser(email, password);
     if (r.status === "exists") {
-      return jsonError("อีเมลนี้สมัครไว้แล้ว — กด “เข้าสู่ระบบ” หรือ “ลืมรหัสผ่าน”", 409, { code: "exists" });
+      return jsonError("อีเมลนี้สมัครแล้ว กด Sign In หรือ “ลืมรหัสผ่าน”", 409, { code: "exists" });
     }
     return loginResponse(email, str(body.next), { created: true });
   } catch (err) {

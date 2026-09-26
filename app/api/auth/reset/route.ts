@@ -16,7 +16,7 @@ export const dynamic = "force-dynamic";
 export async function POST(req: NextRequest) {
   const body = await readJson(req);
   const payload = verifyResetToken(str(body.token, 2000));
-  if (!payload) return jsonError("ลิงก์ตั้งรหัสผ่านไม่ถูกต้องหรือหมดอายุแล้ว (ใช้ได้ 30 นาที) — ขอลิงก์ใหม่ได้ที่ “ลืมรหัสผ่าน”", 400, { code: "invalid_token" });
+  if (!payload) return jsonError("ลิงก์ไม่ถูกต้องหรือหมดอายุ ขอใหม่ได้ที่ “ลืมรหัสผ่าน”", 400, { code: "invalid_token" });
   const password = str(body.password, 200);
   const problem = passwordProblem(password);
   if (problem) return jsonError(problem, 400);
@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
   try {
     const existing = await getUser(payload.email);
     if (existing && Date.parse(existing.passwordUpdatedAt) > payload.iat) {
-      return jsonError("ลิงก์นี้ถูกใช้ไปแล้ว — ถ้ายังเข้าไม่ได้ ขอลิงก์ใหม่ที่ “ลืมรหัสผ่าน”", 400, { code: "used_token" });
+      return jsonError("ลิงก์นี้ถูกใช้แล้ว ขอใหม่ได้ที่ “ลืมรหัสผ่าน”", 400, { code: "used_token" });
     }
     await setPassword(payload.email, password);
     return loginResponse(payload.email, "/my-courses", { reset: true });

@@ -35,7 +35,7 @@ export async function GET(req: NextRequest) {
       // ระบบกำลังดูผลของใครอยู่ (เช่น เครื่องยังจำสิทธิ์ของอีเมลอื่นค้างไว้)
       return NextResponse.json(
         {
-          error: `ยังไม่มีผลสอบของอีเมล ${payload.email} — ต้องทำข้อสอบและกดส่งก่อน`,
+          error: `ยังไม่มีผลสอบของ ${payload.email} ต้องสอบและกดส่งก่อน`,
           email: payload.email,
           state,
         },
@@ -135,7 +135,7 @@ export async function GET(req: NextRequest) {
   } catch (err) {
     console.error("สร้างผลสอบไม่สำเร็จ:", err);
     return NextResponse.json(
-      { error: "ระบบขัดข้องชั่วคราว กรุณารีเฟรชอีกครั้ง" },
+      { error: "ระบบขัดข้องชั่วคราว รีเฟรชอีกครั้ง" },
       { status: 503 }
     );
   }

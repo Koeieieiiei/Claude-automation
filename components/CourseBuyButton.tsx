@@ -46,7 +46,7 @@ export default function CourseBuyButton({
         onClick={buy}
         className={`w-full bg-maroon py-3.5 font-bold text-paper transition hover:bg-maroon-dark ${className}`}
       >
-        สั่งซื้อคอร์สนี้ · ฿{product.price.toLocaleString()}
+        สั่งซื้อ · ฿{product.price.toLocaleString()}
       </button>
       {open && (
         <BuyModal

@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
 
   const parsed = schema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: "ไม่พบสินค้าที่เลือก กรุณารีเฟรชหน้าเว็บแล้วลองใหม่" }, { status: 400 });
+    return NextResponse.json({ error: "ไม่พบสินค้า รีเฟรชแล้วลองใหม่" }, { status: 400 });
   }
   const { productId } = parsed.data;
 
@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
   // (กันการแก้ราคาจากหน้าเว็บ)
   const product = getProduct(productId);
   if (!product) {
-    return NextResponse.json({ error: "ไม่พบสินค้าที่เลือก กรุณารีเฟรชหน้าเว็บแล้วลองใหม่" }, { status: 400 });
+    return NextResponse.json({ error: "ไม่พบสินค้า รีเฟรชแล้วลองใหม่" }, { status: 400 });
   }
   // เล่มเนื้อหาแจกฟรี (price 0 → /api/claim) และครบเซ็ตเลิกขายแล้ว — ไม่เปิด Stripe ให้ (2026-09-27)
   if (!isPurchasableProduct(product.id)) {
@@ -76,7 +76,7 @@ export async function POST(req: NextRequest) {
           "STRIPE_SECRET_KEY ยังไม่ถูกตั้งค่าใน production — ปฏิเสธคำสั่งซื้อเพื่อกันการแจกไฟล์ฟรี"
         );
         return NextResponse.json(
-          { error: "ระบบชำระเงินยังไม่พร้อมใช้งาน กรุณาติดต่อผู้ขาย" },
+          { error: "ระบบชำระเงินยังไม่พร้อม ติดต่อ mr.tpat3@gmail.com" },
           { status: 503 }
         );
       }
@@ -123,7 +123,7 @@ export async function POST(req: NextRequest) {
     if (!session.url) {
       console.error(`Stripe ไม่คืน URL หน้าชำระเงิน (session ${session.id}, order ${order.id})`);
       return NextResponse.json(
-        { error: "สร้างหน้าชำระเงินไม่สำเร็จ กรุณาลองใหม่อีกครั้ง" },
+        { error: "สร้างหน้าชำระเงินไม่สำเร็จ ลองใหม่อีกครั้ง" },
         { status: 500 }
       );
     }
@@ -138,7 +138,7 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     console.error("สร้างรายการชำระเงินไม่สำเร็จ:", err);
     return NextResponse.json(
-      { error: "เกิดข้อผิดพลาดในการสร้างรายการชำระเงิน กรุณาลองใหม่อีกครั้ง" },
+      { error: "สร้างรายการชำระเงินไม่สำเร็จ ลองใหม่อีกครั้ง" },
       { status: 500 }
     );
   }

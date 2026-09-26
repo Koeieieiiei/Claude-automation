@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
 
   const ip = clientIp(req.headers);
   if (!allow(`forgot:ip:${ip}`, 10, 60 * 60 * 1000) || !allow(`forgot:email:${email}`, 3, 60 * 60 * 1000)) {
-    return jsonError("ขอลิงก์ถี่เกินไป — ตรวจกล่องอีเมล (รวมสแปม) หรือรอ 1 ชั่วโมงแล้วลองใหม่", 429);
+    return jsonError("ขอลิงก์ถี่เกินไป ตรวจอีเมล (รวมสแปม) หรือรอ 1 ชั่วโมง", 429);
   }
 
   try {
@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
     });
   } catch (err) {
     console.error("ส่งลิงก์ตั้งรหัสผ่านไม่สำเร็จ:", err);
-    return jsonError("ส่งอีเมลไม่สำเร็จชั่วคราว — ลองใหม่อีกครั้ง หรือติดต่อ mr.tpat3@gmail.com", 500);
+    return jsonError("ส่งอีเมลไม่สำเร็จ ลองใหม่ หรือติดต่อ mr.tpat3@gmail.com", 500);
   }
   return NextResponse.json({ ok: true }, { headers: { "Cache-Control": "no-store" } });
 }

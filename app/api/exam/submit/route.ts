@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     console.error("ส่งข้อสอบไม่สำเร็จ:", err);
     return NextResponse.json(
-      { error: "ส่งไม่สำเร็จ กรุณาลองกดส่งอีกครั้ง" },
+      { error: "ส่งไม่สำเร็จ กดส่งอีกครั้ง" },
       { status: 503 }
     );
   }

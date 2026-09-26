@@ -15,13 +15,13 @@ export default async function ForgotPasswordPage({ searchParams }: { searchParam
   return (
     <AuthCard
       badge="ลืมรหัสผ่าน"
-      title="ตั้งรหัสผ่านใหม่ทางอีเมล"
-      intro="กรอกอีเมล แล้วเราจะส่งลิงก์สำหรับตั้งรหัสผ่านใหม่ไปให้ (ใช้ได้ 30 นาที) — เคยซื้อคอร์สด้วยบัญชี Google ก็ใช้หน้านี้ตั้งรหัสผ่านครั้งแรกได้เลย"
+      title="ตั้งรหัสผ่านใหม่"
+      intro="กรอกอีเมล เราจะส่งลิงก์ตั้งรหัสผ่านให้ (ใช้ได้ 30 นาที) เคยซื้อด้วยบัญชี Google ก็ตั้งรหัสผ่านที่นี่"
       next="/login"
     >
       <ForgotForm initialEmail={(email ?? "").slice(0, 254)} />
       <p className="mt-5 border-t border-dashed border-grid pt-4 font-label text-xs text-ink/60">
-        <a href="/login" className="font-semibold text-maroon underline underline-offset-2 hover:no-underline">← กลับไปหน้าเข้าสู่ระบบ</a>
+        <a href="/login" className="font-semibold text-maroon underline underline-offset-2 hover:no-underline">← เข้าสู่ระบบ</a>
       </p>
     </AuthCard>
   );

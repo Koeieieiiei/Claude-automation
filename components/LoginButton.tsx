@@ -5,7 +5,7 @@
  */
 export default function LoginButton({
   next,
-  label = "เข้าสู่ระบบ / สมัครสมาชิก",
+  label = "เข้าสู่ระบบ / สมัคร",
   mode,
   className = "",
 }: {

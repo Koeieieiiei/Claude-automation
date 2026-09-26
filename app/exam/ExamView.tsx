@@ -91,8 +91,8 @@ export default function ExamView() {
       if (!data.state || data.state === "none") {
         setGateError(
           opts.session
-            ? "บัญชีนี้ยังไม่มีสิทธิ์ทำข้อสอบ — ถ้าซื้อด้วยอีเมลอื่น ให้กดเปลี่ยนบัญชี หรือสั่งซื้อชุดข้อสอบด้านล่าง"
-            : "ไม่พบสิทธิ์ทำข้อสอบของชื่อและอีเมลนี้ — ถ้าซื้อแล้ว ลองตรวจตัวสะกดให้ตรงกับตอนสั่งซื้ออีกครั้ง"
+            ? "บัญชีนี้ไม่มีสิทธิ์สอบ ซื้อด้วยอีเมลอื่นให้กดเปลี่ยนบัญชี"
+            : "ไม่พบสิทธิ์สอบของอีเมลนี้"
         );
         // นับเฉพาะตอนผู้ใช้กรอกเองแล้วไม่ผ่าน (ไม่นับตอนเช็คโทเค็นเงียบ ๆ ตอนเปิดหน้า)
         if (opts.verified) trackEvent("exam_access_denied", { exam_id: exam.id });
@@ -329,7 +329,7 @@ export default function ExamView() {
 
     submittedRef.current = false; // ยังส่งไม่สำเร็จ — เปิด autosave กลับมาตามเดิม
     setSubmitting(false);
-    alert("ส่งไม่สำเร็จ กรุณากดส่งอีกครั้ง (คำตอบของคุณถูกบันทึกไว้แล้ว ไม่หาย)");
+    alert("ส่งไม่สำเร็จ กดส่งอีกครั้ง (คำตอบบันทึกไว้แล้ว)");
   }, [token, router, submitting, exam.id]);
 
   const onExpire = useCallback(() => {
@@ -400,11 +400,9 @@ export default function ExamView() {
               </>
             ) : (
               <>
-                <h1 className="font-display text-2xl font-bold text-ink">โปรดล็อกอินก่อนเข้าห้องสอบ</h1>
+                <h1 className="font-display text-2xl font-bold text-ink">เข้าสู่ระบบก่อนเข้าห้องสอบ</h1>
                 <p className="mt-2 text-sm leading-relaxed text-ink/70">
-                  เข้าสู่ระบบด้วย<strong>อีเมลเดียวกับที่ใช้สั่งซื้อ</strong>ชุด {exam.title}{" "}
-                  ระบบจะตรวจสิทธิ์และพาเข้าห้องสอบให้ทันที ({exam.totalQuestions} ข้อ · จับเวลา{" "}
-                  {durationText(exam)} · ทำได้ 1 รอบ)
+                  ใช้<strong>อีเมลเดียวกับที่สั่งซื้อ</strong> ({exam.totalQuestions} ข้อ · {durationText(exam)} · สอบได้ 1 รอบ)
                 </p>
                 <LoginButton next={examPath} className="mt-5" />
               </>
@@ -419,17 +417,17 @@ export default function ExamView() {
 
             {/* ทางไปซื้อ — โชว์ตั้งแต่เปิดหน้า ไม่ต้องรอให้กรอกผิดก่อน */}
             <p className="mt-5 border-t border-dashed border-grid pt-4 text-sm leading-relaxed text-ink/75">
-              ยังไม่ได้ซื้อชุดข้อสอบ?{" "}
+              ยังไม่มีชุดข้อสอบ?{" "}
               <a
                 href="/?buy=mock1"
                 className="font-bold text-maroon underline underline-offset-2 hover:no-underline"
               >
-                สั่งซื้อชุดข้อสอบ Mock TPAT3 →
+                สั่งซื้อ Mock TPAT3 →
               </a>
             </p>
 
             <p className="mt-4 font-label text-xs leading-relaxed text-ink/50">
-              💻 แนะนำให้ทำข้อสอบในคอมพิวเตอร์หรือ iPad เพื่อเห็นโจทย์ชัดเต็มตา
+              แนะนำทำในคอมพิวเตอร์หรือ iPad
             </p>
           </div>
         </div>
@@ -469,9 +467,9 @@ export default function ExamView() {
 
             <div className="mt-6 grid gap-3 sm:grid-cols-3">
               {[
-                [`${exam.totalQuestions} ข้อ`, `ปรนัย ${exam.choices} ตัวเลือก ครบ ${exam.sections.length} ตอนตามสอบจริง`],
-                [durationText(exam), "จับเวลาอัตโนมัติ หมดเวลาระบบส่งให้ทันที"],
-                ["1 รอบเท่านั้น", "1 อีเมลที่ซื้อ ทำได้ครั้งเดียว เหมือนสอบจริง"],
+                [`${exam.totalQuestions} ข้อ`, `ปรนัย ${exam.choices} ตัวเลือก ${exam.sections.length} ตอน`],
+                [durationText(exam), "หมดเวลาส่งให้อัตโนมัติ"],
+                ["1 รอบเท่านั้น", "1 บัญชี สอบได้ครั้งเดียว"],
               ].map(([t, d]) => (
                 <div key={t} className="border border-grid bg-white p-4">
                   <p className="font-display text-xl font-bold text-maroon">{t}</p>
@@ -482,19 +480,19 @@ export default function ExamView() {
 
             <div className="mt-5 border border-maroon/40 bg-maroon/[0.05] px-5 py-4">
               <p className="text-[0.95rem] font-semibold text-maroon">
-                💻 แนะนำให้ทำในคอมพิวเตอร์ หรือ iPad
+                แนะนำทำในคอมพิวเตอร์หรือ iPad
               </p>
               <p className="mt-1 text-sm leading-relaxed text-ink/70">
-                จะเห็นโจทย์เต็มหน้าและกรอกคำตอบสะดวกที่สุด (มือถือทำได้แต่จอเล็ก อ่านโจทย์ยาก)
+                มือถือทำได้แต่จอเล็ก อ่านโจทย์ยาก
               </p>
             </div>
 
             <ul className="mt-6 space-y-2.5 text-sm leading-relaxed text-ink/75">
               {[
-                "เวลาเริ่มนับทันทีที่กดปุ่มเริ่ม และเดินต่อเนื่องแม้ปิดหน้าเว็บ — เตรียมตัวให้พร้อมก่อนกด",
-                "ระบบบันทึกคำตอบให้อัตโนมัติตลอดเวลา เน็ตหลุด/รีเฟรชหน้า กลับเข้ามาทำต่อได้เลย",
-                "ทำเสร็จกด “ส่งกระดาษคำตอบ” จะได้รับผลวิเคราะห์ละเอียดทันที พร้อมลิงก์ไฟล์โจทย์และเฉลยแนบท้าย",
-                "เพื่อให้ผลวิเคราะห์ตรงกับฝีมือจริง ไม่ควรเปิดไฟล์เฉลยที่ได้รับตอนซื้อก่อนเข้าสอบ",
+                "เวลาเริ่มนับทันทีที่กดเริ่ม และไม่หยุดแม้ปิดหน้าเว็บ",
+                "บันทึกคำตอบอัตโนมัติ เน็ตหลุดหรือรีเฟรชก็ทำต่อได้",
+                "กด “ส่งกระดาษคำตอบ” แล้วรู้ผลทันที",
+                "อย่าเปิดเฉลยก่อนสอบ ผลวิเคราะห์จะได้ตรงกับฝีมือจริง",
               ].map((r) => (
                 <li key={r} className="relative pl-6">
                   <span className="absolute left-0 font-bold text-maroon">✓</span>
@@ -505,7 +503,7 @@ export default function ExamView() {
 
             <details className="mt-6 border border-grid bg-white" open={!resumed}>
               <summary className="cursor-pointer px-5 py-3 font-semibold text-ink">
-                คำชี้แจงข้อสอบ (จากชุดข้อสอบจริง)
+                คำชี้แจงข้อสอบ
               </summary>
               <div className="space-y-3 border-t border-grid p-3">
                 {exam.instructionPages.map((n) => (
@@ -526,7 +524,7 @@ export default function ExamView() {
               disabled={busy}
               className="mt-8 w-full bg-maroon py-4 text-lg font-bold text-paper transition hover:bg-maroon-dark disabled:opacity-60"
             >
-              {busy ? "กำลังเข้าห้องสอบ…" : resumed ? "กลับเข้าห้องสอบ (เวลากำลังเดิน)" : `เริ่มทำข้อสอบ — เริ่มจับเวลา ${durationText(exam)}`}
+              {busy ? "กำลังเข้าห้องสอบ…" : resumed ? "กลับเข้าห้องสอบ (เวลากำลังเดิน)" : `เริ่มสอบ · จับเวลา ${durationText(exam)}`}
             </button>
           </div>
         </div>
@@ -535,7 +533,7 @@ export default function ExamView() {
           <Modal onClose={() => setConfirmStart(false)}>
             <h2 className="font-display text-xl font-bold text-ink">เริ่มจับเวลาเลยไหม?</h2>
             <p className="mt-2 text-sm leading-relaxed text-ink/70">
-              เวลา {durationText(exam)} จะเริ่มนับทันทีและไม่หยุดแม้ปิดหน้าเว็บ อีเมลนี้ทำได้รอบเดียวเท่านั้น
+              เวลา {durationText(exam)} เริ่มนับทันที ไม่หยุดแม้ปิดหน้าเว็บ และสอบได้รอบเดียว
             </p>
             <div className="mt-5 flex gap-3">
               <button
@@ -592,9 +590,9 @@ export default function ExamView() {
         {/* ฝั่งซ้าย: โจทย์ทุกหน้าเรียงต่อกัน */}
         <div className="min-w-0">
           <p className="mb-3 border border-grid bg-white px-4 py-2.5 text-sm text-ink/60">
-            เลื่อนอ่านโจทย์ด้านล่าง แล้วฝนคำตอบใน<strong>กระดาษคำตอบ</strong>
+            อ่านโจทย์แล้วฝนคำตอบใน<strong>กระดาษคำตอบ</strong>
             <span className="lg:hidden"> (ปุ่มมุมขวาล่าง)</span>
-            <span className="hidden lg:inline">ด้านขวา</span> — กดเลขข้อเพื่อกระโดดไปที่โจทย์ข้อนั้นได้
+            <span className="hidden lg:inline">ด้านขวา</span> · กดเลขข้อเพื่อไปที่โจทย์
           </p>
           <div className="space-y-2">
             {exam.questionPages.map((n) => (
@@ -672,7 +670,7 @@ export default function ExamView() {
               </>
             )}
             <br />
-            ส่งแล้วแก้ไขไม่ได้ และถือว่าใช้สิทธิ์สอบรอบเดียวของอีเมลนี้แล้ว
+            ส่งแล้วแก้ไม่ได้ และถือว่าใช้สิทธิ์สอบแล้ว
           </p>
           <div className="mt-5 flex gap-3">
             <button
@@ -698,7 +696,7 @@ export default function ExamView() {
         <Modal onClose={() => null}>
           <h2 className="font-display text-xl font-bold text-maroon">หมดเวลาสอบ</h2>
           <p className="mt-2 text-sm leading-relaxed text-ink/70">
-            ครบ {durationText(exam)} แล้ว — ระบบกำลังส่งคำตอบที่บันทึกไว้และตรวจให้อัตโนมัติ…
+            หมดเวลา กำลังส่งและตรวจคำตอบให้อัตโนมัติ…
           </p>
         </Modal>
       )}

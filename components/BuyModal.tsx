@@ -40,7 +40,7 @@ export default function BuyModal({ product, onClose, user = null, returnTo }: Pr
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "เกิดข้อผิดพลาด");
       // กันเคส server ตอบ ok แต่ไม่มี url — อย่าพาผู้ใช้ไปหน้า "/null"
-      if (!data.url) throw new Error("ไม่ได้รับลิงก์หน้าชำระเงิน กรุณาลองใหม่อีกครั้ง");
+      if (!data.url) throw new Error("เปิดหน้าชำระเงินไม่สำเร็จ ลองใหม่อีกครั้ง");
       // นับตอนกำลังพาไปหน้าจ่ายเงินจริง (ไม่ใช่ตอนกดปุ่ม) — สะท้อนความตั้งใจซื้อจริง
       trackEvent("begin_checkout", {
         product_id: product.id,
@@ -105,12 +105,11 @@ export default function BuyModal({ product, onClose, user = null, returnTo }: Pr
           ) : (
             <div>
               <p className="text-sm leading-relaxed text-ink/75">
-                เข้าสู่ระบบด้วยอีเมล + รหัสผ่านก่อนสั่งซื้อ (ยังไม่มีบัญชี สมัครได้ในหน้าเดียวกัน) —
-                คอร์สและไฟล์จะผูกกับอีเมลนี้ กลับมาเข้าเรียนได้ทุกเครื่องที่หน้า “คอร์สของฉัน”
+                เข้าสู่ระบบก่อนสั่งซื้อ คอร์สจะผูกกับอีเมลที่ใช้
               </p>
-              <LoginButton next={next} label="เข้าสู่ระบบ / สมัครสมาชิก เพื่อสั่งซื้อ" className="mt-3" />
+              <LoginButton next={next} label="เข้าสู่ระบบ / สมัคร" className="mt-3" />
               <p className="mt-2 font-label text-[11px] leading-snug text-ink/50">
-                การเข้าสู่ระบบและสั่งซื้อถือว่ายอมรับ{" "}
+                การสั่งซื้อถือว่ายอมรับ{" "}
                 <a href="/terms" target="_blank" className="underline underline-offset-2 hover:text-maroon">ข้อกำหนดการใช้งาน</a> และ{" "}
                 <a href="/privacy" target="_blank" className="underline underline-offset-2 hover:text-maroon">นโยบายความเป็นส่วนตัว</a>
               </p>
@@ -132,11 +131,11 @@ export default function BuyModal({ product, onClose, user = null, returnTo }: Pr
               disabled={loading}
               className="w-full bg-maroon py-3.5 font-semibold text-white transition hover:bg-maroon-dark disabled:cursor-not-allowed disabled:bg-ink/30"
             >
-              {loading ? "กำลังพาไปหน้าชำระเงิน…" : "ไปหน้าชำระเงิน"}
+              {loading ? "รอสักครู่…" : "ไปหน้าชำระเงิน"}
             </button>
           )}
           <p className="text-center font-label text-[11px] text-ink/50">
-            🔒 ชำระเงินปลอดภัยผ่าน Stripe · PromptPay · สินค้าดิจิทัล ไม่มีการคืนเงิน
+            PromptPay ผ่าน Stripe · ไม่มีการคืนเงิน
           </p>
         </form>
       </div>

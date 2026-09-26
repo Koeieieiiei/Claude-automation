@@ -135,9 +135,9 @@ export default async function CoursePage({ params }: { params: Promise<{ slug: s
                 <p className="font-display text-lg font-bold text-ink">รูปแบบการเรียน</p>
                 <div className="mt-3 border border-maroon/40 bg-maroon/[0.04] px-4 py-3 text-center">
                   <p className="text-sm font-semibold text-ink">
-                    {product.files.includes("questions") ? "สอบออนไลน์บนเว็บ + ไฟล์ PDF" : "ไฟล์ PDF อ่านได้ทุกอุปกรณ์"}
+                    {product.files.includes("questions") ? "สอบออนไลน์ + ไฟล์ PDF" : "ไฟล์ PDF"}
                   </p>
-                  <p className="mt-1 font-label text-[11px] text-ink/55">เข้าเรียนผ่านหน้า “คอร์สของฉัน” · ไม่มีวันหมดอายุ</p>
+                  <p className="mt-1 font-label text-[11px] text-ink/55">อยู่ที่ “คอร์สของฉัน” · ไม่มีวันหมดอายุ</p>
                 </div>
 
                 <ul className="mt-4 space-y-1.5">
@@ -151,7 +151,6 @@ export default async function CoursePage({ params }: { params: Promise<{ slug: s
 
                 <div className="mt-5 flex flex-wrap items-baseline justify-end gap-2.5 border-t border-dashed border-grid pt-4">
                   <span className="font-display text-[2.1rem] font-bold leading-none text-maroon">{priceText(product.price)}</span>
-                  {free && <span className="text-sm text-ink/55">ไม่มีค่าใช้จ่าย</span>}
                 </div>
 
                 {owned ? (
@@ -160,40 +159,39 @@ export default async function CoursePage({ params }: { params: Promise<{ slug: s
                       href="/my-courses"
                       className="mt-4 flex w-full items-center justify-center gap-2 bg-maroon py-3.5 font-bold text-paper transition hover:bg-maroon-dark"
                     >
-                      เข้าเรียน — ไปที่คอร์สของฉัน →
+                      ไปที่คอร์สของฉัน →
                     </a>
-                    <p className="mt-2 text-center font-label text-[11px] text-ink/55">บัญชีนี้มีคอร์สนี้แล้ว</p>
+                    <p className="mt-2 text-center font-label text-[11px] text-ink/55">มีคอร์สนี้แล้ว</p>
                   </>
                 ) : free ? (
                   <>
                     <ClaimButton
                       productId={product.id}
-                      label={user ? "รับคอร์สนี้ฟรี" : "รับฟรี · เข้าสู่ระบบ / สมัคร"}
+                      label="รับฟรี"
                       source="course_page"
                       className="mt-4 w-full py-3.5 font-bold"
                     />
                     <p className="mt-2 text-center font-label text-[11px] text-ink/50">
-                      ไม่มีค่าใช้จ่าย · ได้ทันทีที่หน้า “คอร์สของฉัน”
+                      ได้ทันทีที่ “คอร์สของฉัน”
                     </p>
                   </>
                 ) : (
                   <>
                     <CourseBuyButton product={product} user={user} slug={course.slug} className="mt-4" />
                     <p className="mt-2 text-center font-label text-[11px] text-ink/50">
-                      🔒 ชำระเงินปลอดภัยผ่าน Stripe · PromptPay
+                      PromptPay ผ่าน Stripe
                     </p>
                   </>
                 )}
                 {!owned && !user && (
                   <p className="mt-3 text-center font-label text-xs text-ink/60">
-                    {free ? "เคยรับไปแล้ว?" : "ซื้อไปแล้ว?"}{" "}
+                    {free ? "รับไปแล้ว?" : "ซื้อไปแล้ว?"}{" "}
                     <a
                       href={`/login?next=${encodeURIComponent(`/courses/${course.slug}`)}`}
                       className="font-semibold text-maroon underline underline-offset-2"
                     >
                       เข้าสู่ระบบ
-                    </a>{" "}
-                    เพื่อเข้าเรียน
+                    </a>
                   </p>
                 )}
               </div>
@@ -218,16 +216,6 @@ export default async function CoursePage({ params }: { params: Promise<{ slug: s
                     </div>
                   ))}
                 </dl>
-
-                <h3 className="mt-8 font-display text-lg font-bold text-ink">สิ่งที่จะได้รับ</h3>
-                <ul className="mt-3 space-y-1.5">
-                  {course.includes.map((x) => (
-                    <li key={x} className="relative pl-6 text-[0.95rem] text-ink/85">
-                      <span className="absolute left-0 font-bold text-maroon">✓</span>
-                      {x}
-                    </li>
-                  ))}
-                </ul>
 
                 <h3 className="mt-8 font-display text-lg font-bold text-ink">จุดเด่น</h3>
                 <ul className="mt-3 space-y-1.5">
@@ -290,7 +278,7 @@ export default async function CoursePage({ params }: { params: Promise<{ slug: s
           {/* ===== คอร์สอื่น ===== */}
           {others.length > 0 && (
             <section className="mt-16 border-t border-grid pt-10">
-              <h2 className="font-display text-xl font-bold text-ink">คอร์สอื่นของ Mr.tpat3</h2>
+              <h2 className="font-display text-xl font-bold text-ink">คอร์สอื่น</h2>
               <div className="mt-5 grid gap-4 sm:grid-cols-2">
                 {others.map((c) => {
                   const p = PRODUCTS[c.productId];

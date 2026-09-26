@@ -21,10 +21,10 @@ export function ForgotForm({ initialEmail = "" }: { initialEmail?: string }) {
         body: JSON.stringify({ email }),
       });
       const data = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string };
-      if (!res.ok || !data.ok) throw new Error(data.error || "เกิดข้อผิดพลาด กรุณาลองใหม่");
+      if (!res.ok || !data.ok) throw new Error(data.error || "ผิดพลาด ลองใหม่อีกครั้ง");
       setSent(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "เกิดข้อผิดพลาด กรุณาลองใหม่");
+      setError(err instanceof Error ? err.message : "ผิดพลาด ลองใหม่อีกครั้ง");
     } finally {
       setLoading(false);
     }
@@ -34,11 +34,10 @@ export function ForgotForm({ initialEmail = "" }: { initialEmail?: string }) {
     return (
       <div className="space-y-3 text-sm leading-relaxed text-ink/80">
         <p className="border border-ink/20 bg-white px-4 py-3">
-          ส่งลิงก์ตั้งรหัสผ่านไปที่ <strong className="text-ink">{email}</strong> แล้ว — เปิดอีเมลแล้วกดลิงก์ภายใน 30 นาที
-          (ไม่เจอให้ดูในกล่องสแปม/จดหมายขยะ)
+          ส่งลิงก์ไปที่ <strong className="text-ink">{email}</strong> แล้ว กดลิงก์ภายใน 30 นาที (ไม่เจอ ดูในสแปม)
         </p>
         <p className="font-label text-xs text-ink/55">
-          ไม่ได้รับอีเมล? ตรวจตัวสะกดอีเมล แล้ว{" "}
+          ไม่ได้รับ?{" "}
           <button type="button" onClick={() => setSent(false)} className="font-semibold text-maroon underline underline-offset-2">
             ส่งอีกครั้ง
           </button>{" "}
@@ -51,7 +50,7 @@ export function ForgotForm({ initialEmail = "" }: { initialEmail?: string }) {
   return (
     <form onSubmit={submit} className="space-y-4">
       <label className="block">
-        <span className="font-label text-xs font-semibold text-ink/70">อีเมลที่ใช้สมัคร (หรือที่ใช้สั่งซื้อ)</span>
+        <span className="font-label text-xs font-semibold text-ink/70">อีเมล</span>
         <input
           type="email"
           value={email}
@@ -69,7 +68,7 @@ export function ForgotForm({ initialEmail = "" }: { initialEmail?: string }) {
         disabled={loading}
         className="w-full bg-maroon py-3.5 font-semibold text-white transition hover:bg-maroon-dark disabled:cursor-not-allowed disabled:bg-ink/30"
       >
-        {loading ? "กำลังส่ง…" : "ส่งลิงก์ตั้งรหัสผ่านทางอีเมล"}
+        {loading ? "กำลังส่ง…" : "ส่งลิงก์"}
       </button>
     </form>
   );
@@ -87,7 +86,7 @@ export function ResetForm({ token }: { token: string }) {
     e.preventDefault();
     if (loading) return;
     if (password !== confirm) {
-      setError("รหัสผ่านสองช่องไม่ตรงกัน");
+      setError("รหัสผ่านไม่ตรงกัน");
       return;
     }
     setLoading(true);
@@ -99,10 +98,10 @@ export function ResetForm({ token }: { token: string }) {
         body: JSON.stringify({ token, password }),
       });
       const data = (await res.json().catch(() => ({}))) as { ok?: boolean; next?: string; error?: string };
-      if (!res.ok || !data.ok) throw new Error(data.error || "เกิดข้อผิดพลาด กรุณาลองใหม่");
+      if (!res.ok || !data.ok) throw new Error(data.error || "ผิดพลาด ลองใหม่อีกครั้ง");
       window.location.href = data.next || "/my-courses";
     } catch (err) {
-      setError(err instanceof Error ? err.message : "เกิดข้อผิดพลาด กรุณาลองใหม่");
+      setError(err instanceof Error ? err.message : "ผิดพลาด ลองใหม่อีกครั้ง");
       setLoading(false);
     }
   }
@@ -125,8 +124,8 @@ export function ResetForm({ token }: { token: string }) {
 
   return (
     <form onSubmit={submit} className="space-y-4">
-      {field("รหัสผ่านใหม่ (อย่างน้อย 8 ตัวอักษร)", password, setPassword, "new-password")}
-      {field("พิมพ์รหัสผ่านใหม่อีกครั้ง", confirm, setConfirm, "new-password")}
+      {field("รหัสผ่านใหม่ (8 ตัวขึ้นไป)", password, setPassword, "new-password")}
+      {field("ยืนยันรหัสผ่านใหม่", confirm, setConfirm, "new-password")}
       <label className="flex items-center gap-2 font-label text-xs text-ink/60">
         <input type="checkbox" checked={show} onChange={(e) => setShow(e.target.checked)} />
         แสดงรหัสผ่าน
@@ -137,7 +136,7 @@ export function ResetForm({ token }: { token: string }) {
         disabled={loading}
         className="w-full bg-maroon py-3.5 font-semibold text-white transition hover:bg-maroon-dark disabled:cursor-not-allowed disabled:bg-ink/30"
       >
-        {loading ? "กำลังบันทึก…" : "ตั้งรหัสผ่านและเข้าสู่ระบบ"}
+        {loading ? "กำลังบันทึก…" : "ตั้งรหัสผ่าน"}
       </button>
     </form>
   );

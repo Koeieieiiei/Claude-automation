@@ -20,7 +20,7 @@ export default async function ResetPasswordPage({ searchParams }: { searchParams
     return (
       <AuthCard badge="ตั้งรหัสผ่านใหม่" title="ลิงก์ใช้ไม่ได้แล้ว" next="/login">
         <p className="text-sm leading-relaxed text-ink/75">
-          ลิงก์ตั้งรหัสผ่านไม่ถูกต้องหรือหมดอายุแล้ว (ใช้ได้ 30 นาทีหลังขอ)
+          ลิงก์ไม่ถูกต้องหรือหมดอายุ (ใช้ได้ 30 นาที)
         </p>
         <a
           href="/forgot-password"
@@ -35,10 +35,10 @@ export default async function ResetPasswordPage({ searchParams }: { searchParams
   return (
     <AuthCard
       badge="ตั้งรหัสผ่านใหม่"
-      title="ตั้งรหัสผ่านสำหรับบัญชีนี้"
+      title="ตั้งรหัสผ่านใหม่"
       intro={
         <>
-          บัญชี <strong className="text-ink">{payload.email}</strong> — ตั้งเสร็จระบบจะเข้าสู่ระบบให้ทันที
+          บัญชี <strong className="text-ink">{payload.email}</strong> · ตั้งเสร็จเข้าสู่ระบบให้ทันที
         </>
       }
       next="/login"

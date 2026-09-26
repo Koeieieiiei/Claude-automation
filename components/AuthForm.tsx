@@ -47,7 +47,7 @@ export default function AuthForm({
       };
       if (!res.ok || !data.ok) {
         if (data.code === "exists") setMode("signin");
-        throw new Error(data.error || "เกิดข้อผิดพลาด กรุณาลองใหม่");
+        throw new Error(data.error || "ผิดพลาด ลองใหม่อีกครั้ง");
       }
       if (data.verifySent) {
         setInfo(data.message ?? "ส่งลิงก์ตั้งรหัสผ่านไปที่อีเมลแล้ว");
@@ -56,7 +56,7 @@ export default function AuthForm({
       }
       window.location.href = data.next || next;
     } catch (err) {
-      setError(err instanceof Error ? err.message : "เกิดข้อผิดพลาด กรุณาลองใหม่");
+      setError(err instanceof Error ? err.message : "ผิดพลาด ลองใหม่อีกครั้ง");
       setLoading(false);
     }
   }
@@ -102,7 +102,7 @@ export default function AuthForm({
 
       <label className="block">
         <span className="font-label text-xs font-semibold text-ink/70">
-          รหัสผ่าน{mode === "signup" && <span className="font-normal text-ink/50"> (อย่างน้อย 8 ตัวอักษร)</span>}
+          รหัสผ่าน{mode === "signup" && <span className="font-normal text-ink/50"> (8 ตัวขึ้นไป)</span>}
         </span>
         <span className="relative mt-1 block">
           <input
@@ -138,7 +138,7 @@ export default function AuthForm({
         disabled={loading}
         className="w-full bg-maroon py-3.5 font-semibold text-white transition hover:bg-maroon-dark disabled:cursor-not-allowed disabled:bg-ink/30"
       >
-        {loading ? "กำลังดำเนินการ…" : mode === "signin" ? "Sign In" : "Sign Up"}
+        {loading ? "รอสักครู่…" : mode === "signin" ? "Sign In" : "Sign Up"}
       </button>
 
       <div className="flex flex-wrap items-center justify-between gap-2 font-label text-xs text-ink/60">

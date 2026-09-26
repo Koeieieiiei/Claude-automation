@@ -17,11 +17,11 @@ export async function POST(req: NextRequest) {
   const body = await readJson(req);
   const email = normalizeEmail(str(body.email, 254));
   const password = str(body.password, 200);
-  if (!isValidEmail(email) || !password) return jsonError("กรุณากรอกอีเมลและรหัสผ่านให้ครบ", 400);
+  if (!isValidEmail(email) || !password) return jsonError("กรอกอีเมลและรหัสผ่านให้ครบ", 400);
 
   const ip = clientIp(req.headers);
   if (!allow(`login:ip:${ip}`, 30, 15 * 60 * 1000) || !allow(`login:email:${email}`, 10, 15 * 60 * 1000)) {
-    return jsonError("ลองผิดหลายครั้งเกินไป — รอ 15 นาทีแล้วลองใหม่ หรือกด “ลืมรหัสผ่าน”", 429);
+    return jsonError("ผิดหลายครั้งเกินไป รอ 15 นาที หรือกด “ลืมรหัสผ่าน”", 429);
   }
 
   try {
@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
       const items = await getLibrary(email).catch(() => []);
       if (items.length > 0) {
         return jsonError(
-          "อีเมลนี้มีคอร์สอยู่แต่ยังไม่ได้ตั้งรหัสผ่าน — กด “ลืมรหัสผ่าน” เพื่อรับลิงก์ตั้งรหัสผ่านทางอีเมล",
+          "อีเมลนี้มีคอร์สแต่ยังไม่มีรหัสผ่าน กด “ลืมรหัสผ่าน” เพื่อตั้งรหัสผ่าน",
           401,
           { code: "needs_password" }
         );

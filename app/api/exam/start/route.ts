@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
       if (isUnlimitedEmail(payload.email)) {
         await resetAttempt(exam, payload.email);
       } else {
-        return NextResponse.json({ error: "อีเมลนี้ทำข้อสอบครบ 1 รอบแล้ว" }, { status: 409 });
+        return NextResponse.json({ error: "อีเมลนี้สอบครบ 1 รอบแล้ว" }, { status: 409 });
       }
     }
 
@@ -84,7 +84,7 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     console.error("เริ่มสอบไม่สำเร็จ:", err);
     return NextResponse.json(
-      { error: "ระบบขัดข้องชั่วคราว กรุณาลองใหม่อีกครั้ง" },
+      { error: "ระบบขัดข้องชั่วคราว ลองใหม่อีกครั้ง" },
       { status: 503 }
     );
   }

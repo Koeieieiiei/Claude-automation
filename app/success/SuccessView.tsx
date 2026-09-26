@@ -109,7 +109,7 @@ export default function SuccessView() {
       <Frame badge="กำลังตรวจสอบ…">
         <div className="flex flex-col items-center gap-4 px-8 py-14 text-center">
           <Spinner />
-          <p className="text-ink/70">กำลังตรวจสอบสถานะคำสั่งซื้อ…</p>
+          <p className="text-ink/70">กำลังตรวจสอบ…</p>
         </div>
       </Frame>
     );
@@ -124,12 +124,12 @@ export default function SuccessView() {
           </div>
           <h1 className="mt-5 font-display text-2xl font-bold text-ink">กำลังยืนยันการชำระเงิน</h1>
           <p className="mt-3 leading-relaxed text-ink/70">
-            การชำระผ่าน PromptPay อาจใช้เวลายืนยันสักครู่
+            PromptPay อาจใช้เวลาสักครู่
             <br />
-            ระบบจะเปิดคอร์สให้อัตโนมัติทันทีที่ยืนยันสำเร็จ — ไม่ต้องรีเฟรชหน้านี้
+            ยืนยันแล้วคอร์สจะเปิดให้อัตโนมัติ ไม่ต้องรีเฟรช
           </p>
           <p className="mt-4 font-label text-sm text-ink/50">
-            ถ้าปิดหน้านี้ไปก่อน ก็เปิดคอร์สได้ที่ “คอร์สของฉัน” (เข้าสู่ระบบด้วยอีเมลที่ใช้ซื้อ)
+            ปิดหน้านี้ไปก็เปิดคอร์สได้ที่ “คอร์สของฉัน”
           </p>
         </div>
       </Frame>
@@ -144,7 +144,7 @@ export default function SuccessView() {
             <div className="mx-auto grid h-14 w-14 place-items-center border border-ink bg-white text-2xl">🎉</div>
             <h1 className="mt-5 font-display text-2xl font-bold text-ink">ชำระเงินสำเร็จ</h1>
             <p className="mt-2 leading-relaxed text-ink/70">
-              เปิดคอร์สให้บัญชี{email ? <> <strong>{email}</strong></> : "ของคุณ"} แล้ว — เข้าเรียนได้เลย
+              เปิดคอร์สให้{email ? <> <strong>{email}</strong></> : "บัญชีของคุณ"} แล้ว
             </p>
           </div>
 
@@ -156,19 +156,19 @@ export default function SuccessView() {
                 href="/exam"
                 className="mt-7 flex w-full items-center justify-center gap-3 border border-ink bg-maroon px-5 py-4 text-[1.05rem] font-bold text-paper transition hover:bg-maroon-dark"
               >
-                เริ่มสอบ TPAT3 · 70 ข้อ · จับเวลา 3 ชม.
+                เริ่มสอบ · 70 ข้อ · 3 ชม.
                 <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} aria-hidden>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
                 </svg>
               </a>
               <p className="mt-3 text-center font-label text-xs leading-relaxed text-ink/55">
-                💻 แนะนำให้ทำในคอมพิวเตอร์ หรือ iPad · 1 บัญชีมีสิทธิ์สอบ 1 รอบ
+                สอบได้ 1 รอบ · แนะนำทำในคอมพิวเตอร์หรือ iPad
               </p>
               <a
                 href="/my-courses"
                 className="mt-4 flex w-full items-center justify-center gap-3 border border-ink bg-white px-5 py-3.5 font-semibold text-ink transition hover:bg-ink hover:text-paper"
               >
-                ไปที่คอร์สของฉัน (ไฟล์เฉลย / เนื้อหา) →
+                ไปที่คอร์สของฉัน →
               </a>
             </>
           ) : (
@@ -176,7 +176,7 @@ export default function SuccessView() {
               href="/my-courses"
               className="mt-7 flex w-full items-center justify-center gap-3 border border-ink bg-maroon px-5 py-4 text-[1.05rem] font-bold text-paper transition hover:bg-maroon-dark"
             >
-              ไปที่คอร์สของฉัน — โหลดไฟล์ได้เลย →
+              ไปที่คอร์สของฉัน →
             </a>
           )}
 
@@ -185,9 +185,8 @@ export default function SuccessView() {
               เปิดย้อนหลังได้ตลอด
             </p>
             <p className="mt-1.5 text-sm leading-relaxed text-ink/75">
-              เข้าสู่ระบบด้วยอีเมล{email ? <> <strong>{email}</strong></> : "ที่ใช้ซื้อ"} ที่หน้า “คอร์สของฉัน”
-              จากเครื่องไหนก็ได้ ไฟล์เป็นของบัญชีนี้ตลอด ไม่มีวันหมดอายุ
-              {hasExam && <> — <strong>แนะนำให้เปิดเฉลยหลังทำข้อสอบเสร็จ</strong></>}
+              เข้าสู่ระบบด้วย{email ? <> <strong>{email}</strong></> : "อีเมลที่ใช้ซื้อ"} ที่ “คอร์สของฉัน” ได้ทุกเครื่อง ไม่มีวันหมดอายุ
+              {hasExam && <> · <strong>แนะนำเปิดเฉลยหลังสอบเสร็จ</strong></>}
             </p>
           </div>
 
@@ -208,11 +207,10 @@ export default function SuccessView() {
       <div className="px-8 py-10 text-center">
         <div className="mx-auto grid h-14 w-14 place-items-center border border-ink bg-white text-2xl">📚</div>
         <h1 className="mt-5 font-display text-2xl font-bold text-ink">
-          {status === "error" ? "เชื่อมต่อไม่สำเร็จชั่วคราว" : "เปิดคอร์สได้ที่ “คอร์สของฉัน”"}
+          {status === "error" ? "เชื่อมต่อไม่สำเร็จ" : "เปิดคอร์สได้ที่ “คอร์สของฉัน”"}
         </h1>
         <p className="mt-3 leading-relaxed text-ink/70">
-          หากชำระเงินเรียบร้อยแล้ว คอร์สจะอยู่ในบัญชี (อีเมล) ที่ใช้สั่งซื้อ —
-          ล็อกอินที่หน้า <strong>คอร์สของฉัน</strong> ได้เลย
+          ชำระเงินแล้ว คอร์สจะอยู่ในบัญชีที่ใช้ซื้อ เข้าสู่ระบบที่ <strong>คอร์สของฉัน</strong> ได้เลย
         </p>
         <a
           href="/my-courses"

@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
     const user = verifyUserSession(req.cookies.get(USER_COOKIE)?.value);
     if (!user) {
       return NextResponse.json(
-        { error: "กรุณาล็อกอินก่อนเข้าห้องสอบ", loginRequired: true },
+        { error: "เข้าสู่ระบบก่อนเข้าห้องสอบ", loginRequired: true },
         { status: 401 }
       );
     }
@@ -72,7 +72,7 @@ export async function POST(req: NextRequest) {
     const payload = verifyExamToken(body.token);
     if (!payload) {
       return NextResponse.json(
-        { error: "ลิงก์เข้าห้องสอบหมดอายุแล้ว — กรอกชื่อ นามสกุล และอีเมลที่ใช้ซื้อเพื่อเข้าใหม่ได้เลย" },
+        { error: "ลิงก์หมดอายุ เข้าสู่ระบบใหม่อีกครั้ง" },
         { status: 403 }
       );
     }
@@ -105,7 +105,7 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     console.error("ตรวจสิทธิ์เข้าสอบไม่สำเร็จ:", err);
     return NextResponse.json(
-      { error: "ระบบขัดข้องชั่วคราว กรุณาลองใหม่อีกครั้ง" },
+      { error: "ระบบขัดข้องชั่วคราว ลองใหม่อีกครั้ง" },
       { status: 503 }
     );
   }
@@ -117,7 +117,7 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     console.error("อ่านสถานะการสอบไม่สำเร็จ:", err);
     return NextResponse.json(
-      { error: "ระบบขัดข้องชั่วคราว กรุณาลองใหม่อีกครั้ง" },
+      { error: "ระบบขัดข้องชั่วคราว ลองใหม่อีกครั้ง" },
       { status: 503 }
     );
   }

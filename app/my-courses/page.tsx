@@ -52,10 +52,10 @@ function deriveCourses(items: LibraryItem[]): LibraryCourse[] {
 }
 
 const LOGIN_ERRORS: Record<string, string> = {
-  cancelled: "ยกเลิกการล็อกอิน — กดล็อกอินใหม่ได้เลย",
-  expired: "ลิงก์ล็อกอินหมดอายุหรือถูกใช้ไปแล้ว — กดล็อกอินใหม่อีกครั้ง",
-  server: "ระบบล็อกอินขัดข้องชั่วคราว — ลองใหม่อีกครั้งในอีกสักครู่",
-  setup: "ระบบล็อกอินยังไม่พร้อมใช้งาน — ติดต่อ mr.tpat3@gmail.com",
+  cancelled: "ยกเลิกการเข้าสู่ระบบ ลองใหม่ได้เลย",
+  expired: "ลิงก์หมดอายุ เข้าสู่ระบบใหม่อีกครั้ง",
+  server: "ระบบขัดข้องชั่วคราว ลองใหม่อีกครั้ง",
+  setup: "ระบบยังไม่พร้อม ติดต่อ mr.tpat3@gmail.com",
 };
 
 /**
@@ -82,10 +82,9 @@ export default async function MyCoursesPage({
               </span>
             </div>
             <div className="px-6 py-8">
-              <h1 className="font-display text-2xl font-bold text-ink">เข้าสู่ระบบเพื่อดูคอร์สของคุณ</h1>
+              <h1 className="font-display text-2xl font-bold text-ink">เข้าสู่ระบบ</h1>
               <p className="mt-2 text-sm leading-relaxed text-ink/70">
-                เข้าสู่ระบบด้วย<strong>อีเมลเดียวกับที่ใช้สั่งซื้อ</strong> (สมัครใหม่ได้ในหน้าเดียวกัน) — ไฟล์ทุกไฟล์
-                สิทธิ์เข้าห้องสอบ และผลสอบ จะรวมอยู่ที่หน้านี้ เปิดได้ทุกเครื่อง
+                ใช้<strong>อีเมลเดียวกับที่สั่งซื้อ</strong> คอร์ส ไฟล์ และผลสอบจะรวมอยู่ที่นี่
               </p>
               <LoginButton next="/my-courses" className="mt-5" />
               {loginError && (
@@ -182,41 +181,40 @@ export default async function MyCoursesPage({
           {claimedTitle && (
             <p className="mb-6 border border-maroon/40 bg-maroon/[0.06] px-4 py-3 text-sm leading-relaxed text-ink">
               {already ? (
-                <>บัญชีนี้มี <strong>“{claimedTitle}”</strong> อยู่แล้ว — เปิดใช้ได้เลยด้านล่าง</>
+                <>มี <strong>“{claimedTitle}”</strong> อยู่แล้ว</>
               ) : (
                 <>
-                  <strong className="text-maroon">รับ “{claimedTitle}” เรียบร้อย ✓</strong> — ไม่มีค่าใช้จ่าย
-                  เปิดใช้ได้เลยด้านล่าง กลับมาเปิดได้ตลอดด้วยบัญชีนี้
+                  <strong className="text-maroon">รับ “{claimedTitle}” แล้ว ✓</strong> เปิดใช้ได้ด้านล่าง
                 </>
               )}
             </p>
           )}
           {claimError && (
             <p className="mb-6 border border-maroon/40 bg-maroon/[0.06] px-4 py-3 text-sm text-maroon">
-              รับคอร์สไม่สำเร็จชั่วคราว — ลองกดรับใหม่อีกครั้ง ถ้ายังไม่ได้ติดต่อ mr.tpat3@gmail.com
+              รับคอร์สไม่สำเร็จ ลองใหม่ หรือติดต่อ mr.tpat3@gmail.com
             </p>
           )}
           {loadError && (
             <p className="mb-6 border border-maroon/40 bg-maroon/[0.06] px-4 py-3 text-sm text-maroon">
-              โหลดรายการคอร์สไม่สำเร็จชั่วคราว — รีเฟรชหน้านี้อีกครั้ง
+              โหลดไม่สำเร็จ รีเฟรชอีกครั้ง
             </p>
           )}
 
           {items.length === 0 && !loadError && (
             <div className="border border-dashed border-maroon/40 bg-white px-6 py-10 text-center">
-              <p className="font-display text-xl font-bold text-ink">บัญชีนี้ยังไม่มีคอร์ส</p>
+              <p className="font-display text-xl font-bold text-ink">ยังไม่มีคอร์ส</p>
               <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-ink/65">
-                ถ้าซื้อไปแล้วแต่ไม่เห็นคอร์ส — น่าจะซื้อด้วยอีเมลอื่น ลอง{" "}
+                ซื้อแล้วแต่ไม่เห็น? ลอง{" "}
                 <a
                   href={`/api/auth/logout?switch=1&next=${encodeURIComponent("/my-courses")}`}
                   className="font-semibold text-maroon underline underline-offset-2"
                 >
                   เปลี่ยนบัญชี
                 </a>{" "}
-                เป็นอีเมลที่ใช้สั่งซื้อ หรือติดต่อ mr.tpat3@gmail.com
+                เป็นอีเมลที่ใช้ซื้อ หรือติดต่อ mr.tpat3@gmail.com
               </p>
               <div className="mt-6 flex flex-wrap justify-center gap-3">
-                <ClaimButton productId="sum4" label="รับเล่มเนื้อหา TPAT3 ฟรี" source="my_courses_empty" />
+                <ClaimButton productId="sum4" label="รับเนื้อหา TPAT3 ฟรี" source="my_courses_empty" />
                 <a
                   href="/#mock"
                   className="inline-flex items-center border border-maroon px-6 py-3 font-bold text-maroon transition hover:bg-maroon hover:text-paper"
@@ -240,8 +238,7 @@ export default async function MyCoursesPage({
 
           {items.length > 0 && (
             <p className="mt-8 font-label text-xs leading-relaxed text-ink/50">
-              ระบบเตรียมไฟล์ตอนกดดาวน์โหลด อาจใช้เวลา 2–3 วินาทีต่อไฟล์ · ไฟล์เป็นของบัญชีนี้ตลอด ไม่มีวันหมดอายุ ·
-              สงวนลิขสิทธิ์ ห้ามเผยแพร่ต่อ
+              ดาวน์โหลดอาจใช้เวลา 2–3 วินาที · ไม่มีวันหมดอายุ · ห้ามเผยแพร่ต่อ
             </p>
           )}
         </section>
@@ -309,7 +306,7 @@ function CourseCard({ course: lc, examState }: { course: LibraryCourse; examStat
       {hasExam && <ExamButton state={examState} />}
 
       <div className="mt-6">
-        <p className="font-label text-[11px] font-semibold uppercase tracking-[0.18em] text-maroon">ไฟล์ในคอร์ส</p>
+        <p className="font-label text-[11px] font-semibold uppercase tracking-[0.18em] text-maroon">ไฟล์</p>
         <div className="mt-2.5 space-y-2.5">
           {links.map((l) => (
             <a
@@ -325,12 +322,12 @@ function CourseCard({ course: lc, examState }: { course: LibraryCourse; examStat
             </a>
           ))}
           {links.length === 0 && (
-            <p className="text-sm text-maroon">เตรียมลิงก์ไม่สำเร็จชั่วคราว — รีเฟรชอีกครั้ง หรือใช้ลิงก์ในอีเมล</p>
+            <p className="text-sm text-maroon">โหลดลิงก์ไม่สำเร็จ รีเฟรชอีกครั้ง</p>
           )}
         </div>
         {hasExam && examState !== "submitted" && (
           <p className="mt-2 font-label text-[12px] leading-snug text-ink/55">
-            แนะนำให้เปิดไฟล์เฉลยหลังทำข้อสอบเสร็จ ผลวิเคราะห์จะได้ตรงกับฝีมือจริง
+            แนะนำเปิดเฉลยหลังสอบเสร็จ
           </p>
         )}
       </div>
@@ -342,10 +339,10 @@ function CourseCard({ course: lc, examState }: { course: LibraryCourse; examStat
 function ExamButton({ state }: { state: AttemptState }) {
   const cfg =
     state === "submitted"
-      ? { href: "/exam/results", label: "ดูผลสอบ + บทวิเคราะห์", sub: "ส่งข้อสอบแล้ว · เปิดดูผลได้ตลอด" }
+      ? { href: "/exam/results", label: "ดูผลสอบ", sub: "ส่งแล้ว · เปิดดูได้ตลอด" }
       : state === "in_progress"
-        ? { href: "/exam", label: "ทำข้อสอบต่อ — เวลากำลังเดิน", sub: "เริ่มสอบไปแล้ว ระบบจับเวลาอยู่" }
-        : { href: "/exam", label: "เริ่มสอบ TPAT3 · 70 ข้อ · 3 ชม.", sub: "ยังไม่ได้ใช้สิทธิ์สอบ · 1 บัญชีสอบได้ 1 รอบ" };
+        ? { href: "/exam", label: "ทำข้อสอบต่อ — เวลากำลังเดิน", sub: "เริ่มสอบไปแล้ว" }
+        : { href: "/exam", label: "เริ่มสอบ · 70 ข้อ · 3 ชม.", sub: "สอบได้ 1 รอบ" };
   return (
     <div className="mt-6">
       <a
@@ -357,7 +354,7 @@ function ExamButton({ state }: { state: AttemptState }) {
           <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
         </svg>
       </a>
-      <p className="mt-2 text-center font-label text-xs text-ink/55">{cfg.sub} · 💻 แนะนำทำในคอมพิวเตอร์หรือ iPad</p>
+      <p className="mt-2 text-center font-label text-xs text-ink/55">{cfg.sub} · แนะนำทำในคอมพิวเตอร์หรือ iPad</p>
     </div>
   );
 }
@@ -368,7 +365,7 @@ function OwnerExamCard({ examState }: { examState: AttemptState }) {
     <article className="flex flex-col border border-dashed border-maroon/50 bg-white p-6 md:p-7">
       <p className="font-label text-[11px] font-semibold uppercase tracking-[0.18em] text-maroon">สิทธิ์เจ้าของร้าน</p>
       <h2 className="mt-1 font-display text-xl font-bold text-ink">ห้องสอบ Mock TPAT3 (ทดสอบระบบ)</h2>
-      <p className="mt-1.5 text-sm text-ink/60">เข้าได้ไม่จำกัดรอบ ผลรอบใหม่แทนที่รอบเก่า</p>
+      <p className="mt-1.5 text-sm text-ink/60">สอบได้ไม่จำกัด ผลรอบใหม่แทนที่รอบเก่า</p>
       <ExamButton state={examState} />
     </article>
   );
@@ -385,7 +382,7 @@ function MoreCourses({ items }: { items: LibraryItem[] }) {
   return (
     <section className="border-t border-grid bg-paper">
       <div className="mx-auto max-w-6xl px-5 py-12">
-        <h2 className="font-display text-xl font-bold text-ink">คอร์สที่ยังไม่มีในบัญชี</h2>
+        <h2 className="font-display text-xl font-bold text-ink">คอร์สอื่น</h2>
         <div className="mt-5 grid gap-4 sm:grid-cols-2">
           {missing.map((c) => {
             const p = PRODUCTS[c.productId];

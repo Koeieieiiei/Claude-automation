@@ -162,7 +162,7 @@ export default function SuccessView() {
                 </svg>
               </a>
               <p className="mt-3 text-center font-label text-xs leading-relaxed text-ink/55">
-                สอบได้ 1 รอบ · แนะนำทำในคอมพิวเตอร์หรือ iPad
+                แนะนำทำในคอมพิวเตอร์หรือ iPad
               </p>
               <a
                 href="/my-courses"

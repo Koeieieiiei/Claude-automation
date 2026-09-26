@@ -342,7 +342,7 @@ function ExamButton({ state }: { state: AttemptState }) {
       ? { href: "/exam/results", label: "ดูผลสอบ", sub: "ส่งแล้ว · เปิดดูได้ตลอด" }
       : state === "in_progress"
         ? { href: "/exam", label: "ทำข้อสอบต่อ — เวลากำลังเดิน", sub: "เริ่มสอบไปแล้ว" }
-        : { href: "/exam", label: "เริ่มสอบ · 70 ข้อ · 3 ชม.", sub: "สอบได้ 1 รอบ" };
+        : { href: "/exam", label: "เริ่มสอบ · 70 ข้อ · 3 ชม.", sub: "" };
   return (
     <div className="mt-6">
       <a
@@ -354,7 +354,7 @@ function ExamButton({ state }: { state: AttemptState }) {
           <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
         </svg>
       </a>
-      <p className="mt-2 text-center font-label text-xs text-ink/55">{cfg.sub} · แนะนำทำในคอมพิวเตอร์หรือ iPad</p>
+      <p className="mt-2 text-center font-label text-xs text-ink/55">{cfg.sub ? `${cfg.sub} · ` : ""}แนะนำทำในคอมพิวเตอร์หรือ iPad</p>
     </div>
   );
 }

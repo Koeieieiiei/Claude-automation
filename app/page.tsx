@@ -132,11 +132,12 @@ export default function Home() {
             สวัสดีครับน้อง ๆ
           </h1>
           <p className="mt-5 max-w-[960px] text-[clamp(1.4rem,2.7vw,2.15rem)] leading-[1.6] text-ink md:mt-7">
-            พี่ชื่อ <strong className="font-semibold text-maroon">มาโก้ ศุภวัฒน์</strong> เรียนอยู่{" "}
-            <strong className="font-semibold text-maroon">วิศวคอม จุฬาฯ</strong> พี่กับเพื่อน ๆ รวมหัวกันออกแบบ{" "}
+            พี่ชื่อ <strong className="font-semibold text-maroon">มาโก้ ศุภวัฒน์</strong> กำลังศึกษาอยู่ที่{" "}
+            <strong className="font-semibold text-maroon">วิศวคอม จุฬาฯ</strong> พี่และเพื่อน ๆ ในกลุ่มได้รวมหัวกันออกแบบ{" "}
             <strong className="font-semibold text-maroon">Mock TPAT3</strong> และ
             <strong className="font-semibold text-maroon">เนื้อหาสำหรับสอบ TPAT3</strong> ซึ่ง
-            <strong className="font-semibold text-maroon">แจกฟรี</strong> สนใจเลื่อนดูด้านล่าง<span className="whitespace-nowrap">ได้เลยครับ</span>
+            <strong className="font-semibold text-maroon">แจกฟรี</strong> หากน้องสนใจ
+            สามารถเลื่อนดูด้านล่าง<span className="whitespace-nowrap">ได้เลยครับ</span>
           </p>
 
           <div className="mt-9 flex flex-wrap gap-3.5 md:mt-14">

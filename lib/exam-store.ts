@@ -16,8 +16,8 @@ import { accessResetIso, afterReset } from "./access-reset";
  * และหายทุกครั้งที่ instance เปลี่ยน จึงห้ามพึ่งไฟล์ในเครื่อง
  *   ebooks/exam/<examId>/answer-key.json      เฉลย + ระดับความยากรายข้อ
  *   ebooks/exam/<examId>/population-2026-09-27.json  ประชากรอ้างอิงสำหรับสถิติ
- *   ebooks/exam/<examId>/pages-wm/page-NN.png  รูปหน้าโจทย์ + ลายน้ำ (เสิร์ฟผ่าน API ที่เช็คสิทธิ์)
- *   ebooks/exam/<examId>/pages/page-NN.png     รูปหน้าโจทย์ต้นฉบับ (ไม่เสิร์ฟ — ใช้เป็นต้นทางประทับลายน้ำ)
+ *   ebooks/exam/<examId>/pages-wm-2026-09-27/page-NN.png  รูปหน้าโจทย์ + ลายน้ำ (เสิร์ฟผ่าน API ที่เช็คสิทธิ์)
+ *   ebooks/exam/<examId>/pages-2026-09-27/page-NN.png     รูปหน้าโจทย์ต้นฉบับ (ไม่เสิร์ฟ — ใช้เป็นต้นทางประทับลายน้ำ)
  *   ebooks/exam/<examId>/attempts/<hash>.json การสอบของแต่ละอีเมล (hash = sha256 ของอีเมล)
  *   ebooks/exam/<examId>/aggregate.json       ผลรวมของผู้สอบจริง ไว้คิดสถิติเร็ว ๆ
  *
@@ -40,10 +40,12 @@ const sPop = (exam: ExamDef) => `exam/${exam.id}/population-2026-09-27.json`;
 const sAgg = (exam: ExamDef) => `exam/${exam.id}/aggregate.json`;
 const sAttempt = (exam: ExamDef, email: string) =>
   `exam/${exam.id}/attempts/${createHash("sha256").update(normalizeEmail(email)).digest("hex")}.json`;
-// pages-wm = รูปหน้าโจทย์ที่ประทับลายน้ำแบรนด์แล้ว (scripts/watermark-exam-pages.py — เจ้าของสั่ง 2026-09-27)
-// ต้นฉบับสะอาดอยู่ที่ exam/<examId>/pages/ ห้องสอบไม่เสิร์ฟจากที่นั่นแล้ว
+// pages-wm-* = รูปหน้าโจทย์ที่ประทับลายน้ำแบรนด์แล้ว (scripts/watermark-exam-pages.py — เจ้าของสั่ง 2026-09-27)
+// ต้นฉบับสะอาดอยู่ที่ exam/<examId>/pages-2026-09-27/ ห้องสอบไม่เสิร์ฟจากที่นั่น
+// ชุด 2026-09-27 = Master Questions ฉบับฟอนต์ Sarabun (เจ้าของสั่ง) อัปขึ้นโฟลเดอร์ใหม่แทนการทับ
+// เหตุผลเดียวกับ sPop — ชุดก่อนหน้ายังอยู่ที่ pages/ และ pages-wm/
 export const storagePagePath = (exam: ExamDef, pageNo: number) =>
-  `exam/${exam.id}/pages-wm/page-${String(pageNo).padStart(2, "0")}.png`;
+  `exam/${exam.id}/pages-wm-2026-09-27/page-${String(pageNo).padStart(2, "0")}.png`;
 
 const localAttemptsFile = (exam: ExamDef) => path.join(DATA_ROOT, exam.id, "attempts.json");
 const localDataFile = (exam: ExamDef, name: string) => path.join(DATA_ROOT, exam.id, name);

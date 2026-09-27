@@ -250,7 +250,8 @@ npx vercel --prod --yes
 |---|---|
 | `exam/<examId>/answer-key.json` | เฉลย + ระดับความยากรายข้อ |
 | `exam/<examId>/population.json` | ประชากรอ้างอิง (TPAT3: 15 คน กอง 30-60 + เก่ง 1 คนที่ 76) |
-| `exam/<examId>/pages/page-NN.png` | รูปหน้าโจทย์ (เสิร์ฟผ่าน API ที่เช็คสิทธิ์) |
+| `exam/<examId>/pages-wm-2026-09-27/page-NN.png` | รูปหน้าโจทย์ + ลายน้ำ ชุดฟอนต์ Sarabun (เสิร์ฟผ่าน API ที่เช็คสิทธิ์) |
+| `exam/<examId>/pages-2026-09-27/page-NN.png` | รูปหน้าโจทย์ต้นฉบับ ไม่มีลายน้ำ (ไม่เสิร์ฟ) ชุดก่อนหน้าอยู่ที่ `pages/` และ `pages-wm/` |
 | `exam/<examId>/attempts/<sha256(email)>.json` | การสอบรายคน (1 อีเมล = 1 ไฟล์ = 1 รอบต่อสนาม) |
 | `exam/<examId>/aggregate.json` | ผลรวมผู้สอบจริง ไว้คิดสถิติโดยไม่ต้องอ่านทุกไฟล์ |
 

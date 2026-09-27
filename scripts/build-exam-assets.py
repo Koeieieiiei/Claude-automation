@@ -12,6 +12,8 @@
 
 อ่าน:
   assets/master-questions.pdf   โจทย์ 1-70 (หน้า 1 ปก, 2-3 คำชี้แจง, 4-57 โจทย์)
+      ฉบับ Sarabun 2026-09-15 ไม่มีหน้าปก (56 หน้า เริ่มที่คำชี้แจง) — สคริปต์เลื่อนเลขหน้าให้เอง
+      เลขหน้าในห้องสอบจึงยังเป็น 2-57 เหมือนเดิม (ดู page_offset)
   assets/master-answers.pdf     เฉลย — มี "ตารางเฉลยรวม" (ข้อ/ตอบ/ระดับ) อยู่ใน 5 หน้าแรก
 
 สร้าง (แยกโฟลเดอร์ตามสนาม):
@@ -37,8 +39,16 @@ MANIFEST = os.path.join(ROOT, "lib", "exam-manifests", f"{EXAM_ID}.json")
 
 TOTAL_Q = 70
 DPI = 150
-FIRST_Q_PAGE = 4  # หน้า PDF (1-based) ที่โจทย์ข้อ 1 เริ่ม
+# เลขหน้าด้านล่างคือ "เลขหน้าในห้องสอบ" (ชื่อไฟล์ page-NN.png) นับแบบไฟล์ที่มีหน้าปกเป็นหน้า 1
+FIRST_Q_PAGE = 4  # หน้าที่โจทย์ข้อ 1 เริ่ม
 INSTRUCTION_PAGES = [2, 3]  # หน้าคำชี้แจง แสดงก่อนเริ่มสอบ
+
+
+def page_offset(doc) -> int:
+    """เลขหน้าในห้องสอบ = เลขหน้า PDF + ค่านี้
+    ไฟล์ที่ไม่มีหน้าปก (หน้า 1 เป็นคำชี้แจงเลย) ต้องเลื่อน 1 ให้เลขหน้าในห้องสอบคงเดิม —
+    เครื่องผู้สอบที่เปิดห้องสอบค้างไว้จะได้ขอรูปหน้าเดิมได้ต่อ"""
+    return 1 if "คำชี้แจง" in doc[0].get_text() else 0
 
 # น้ำหนักคะแนนรายข้อ (คะแนนเต็ม 100): ข้อ 1-60 ข้อละ 4/3 (รวม 80) · ข้อ 61-70 ข้อละ 2 (รวม 20)
 def question_weight(no: int) -> float:
@@ -85,7 +95,8 @@ def locate_questions(doc):
     """หาว่าข้อแต่ละข้อเริ่มที่หน้าไหน ตำแหน่งแนวตั้งเท่าไร (เลขข้ออยู่ชิดซ้าย x<100, ช้อยส์เยื้องเข้ามา)"""
     positions = {}
     expected = 1
-    for pi in range(FIRST_Q_PAGE - 1, len(doc)):
+    offset = page_offset(doc)
+    for pi in range(FIRST_Q_PAGE - 1 - offset, len(doc)):
         page = doc[pi]
         h = page.rect.height
         d = page.get_text("dict")
@@ -98,7 +109,7 @@ def locate_questions(doc):
                 text = "".join(s["text"] for s in spans).strip()
                 m = re.match(r"^(\d{1,2})\.", text)
                 if m and x0 < 100 and int(m.group(1)) == expected:
-                    positions[expected] = {"page": pi + 1, "yFrac": round(max(0.0, (y0 - 14) / h), 4)}
+                    positions[expected] = {"page": pi + 1 + offset, "yFrac": round(max(0.0, (y0 - 14) / h), 4)}
                     expected += 1
                     if expected > TOTAL_Q:
                         return positions
@@ -108,8 +119,9 @@ def locate_questions(doc):
 def render_pages(doc, page_numbers):
     os.makedirs(PAGES_DIR, exist_ok=True)
     size = None
+    offset = page_offset(doc)
     for n in page_numbers:
-        pix = doc[n - 1].get_pixmap(dpi=DPI)
+        pix = doc[n - 1 - offset].get_pixmap(dpi=DPI)
         pix.save(os.path.join(PAGES_DIR, f"page-{n:02d}.png"))
         size = (pix.width, pix.height)
     return size
@@ -213,7 +225,7 @@ def main():
         missing = [q for q in range(1, TOTAL_Q + 1) if q not in positions]
         sys.exit(f"locate questions failed, missing: {missing}")
 
-    last_page = len(doc)
+    last_page = len(doc) + page_offset(doc)
     question_pages = list(range(FIRST_Q_PAGE, last_page + 1))
     size = render_pages(doc, INSTRUCTION_PAGES + question_pages)
 

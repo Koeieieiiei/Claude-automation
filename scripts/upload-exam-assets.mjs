@@ -10,9 +10,12 @@
  *   data/exam/<examId>/population.json   → exam/<examId>/population-2026-09-27.json
  *       (ชื่อปลายทางต้องตรงกับ sPop ใน lib/exam-store.ts — เปลี่ยนประชากรครั้งหน้าให้ตั้งชื่อใหม่ทั้งสองที่
  *        อย่าอัปทับ เพราะ CDN จ่ายไฟล์เก่าที่แคชไว้ได้อีกพัก)
- *   assets/exam-pages/<examId>/*.png     → exam/<examId>/pages/*.png
+ *   assets/exam-pages/<examId>/*.png     → exam/<examId>/pages-2026-09-27/*.png
  *       (ต้นฉบับสะอาด — อัปแล้วต้องรัน `python scripts/watermark-exam-pages.py <examId>` ต่อ
- *        เพื่อสร้างชุดมีลายน้ำที่ pages-wm/ ซึ่งเป็นชุดที่ห้องสอบเสิร์ฟจริง)
+ *        เพื่อสร้างชุดมีลายน้ำที่ pages-wm-2026-09-27/ ซึ่งเป็นชุดที่ห้องสอบเสิร์ฟจริง)
+ *       (เปลี่ยนรูปหน้าโจทย์ครั้งหน้าให้ตั้งชื่อโฟลเดอร์ใหม่ทั้ง 3 ที่: PAGES_TARGET ในไฟล์นี้,
+ *        PAGES_DIR/PAGES_WM_DIR ใน watermark-exam-pages.py และ storagePagePath ใน lib/exam-store.ts
+ *        อย่าอัปทับ เพราะ CDN จ่ายไฟล์เก่าที่แคชไว้ได้อีกพัก — ชุดเดิมยังอยู่ที่ pages/ และ pages-wm/)
  *
  * ไฟล์ต้นทางสร้างด้วย `python scripts/build-exam-assets.py <examId>` (ต้องรันก่อน)
  * เรียกซ้ำได้ปลอดภัย — ทับไฟล์เดิม (upsert) และไม่แตะไฟล์ผลสอบของผู้ใช้
@@ -26,6 +29,7 @@ import path from "path";
 const ROOT = process.cwd();
 const POPULATION_ONLY = process.argv.includes("--population-only");
 const POPULATION_TARGET = "population-2026-09-27.json";
+const PAGES_TARGET = "pages-2026-09-27";
 const EXAM_ID = process.argv.slice(2).find((a) => !a.startsWith("--")) || "tpat3-1";
 if (!/^[a-z0-9-]+$/.test(EXAM_ID)) {
   console.error(`❌ examId ไม่ถูกต้อง: ${EXAM_ID}`);
@@ -78,7 +82,7 @@ async function main() {
   const pages = (await readdir(pagesDir)).filter((f) => f.endsWith(".png")).sort();
   let done = 0;
   for (const f of pages) {
-    await put(`exam/${EXAM_ID}/pages/${f}`, await readFile(path.join(pagesDir, f)), "image/png");
+    await put(`exam/${EXAM_ID}/${PAGES_TARGET}/${f}`, await readFile(path.join(pagesDir, f)), "image/png");
     done++;
     if (done % 10 === 0 || done === pages.length) {
       console.log(`✓ รูปหน้าโจทย์ ${done}/${pages.length}`);

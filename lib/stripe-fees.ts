@@ -30,12 +30,14 @@ const MAX_TRANSACTIONS = 2000;
  */
 const SALE_TYPES = new Set(["charge", "payment"]);
 
-export async function fetchStripeFees(sinceIsoDate: string): Promise<StripeFeeSummary | null> {
+/** since = วันที่ (YYYY-MM-DD ตีความเป็นเที่ยงคืนเวลาไทย) หรือเวลาเต็ม (ISO มีตัว T) */
+export async function fetchStripeFees(since: string): Promise<StripeFeeSummary | null> {
   const stripe = getStripe();
   if (!stripe) return null;
 
-  // ตีความวันที่เป็นเวลาไทย (เที่ยงคืนของวันนั้น = 17:00 UTC ของวันก่อนหน้า)
-  const gte = Math.floor(new Date(`${sinceIsoDate}T00:00:00+07:00`).getTime() / 1000);
+  // วันที่ล้วน = เที่ยงคืนเวลาไทยของวันนั้น (17:00 UTC ของวันก่อนหน้า)
+  const sinceMs = new Date(since.includes("T") ? since : `${since}T00:00:00+07:00`).getTime();
+  const gte = Math.floor(sinceMs / 1000);
 
   try {
     let fees = 0;

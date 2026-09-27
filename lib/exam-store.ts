@@ -915,8 +915,24 @@ export async function resetAttempt(exam: ExamDef, email: string): Promise<void> 
   await deleteAttempt(exam, email);
 }
 
-/** คะแนนของผู้สอบจริงที่ส่งแล้ว (ไม่รวมประชากรอ้างอิง) — ใช้กับหน้าหลังร้าน */
-export async function getSubmittedScores(exam: ExamDef): Promise<number[]> {
+/**
+ * คะแนนของผู้สอบจริงที่ส่งแล้ว (ไม่รวมประชากรอ้างอิง) — ใช้กับหน้าหลังร้าน
+ * sinceMs = นับเฉพาะคนที่ส่งตั้งแต่เวลานี้ (0 = ทุกคน) กรองได้เฉพาะเมื่อผลสอบอยู่ในตารางฐานข้อมูล
+ * — ไฟล์สรุปบน Storage ไม่มีเวลาส่งรายคน ถ้าต้องถอยไปใช้จะได้ทุกคน
+ */
+export async function getSubmittedScores(exam: ExamDef, sinceMs = 0): Promise<number[]> {
+  const supabase = getSupabase();
+  if (sinceMs && supabase && attemptsTableReady !== false) {
+    const { data, error } = await supabase
+      .from(ATTEMPTS_TABLE)
+      .select("score")
+      .eq("exam_id", exam.id)
+      .gte("submitted_at", new Date(sinceMs).toISOString());
+    if (!error) return ((data ?? []) as { score: number | string | null }[]).map((r) => Number(r.score) || 0);
+    if (!isMissingTable(error)) {
+      throw new Error(`อ่านผลสอบจากฐานข้อมูลไม่สำเร็จ: ${error.message}`);
+    }
+  }
   return (await readAggregate(exam)).scores;
 }
 

@@ -65,11 +65,74 @@ function isoDate(gaDate: string): string {
   return `${gaDate.slice(0, 4)}-${gaDate.slice(4, 6)}-${gaDate.slice(6, 8)}`;
 }
 
-export async function fetchGaSummary(days = 30): Promise<GaSummary | null> {
+const DAY_MS = 24 * 60 * 60 * 1000;
+const BKK_OFFSET_MS = 7 * 60 * 60 * 1000;
+
+export interface GaWindow {
+  /** วันแรกที่นับ (YYYY-MM-DD เวลาไทย) */
+  startDate: string;
+  /** จำนวนวันในช่วง นับรวมวันนี้ — 0 = จุดเริ่มนับยังมาไม่ถึง ไม่มีอะไรให้นับ */
+  days: number;
+  /** ชั่วโมงของวันแรกที่ต้องตัดทิ้ง (รูปแบบ dateHour ของ GA: YYYYMMDDHH) เพราะเกิดก่อนจุดเริ่มนับ */
+  excludedDateHours: string[];
+}
+
+/**
+ * ช่วงเวลาที่จะขอจาก GA: ย้อนหลัง maxDays วัน แต่ไม่ย้อนเกินจุดเริ่มนับ (sinceMs, 0 = ไม่จำกัด)
+ * GA ตัดได้ละเอียดสุดระดับชั่วโมง — จุดเริ่มนับที่ไม่ลงต้นชั่วโมงจะเริ่มนับที่ต้นชั่วโมงถัดไป
+ */
+export function gaWindow(nowMs: number, maxDays: number, sinceMs = 0): GaWindow {
+  const today = bkkDayKey(nowMs);
+  const rollingStart = bkkDayKey(nowMs - (maxDays - 1) * DAY_MS);
+  const sinceDay = sinceMs ? bkkDayKey(sinceMs) : "";
+  if (!sinceDay || sinceDay <= rollingStart) {
+    return { startDate: rollingStart, days: maxDays, excludedDateHours: [] };
+  }
+  if (sinceMs > nowMs) return { startDate: sinceDay, days: 0, excludedDateHours: [] };
+
+  const dayDiff = Math.round((Date.parse(`${today}T00:00:00Z`) - Date.parse(`${sinceDay}T00:00:00Z`)) / DAY_MS);
+  const firstHour = Math.ceil(((sinceMs + BKK_OFFSET_MS) % DAY_MS) / (60 * 60 * 1000));
+  const ymd = sinceDay.replace(/-/g, "");
+  return {
+    startDate: sinceDay,
+    days: dayDiff + 1,
+    excludedDateHours: Array.from({ length: firstHour }, (_, h) => `${ymd}${String(h).padStart(2, "0")}`),
+  };
+}
+
+/** sinceMs = นับเฉพาะตั้งแต่เวลานี้ (จุดเริ่มนับของหน้าหลังร้าน — lib/admin-reset.ts) */
+export async function fetchGaSummary(maxDays = 30, sinceMs = 0): Promise<GaSummary | null> {
   if (!ready.ga) return null;
 
+  const window = gaWindow(Date.now(), maxDays, sinceMs);
+  const days = window.days;
+  if (days === 0) {
+    return {
+      days: 0,
+      activeUsers: 0,
+      newUsers: 0,
+      sessions: 0,
+      pageViews: 0,
+      avgEngagementSec: 0,
+      daily: [],
+      channels: [],
+      sources: [],
+      pages: [],
+      devices: [],
+      events: FUNNEL_EVENTS.map((e) => ({ event: e.event, label: e.label, count: 0 })),
+    };
+  }
+
   const property = `properties/${config.ga.propertyId}`;
-  const dateRanges = [{ startDate: `${days}daysAgo`, endDate: "today" }];
+  const dateRanges = [{ startDate: window.startDate, endDate: "today" }];
+  // ตัดชั่วโมงก่อนจุดเริ่มนับของวันแรกทิ้ง (ใส่ในทุกรายงาน ให้ทุกตัวเลขนับช่วงเดียวกัน)
+  const dimensionFilter = window.excludedDateHours.length
+    ? {
+        notExpression: {
+          filter: { fieldName: "dateHour", inListFilter: { values: window.excludedDateHours } },
+        },
+      }
+    : undefined;
   const client = getClient();
 
   try {
@@ -82,6 +145,7 @@ export async function fetchGaSummary(days = 30): Promise<GaSummary | null> {
           // 0) ภาพรวม + รายวัน
           {
             dateRanges,
+            dimensionFilter,
             dimensions: [{ name: "date" }],
             metrics: [
               { name: "activeUsers" },
@@ -99,6 +163,7 @@ export async function fetchGaSummary(days = 30): Promise<GaSummary | null> {
           // 1) ช่องทางที่มา (กลุ่มใหญ่ เช่น Organic Social / Direct)
           {
             dateRanges,
+            dimensionFilter,
             dimensions: [{ name: "sessionDefaultChannelGroup" }],
             metrics: [{ name: "activeUsers" }, { name: "sessions" }],
             orderBys: [{ metric: { metricName: "activeUsers" }, desc: true }],
@@ -107,6 +172,7 @@ export async function fetchGaSummary(days = 30): Promise<GaSummary | null> {
           // 2) แหล่งที่มาละเอียด (เช่น tiktok / google / instagram)
           {
             dateRanges,
+            dimensionFilter,
             dimensions: [{ name: "sessionSource" }],
             metrics: [{ name: "activeUsers" }, { name: "sessions" }],
             orderBys: [{ metric: { metricName: "activeUsers" }, desc: true }],
@@ -115,6 +181,7 @@ export async function fetchGaSummary(days = 30): Promise<GaSummary | null> {
           // 3) หน้าที่มีคนเข้ามากสุด
           {
             dateRanges,
+            dimensionFilter,
             dimensions: [{ name: "pagePath" }],
             metrics: [{ name: "screenPageViews" }],
             orderBys: [{ metric: { metricName: "screenPageViews" }, desc: true }],
@@ -123,6 +190,7 @@ export async function fetchGaSummary(days = 30): Promise<GaSummary | null> {
           // 4) อุปกรณ์
           {
             dateRanges,
+            dimensionFilter,
             dimensions: [{ name: "deviceCategory" }],
             metrics: [{ name: "activeUsers" }],
             orderBys: [{ metric: { metricName: "activeUsers" }, desc: true }],
@@ -137,6 +205,7 @@ export async function fetchGaSummary(days = 30): Promise<GaSummary | null> {
       property,
       requestBody: {
         dateRanges,
+        dimensionFilter,
         dimensions: [{ name: "eventName" }],
         metrics: [{ name: "eventCount" }],
         limit: "100",
@@ -166,7 +235,6 @@ export async function fetchGaSummary(days = 30): Promise<GaSummary | null> {
         sessions: num(m[2]?.value),
       });
     }
-    const DAY_MS = 24 * 60 * 60 * 1000;
     const daily = Array.from({ length: days }, (_, i) => {
       const date = bkkDayKey(Date.now() - (days - 1 - i) * DAY_MS);
       const d = byDay.get(date);

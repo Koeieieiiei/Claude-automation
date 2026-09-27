@@ -23,6 +23,8 @@ interface StatsPayload {
     productColumnReady: boolean;
     ledgerReady: boolean;
     orderCount: number;
+    /** จุดเริ่มนับของทุกตัวเลขบนหน้านี้ (lib/admin-reset.ts) — null = นับตั้งแต่เปิดร้าน */
+    since: string | null;
     /** ตัวเลขฝั่ง Stripe ไว้กระทบยอด (null = ดึงไม่ได้) */
     stripe: { gross: number; net: number; saleCount: number } | null;
     categories: { expense: string[]; income: string[] };
@@ -749,6 +751,9 @@ export default function AdminDashboard() {
                 ? `อัปเดตล่าสุด ${updatedAt.toLocaleTimeString("th-TH", TH_DATE)} (รีเฟรชเองทุก 30 วินาที)`
                 : "กำลังอัปเดต…"}
             </p>
+            {data?.meta.since && (
+              <p className="mt-0.5 text-xs text-ink/50">เริ่มนับใหม่ตั้งแต่ {dateTime(data.meta.since)} น.</p>
+            )}
           </div>
           <div className="flex gap-2">
             <button
@@ -871,7 +876,10 @@ export default function AdminDashboard() {
               </Card>
             </FoldSection>
 
-            <FoldSection title="ผู้เข้าชมเว็บ" hint="Google Analytics 30 วันล่าสุด">
+            <FoldSection
+              title="ผู้เข้าชมเว็บ"
+              hint={ga && ga.days < 30 ? "Google Analytics ตั้งแต่เริ่มนับใหม่" : "Google Analytics 30 วันล่าสุด"}
+            >
               <GaBlock ga={ga} configured={data.meta.gaConfigured} />
             </FoldSection>
 

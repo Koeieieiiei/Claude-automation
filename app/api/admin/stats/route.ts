@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ADMIN_COOKIE, adminReady, verifyAdminSession } from "@/lib/admin-auth";
-import { summarizeSales, type OrderRow } from "@/lib/admin-stats";
+import { ADMIN_STATS_START, sinceAdminReset } from "@/lib/admin-reset";
+import { bkkDayKey, summarizeSales, type OrderRow } from "@/lib/admin-stats";
 import { EXAMS } from "@/lib/exams";
 import { getSubmittedScores } from "@/lib/exam-store";
 import { LEDGER_START, summarizeFinance } from "@/lib/finance";
@@ -21,7 +22,7 @@ async function examStats() {
   const out: { id: string; title: string; attempts: number; avgScore: number; maxScore: number }[] = [];
   for (const exam of Object.values(EXAMS)) {
     try {
-      const scores = await getSubmittedScores(exam);
+      const scores = await getSubmittedScores(exam, ADMIN_STATS_START);
       out.push({
         id: exam.id,
         title: exam.title,
@@ -47,15 +48,21 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const orders = (await listOrders()) as OrderRow[];
+    const allOrders = (await listOrders()) as OrderRow[];
+    // ทุกตัวเลขบนหน้านี้นับตั้งแต่จุดเริ่มนับ (lib/admin-reset.ts) — ของเก่ากว่านั้นยังอยู่ในฐานข้อมูล แค่ไม่ถูกนับ
+    const orders = allOrders.filter((o) => sinceAdminReset(o.created_at));
+    const resetDay = bkkDayKey(ADMIN_STATS_START);
+    const financeStart = resetDay > LEDGER_START ? resetDay : LEDGER_START;
+    const feesSince = resetDay > LEDGER_START ? new Date(ADMIN_STATS_START).toISOString() : LEDGER_START;
+
     // ดึงของนอกฐานข้อมูลพร้อมกัน — ตัวไหนล่ม/ยังไม่ตั้งค่า ก็แค่เป็น null ไม่ล้มทั้งหน้า
     const [ga, exams, stripeFees, ledger] = await Promise.all([
-      fetchGaSummary(30).catch(() => null),
+      fetchGaSummary(30, ADMIN_STATS_START).catch(() => null),
       examStats().catch(() => []),
-      fetchStripeFees(LEDGER_START).catch(() => null),
+      fetchStripeFees(feesSince).catch(() => null),
       // ยังไม่ได้สร้างตาราง ledger = ถือว่ายังไม่มีรายการ (หน้าเว็บจะบอกให้รัน SQL)
       listLedger().then(
-        (rows) => ({ rows, ready: true }),
+        (rows) => ({ rows: rows.filter((e) => sinceAdminReset(e.created_at)), ready: true }),
         () => ({ rows: [] as LedgerEntry[], ready: false })
       ),
     ]);
@@ -66,15 +73,18 @@ export async function GET(req: NextRequest) {
         orders,
         entries: ledger.rows,
         stripeFees: stripeFees ? stripeFees.fees : null,
+        startDate: financeStart,
       }),
       exams,
       ga,
       meta: {
         gaConfigured: ready.ga,
         // คอลัมน์ product_id มีจริงหรือยัง (ถ้ายัง หน้าเว็บจะเตือนให้รันคำสั่ง SQL)
-        productColumnReady: orders.length === 0 || orders.some((o) => "product_id" in o),
+        productColumnReady: allOrders.length === 0 || allOrders.some((o) => "product_id" in o),
         ledgerReady: ledger.ready,
         orderCount: orders.length,
+        /** จุดเริ่มนับ (ISO) — null = ไม่ได้รีเซ็ต นับทุกอย่างตั้งแต่เปิดร้าน */
+        since: ADMIN_STATS_START ? new Date(ADMIN_STATS_START).toISOString() : null,
         // ตัวเลขฝั่ง Stripe ไว้กระทบยอดกับที่บันทึกในเว็บ (ควรใกล้เคียงกัน)
         stripe: stripeFees
           ? {

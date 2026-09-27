@@ -2,30 +2,26 @@ import { NextRequest, NextResponse } from "next/server";
 import { ADMIN_COOKIE, adminReady, verifyAdminSession } from "@/lib/admin-auth";
 import { summarizeSales, type OrderRow } from "@/lib/admin-stats";
 import { EXAMS } from "@/lib/exams";
+import { getSubmittedScores } from "@/lib/exam-store";
 import { LEDGER_START, summarizeFinance } from "@/lib/finance";
 import { fetchGaSummary } from "@/lib/ga";
 import { listLedger, EXPENSE_CATEGORIES, INCOME_CATEGORIES, type LedgerEntry } from "@/lib/ledger";
 import { listOrders } from "@/lib/orders";
 import { fetchStripeFees } from "@/lib/stripe-fees";
-import { getSupabase } from "@/lib/supabase";
-import { config, ready } from "@/lib/config";
+import { ready } from "@/lib/config";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-/** จำนวนคนที่ทำข้อสอบออนไลน์จริง (อ่านจากไฟล์ผลรวมของแต่ละสนาม) */
+/**
+ * จำนวนคนที่ทำข้อสอบออนไลน์จริง — แหล่งเดียวกับหน้าผลสอบ (lib/exam-store)
+ * เดิมอ่านไฟล์ aggregate.json ตรง ๆ ซึ่งเลิกอัปเดตตั้งแต่ย้ายผลสอบไปเก็บในฐานข้อมูล ตัวเลขจึงค้าง
+ */
 async function examStats() {
-  const supabase = getSupabase();
-  if (!supabase) return [];
   const out: { id: string; title: string; attempts: number; avgScore: number; maxScore: number }[] = [];
   for (const exam of Object.values(EXAMS)) {
     try {
-      const { data } = await supabase.storage
-        .from(config.supabase.bucket)
-        .download(`exam/${exam.id}/aggregate.json`);
-      if (!data) continue;
-      const agg = JSON.parse(await data.text()) as { scores?: number[] };
-      const scores = agg.scores ?? [];
+      const scores = await getSubmittedScores(exam);
       out.push({
         id: exam.id,
         title: exam.title,
@@ -36,7 +32,7 @@ async function examStats() {
         maxScore: scores.length ? Math.max(...scores) : 0,
       });
     } catch {
-      /* ยังไม่มีคนสอบสนามนี้ = ไม่มีไฟล์ ข้ามไป */
+      /* อ่านผลสอบของสนามนี้ไม่ได้ = ข้ามไป ไม่ให้ล้มทั้งหน้าหลังร้าน */
     }
   }
   return out;

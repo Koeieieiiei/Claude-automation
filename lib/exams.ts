@@ -7,6 +7,7 @@
  * 1. วางไฟล์ต้นฉบับ master-*.pdf แล้วรัน `python scripts/build-exam-assets.py <examId>`
  *    → ได้ manifest ที่ lib/exam-manifests/<examId>.json + เฉลย/รูปโจทย์ใน data,assets
  * 2. รัน `node --env-file=.env.local scripts/upload-exam-assets.mjs <examId>`
+ *    แล้ว `python scripts/watermark-exam-pages.py <examId>` (ประทับลายน้ำรูปหน้าโจทย์ที่ห้องสอบเสิร์ฟ)
  * 3. เพิ่ม entry ใหม่ใน EXAMS ด้านล่าง (id, ชื่อ, น้ำหนักคะแนน, ไฟล์ที่ให้สิทธิ์)
  * 4. เข้าห้องสอบชุดใหม่ที่ /exam?exam=<examId>
  * ข้อมูลทุกอย่าง (สิทธิ์ 1 อีเมล 1 รอบ, ผลสอบ, สถิติ) แยกกันต่อสนามโดยอัตโนมัติ —

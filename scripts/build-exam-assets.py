@@ -3,6 +3,8 @@
 สร้างชุดข้อมูล "ทำข้อสอบออนไลน์" จากไฟล์ต้นฉบับ (รันครั้งเดียวต่อสนาม หรือรันใหม่เมื่อเปลี่ยนไฟล์)
 
     python scripts/build-exam-assets.py [examId]     (ไม่ระบุ = tpat3-1)
+    python scripts/build-exam-assets.py [examId] --population-only
+        สร้างเฉพาะประชากรอ้างอิงใหม่ (หลังแก้ TARGET_SCORES) ไม่แตะไฟล์อื่น
 
 ⚠️ สคริปต์นี้ตั้งค่าตามชุด TPAT3 (โครงหน้า/ตอน/น้ำหนัก/ประชากร ในค่าคงที่ด้านล่าง)
 เพิ่มสนามใหม่ (เช่น A-Level) ต้องปรับค่าพวกนั้นให้ตรงกับชุดนั้นก่อนรัน
@@ -21,7 +23,8 @@
 import fitz  # PyMuPDF
 import json, os, random, re, sys
 
-EXAM_ID = sys.argv[1] if len(sys.argv) > 1 else "tpat3-1"
+_args = [a for a in sys.argv[1:] if not a.startswith("--")]
+EXAM_ID = _args[0] if _args else "tpat3-1"
 if not re.fullmatch(r"[a-z0-9-]+", EXAM_ID):
     sys.exit(f"examId ไม่ถูกต้อง: {EXAM_ID} (ใช้ a-z 0-9 และขีดกลางเท่านั้น)")
 
@@ -112,9 +115,20 @@ def render_pages(doc, page_numbers):
     return size
 
 
-# คะแนนเป้าหมายของประชากรอ้างอิง (เต็ม 100) — เจ้าของร้านกำหนด 2026-07-25:
-# ผู้สอบ 15 คน กองกันช่วง 30-60 และมีคนเก่งหลุดกลุ่ม 1 คนที่ราว 76
-TARGET_SCORES = [32, 35, 38, 40, 42, 44, 46, 47, 49, 51, 53, 55, 58, 60, 76]
+# คะแนนเป้าหมายของประชากรอ้างอิง (เต็ม 100) — เจ้าของร้านกำหนด 2026-09-27:
+# ผู้สอบ 20 คน แจกแจงแบบปกติ (ค่าเฉลี่ย 45, SD 15 — ตำแหน่งควอนไทล์ของโค้งปกติ)
+# นับรายช่วง 10 คะแนนได้ 1-2-4-6-4-2-1 (ช่วง 10-20 ถึง 70-80) ยอดอยู่ที่ 40-50
+# คะแนนจริงที่ได้จะต่ำกว่าเป้าไม่เกิน 1.33 จึงตั้งเป้าให้ห่างขอบช่วงไว้ ไม่ให้หล่นไปช่วงข้างล่าง
+# (เดิม 2026-07-25: 15 คน กองกันช่วง 30-60 + คนเก่งหลุดกลุ่ม 1 คนที่ราว 76)
+TARGET_SCORES = [
+    16,
+    23.5, 28,
+    31, 34, 36, 38.5,
+    41, 42.5, 44, 46, 47.5, 49.3,
+    52, 54, 56.5, 59,
+    62.5, 67,
+    74.5,
+]
 
 
 def build_population(answer_key, seed=20260725):
@@ -158,7 +172,35 @@ def build_population(answer_key, seed=20260725):
     }
 
 
+def rebuild_population_only():
+    """สร้างเฉพาะ population.json ใหม่จากเฉลยที่มีอยู่แล้ว — ไม่แตะไฟล์ PDF/รูปโจทย์/เฉลย/manifest
+    ใช้ตอนเปลี่ยน TARGET_SCORES อย่างเดียว (ไฟล์ master ในเครื่องอาจไม่ตรงกับที่ใช้จริงบน Storage)"""
+    key_file = os.path.join(DATA_DIR, "answer-key.json")
+    if not os.path.exists(key_file):
+        sys.exit(f"missing {key_file}")
+    with open(key_file, encoding="utf-8") as f:
+        key = {int(q): v for q, v in json.load(f).items()}
+    if len(key) != TOTAL_Q:
+        sys.exit(f"answer key has {len(key)}/{TOTAL_Q} questions")
+
+    pop = build_population(key)
+    with open(os.path.join(DATA_DIR, "population.json"), "w", encoding="utf-8") as f:
+        json.dump(pop, f, ensure_ascii=False)
+
+    scores = pop["scoresWeighted"]
+    bins = [0] * 10
+    for s in scores:
+        bins[min(9, int(s // 10))] += 1
+    mean = sum(scores) / len(scores)
+    sd = (sum((s - mean) ** 2 for s in scores) / len(scores)) ** 0.5
+    print(f"OK: population {len(scores)} students, mean {mean:.2f}, sd {sd:.2f}")
+    print(f"scores: {scores}")
+    print(f"histogram (0-10 ... 90-100): {bins}")
+
+
 def main():
+    if "--population-only" in sys.argv:
+        return rebuild_population_only()
     for f in (Q_PDF, A_PDF):
         if not os.path.exists(f):
             sys.exit(f"missing {f}")

@@ -15,8 +15,9 @@ import { accessResetIso, afterReset } from "./access-reset";
  * production (Vercel): เก็บบน Supabase Storage ทั้งหมด — ดิสก์ของ serverless เขียนไม่ได้
  * และหายทุกครั้งที่ instance เปลี่ยน จึงห้ามพึ่งไฟล์ในเครื่อง
  *   ebooks/exam/<examId>/answer-key.json      เฉลย + ระดับความยากรายข้อ
- *   ebooks/exam/<examId>/population.json      ประชากรอ้างอิงสำหรับสถิติ
- *   ebooks/exam/<examId>/pages/page-NN.png    รูปหน้าโจทย์ (เสิร์ฟผ่าน API ที่เช็คสิทธิ์)
+ *   ebooks/exam/<examId>/population-2026-09-27.json  ประชากรอ้างอิงสำหรับสถิติ
+ *   ebooks/exam/<examId>/pages-wm/page-NN.png  รูปหน้าโจทย์ + ลายน้ำ (เสิร์ฟผ่าน API ที่เช็คสิทธิ์)
+ *   ebooks/exam/<examId>/pages/page-NN.png     รูปหน้าโจทย์ต้นฉบับ (ไม่เสิร์ฟ — ใช้เป็นต้นทางประทับลายน้ำ)
  *   ebooks/exam/<examId>/attempts/<hash>.json การสอบของแต่ละอีเมล (hash = sha256 ของอีเมล)
  *   ebooks/exam/<examId>/aggregate.json       ผลรวมของผู้สอบจริง ไว้คิดสถิติเร็ว ๆ
  *
@@ -33,12 +34,16 @@ const PAGES_ROOT = path.join(process.cwd(), "assets", "exam-pages");
 const BUYERS_FILE = path.join(DATA_ROOT, "demo-buyers.json"); // ผู้ซื้อจำลอง — ใช้ร่วมทุกสนาม
 
 const sKey = (exam: ExamDef) => `exam/${exam.id}/answer-key.json`;
-const sPop = (exam: ExamDef) => `exam/${exam.id}/population.json`;
+// ประชากรอ้างอิงชุด 2026-09-27 (20 คน แจกแจงปกติ — เจ้าของสั่ง) อัปขึ้นชื่อไฟล์ใหม่แทนการทับ
+// เพราะ CDN ของ Supabase จ่ายไฟล์เก่าที่แคชไว้ได้อีกพักหลังอัปทับ (ชุดเดิม 15 คนยังอยู่ที่ population.json)
+const sPop = (exam: ExamDef) => `exam/${exam.id}/population-2026-09-27.json`;
 const sAgg = (exam: ExamDef) => `exam/${exam.id}/aggregate.json`;
 const sAttempt = (exam: ExamDef, email: string) =>
   `exam/${exam.id}/attempts/${createHash("sha256").update(normalizeEmail(email)).digest("hex")}.json`;
+// pages-wm = รูปหน้าโจทย์ที่ประทับลายน้ำแบรนด์แล้ว (scripts/watermark-exam-pages.py — เจ้าของสั่ง 2026-09-27)
+// ต้นฉบับสะอาดอยู่ที่ exam/<examId>/pages/ ห้องสอบไม่เสิร์ฟจากที่นั่นแล้ว
 export const storagePagePath = (exam: ExamDef, pageNo: number) =>
-  `exam/${exam.id}/pages/page-${String(pageNo).padStart(2, "0")}.png`;
+  `exam/${exam.id}/pages-wm/page-${String(pageNo).padStart(2, "0")}.png`;
 
 const localAttemptsFile = (exam: ExamDef) => path.join(DATA_ROOT, exam.id, "attempts.json");
 const localDataFile = (exam: ExamDef, name: string) => path.join(DATA_ROOT, exam.id, name);
@@ -908,6 +913,11 @@ export async function resetAttempt(exam: ExamDef, email: string): Promise<void> 
   const attempt = await getAttempt(exam, email);
   if (attempt) await removeFromAggregate(exam, attempt);
   await deleteAttempt(exam, email);
+}
+
+/** คะแนนของผู้สอบจริงที่ส่งแล้ว (ไม่รวมประชากรอ้างอิง) — ใช้กับหน้าหลังร้าน */
+export async function getSubmittedScores(exam: ExamDef): Promise<number[]> {
+  return (await readAggregate(exam)).scores;
 }
 
 export interface ExamStatistics {

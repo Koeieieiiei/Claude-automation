@@ -466,14 +466,9 @@ export default function ExamView() {
             )}
 
             <div className="mt-6 grid gap-3 sm:grid-cols-3">
-              {[
-                [`${exam.totalQuestions} ข้อ`, `ปรนัย ${exam.choices} ตัวเลือก ${exam.sections.length} ตอน`],
-                [durationText(exam), "หมดเวลาส่งให้อัตโนมัติ"],
-                ["1 รอบเท่านั้น", "1 บัญชี สอบได้ครั้งเดียว"],
-              ].map(([t, d]) => (
+              {[`${exam.totalQuestions} ข้อ`, durationText(exam), "1 รอบเท่านั้น"].map((t) => (
                 <div key={t} className="border border-grid bg-white p-4">
                   <p className="font-display text-xl font-bold text-maroon">{t}</p>
-                  <p className="mt-1 text-xs leading-relaxed text-ink/65">{d}</p>
                 </div>
               ))}
             </div>

@@ -4,11 +4,11 @@ export default function SiteFooter() {
     <footer className="border-t border-grid bg-paper">
       <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-5 py-8 font-label text-sm text-ink/55">
         <p>
-          © {new Date().getFullYear()} Mr.tpat3 · ติดต่อ{" "}
+          © {new Date().getFullYear()} Mr.tpat3 / ติดต่อ{" "}
           <a href="mailto:mr.tpat3@gmail.com" className="font-medium text-maroon underline-offset-2 hover:underline">
             mr.tpat3@gmail.com
           </a>{" "}
-          · TikTok{" "}
+          / TikTok{" "}
           <a
             href="https://www.tiktok.com/@mrtpat3"
             target="_blank"

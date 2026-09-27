@@ -82,7 +82,7 @@ export const EXAMS: Record<string, ExamDef> = {
       { from: 61, to: 70, weight: 2 },
     ],
     entitlementFile: "questions",
-    resultFiles: ["questions", "answers"],
+    resultFiles: ["answers"],
   },
 };
 

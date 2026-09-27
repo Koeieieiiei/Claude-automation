@@ -182,6 +182,30 @@ describe("summarizeSales", () => {
     expect(s.repeatCustomers[0].revenue).toBe(258);
   });
 
+  it("รับเล่มฟรี (ยอด 0) นับแยก ไม่ปนจำนวนชุด/ลูกค้า/อัตราปิดการขาย", () => {
+    const s = summarizeSales(
+      [
+        order({ product_id: "mock1", amount: 199 }),
+        order({ product_id: "mock1", amount: 199, status: "pending" }),
+        order({ product_id: "sum4", amount: 0, stripe_session_id: null }), // รับฟรีวันนี้
+        order({
+          product_id: "sum4",
+          amount: 0,
+          stripe_session_id: null,
+          created_at: new Date(NOW - 10 * DAY).toISOString(),
+        }),
+      ],
+      NOW
+    );
+    expect(s.totals.all).toEqual({ units: 1, revenue: 199 });
+    expect(s.paidOrders).toBe(1);
+    expect(s.closeRate).toBe(50);
+    expect(s.customers).toBe(1);
+    expect(s.freeClaims).toEqual({ today: 1, d7: 1, d30: 2, all: 2 });
+    // ยังต้องเห็นในรายการออเดอร์ล่าสุด (ไว้ดูว่าใครรับไปบ้าง)
+    expect(s.recent).toHaveLength(4);
+  });
+
   it("ไม่มีออเดอร์เลยก็ต้องไม่พัง (ไม่หารด้วยศูนย์)", () => {
     const s = summarizeSales([], NOW);
     expect(s.totals.all).toEqual({ units: 0, revenue: 0 });

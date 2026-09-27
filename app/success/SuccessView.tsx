@@ -156,7 +156,7 @@ export default function SuccessView() {
                 href="/exam"
                 className="mt-7 flex w-full items-center justify-center gap-3 border border-ink bg-maroon px-5 py-4 text-[1.05rem] font-bold text-paper transition hover:bg-maroon-dark"
               >
-                เริ่มสอบ · 70 ข้อ · 3 ชม.
+                เริ่มสอบ 70 ข้อ / 3 ชม.
                 <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} aria-hidden>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
                 </svg>
@@ -186,7 +186,7 @@ export default function SuccessView() {
             </p>
             <p className="mt-1.5 text-sm leading-relaxed text-ink/75">
               เข้าสู่ระบบด้วย{email ? <> <strong>{email}</strong></> : "อีเมลที่ใช้ซื้อ"} ที่ “คอร์สของฉัน” ได้ทุกเครื่อง ไม่มีวันหมดอายุ
-              {hasExam && <> · <strong>แนะนำเปิดเฉลยหลังสอบเสร็จ</strong></>}
+              {hasExam && <> <strong>แนะนำเปิดเฉลยหลังสอบเสร็จ</strong></>}
             </p>
           </div>
 

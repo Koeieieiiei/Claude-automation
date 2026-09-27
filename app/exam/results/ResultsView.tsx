@@ -8,10 +8,10 @@ import { DEFAULT_EXAM_ID } from "@/lib/exams";
 /**
  * หน้าผลสอบ + บทวิเคราะห์ละเอียด
  *   1) คะแนนของคุณ (สเกลตามคะแนนเต็มของสนาม) + อันดับเทียบผู้สอบทุกคน
- *   2) สถิติภาพรวม: ค่าเฉลี่ย / SD / สูงสุด / ต่ำสุด + กราฟการแจกแจงคะแนน
+ *   2) สถิติภาพรวม: Percentile / ค่าเฉลี่ย / SD / สูงสุด / ต่ำสุด + กราฟการแจกแจงคะแนน
  *   3) สรุปรายตอน (บท)
  *   4) วิเคราะห์รายข้อทุกข้อ: บท · คำตอบ · ถูก/ผิด · ความยาก · %คนตอบถูก · คำแนะนำ (6 แบบ)
- *   5) ไฟล์โจทย์ + เฉลยแนบท้าย (ลายน้ำชื่อผู้ซื้อ ตามระบบดาวน์โหลดเดิม)
+ *   5) ไฟล์เฉลยแนบท้าย (ลายน้ำ ตามระบบดาวน์โหลดเดิม)
  */
 
 interface ResultsData {
@@ -156,7 +156,9 @@ export default function ResultsView() {
   }
 
   const { score, overall, student } = data;
-  const pctBeat = Math.round(((overall.nTotal - overall.rank) / Math.max(1, overall.nTotal - 1)) * 100);
+  // Percentile = % ของผู้สอบคนอื่นที่คะแนนไม่เกินเรา (ที่ 1 = 100, ที่สุดท้าย = 0)
+  const percentile = ((overall.nTotal - overall.rank) / Math.max(1, overall.nTotal - 1)) * 100;
+  const pctBeat = Math.round(percentile);
   const submitDate = new Date(student.submittedAt).toLocaleString("th-TH", {
     dateStyle: "long",
     timeStyle: "short",
@@ -193,7 +195,7 @@ export default function ResultsView() {
                 {score.totalQuestions} ข้อ (ตอบไป {score.answered} ข้อ)
               </p>
               <p className="mt-4 font-label text-xs text-ink/50">
-                {student.firstName} {student.lastName} · ส่งเมื่อ {submitDate}
+                {student.firstName} {student.lastName} ส่งเมื่อ {submitDate}
               </p>
             </div>
             <div className="flex flex-col justify-center gap-2 p-8">
@@ -215,7 +217,13 @@ export default function ResultsView() {
         {/* ===== สถิติภาพรวม ===== */}
         <section className="mt-10">
           <h2 className="font-display text-2xl font-bold text-ink">ภาพรวมผู้สอบ</h2>
-          <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-5">
+            <StatTile
+              label="Percentile ของคุณ"
+              value={percentile}
+              accent
+              className="col-span-2 sm:col-span-4 lg:col-span-1"
+            />
             <StatTile label="ค่าเฉลี่ย (Mean)" value={overall.mean} />
             <StatTile label="ส่วนเบี่ยงเบน (SD)" value={overall.sd} />
             <StatTile label="สูงสุด" value={overall.max} />
@@ -226,12 +234,12 @@ export default function ResultsView() {
             <div className="flex flex-wrap items-baseline justify-between gap-2">
               <h3 className="font-semibold text-ink">การแจกแจงคะแนน</h3>
               <span className="font-label text-xs text-ink/50">
-                ผู้สอบ {overall.nTotal.toLocaleString()} คน · คะแนนเต็ม {score.maxScore}
+                ผู้สอบ {overall.nTotal.toLocaleString()} คน / คะแนนเต็ม {score.maxScore}
               </span>
             </div>
             <ScoreHistogram bins={overall.histogram} myScore={score.scaled} maxScore={score.maxScore} />
             <p className="mt-2 font-label text-xs text-ink/50">
-              แท่งสีเข้ม = ช่วงคะแนนของคุณ · เส้น = คะแนนคุณ ({score.scaled.toFixed(2)})
+              แท่งสีเข้ม = ช่วงคะแนนของคุณ / เส้น = คะแนนคุณ ({score.scaled.toFixed(2)})
             </p>
           </div>
         </section>
@@ -246,7 +254,7 @@ export default function ResultsView() {
                 <div key={s.no} className="border border-grid bg-white px-5 py-3.5">
                   <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
                     <p className="text-[0.95rem] font-semibold text-ink">
-                      ตอนที่ {s.no} · {s.title}
+                      ตอนที่ {s.no} {s.title}
                       <span className="ml-2 font-label text-xs font-normal text-ink/45">
                         ข้อ {s.from}–{s.to}
                       </span>
@@ -283,7 +291,7 @@ export default function ResultsView() {
         {/* ===== ไฟล์แนบท้าย (ไม่มีลิงก์ = ข้ามทั้งบล็อก ไม่ต้องโชว์กล่องว่าง) ===== */}
         {data.downloads.length > 0 && (
         <section className="mt-10 border-2 border-maroon bg-white p-6 md:p-8">
-          <h2 className="font-display text-2xl font-bold text-ink">ไฟล์โจทย์และเฉลย</h2>
+          <h2 className="font-display text-2xl font-bold text-ink">ไฟล์เฉลย</h2>
           <p className="mt-2 text-sm leading-relaxed text-ink/70">
             โหลดไว้ทบทวนคู่กับผลวิเคราะห์ด้านบน
           </p>
@@ -303,7 +311,7 @@ export default function ResultsView() {
             ))}
           </div>
           <p className="mt-3 font-label text-[12px] text-ink/50">
-            ดาวน์โหลดอาจใช้เวลา 2–3 วินาที ·{" "}
+            ดาวน์โหลดอาจใช้เวลา 2–3 วินาที{" "}
             {formatExpiry(data.downloadExpiryHours)
               ? `ลิงก์ใช้ได้อีก ${formatExpiry(data.downloadExpiryHours)}`
               : "ลิงก์ไม่มีวันหมดอายุ"}
@@ -323,13 +331,23 @@ export default function ResultsView() {
 }
 
 /* ---------- กล่องสถิติหนึ่งค่า ---------- */
-function StatTile({ label, value }: { label: string; value: number }) {
+function StatTile({
+  label,
+  value,
+  accent = false,
+  className = "",
+}: {
+  label: string;
+  value: number;
+  accent?: boolean; // ค่าของผู้สอบเอง (ไม่ใช่สถิติรวม) → ตัวเลขสีแดงเลือดหมู
+  className?: string;
+}) {
   return (
-    <div className="border border-grid bg-white p-4">
+    <div className={`border border-grid bg-white p-4 ${className}`}>
       <p className="font-label text-[11px] font-semibold uppercase tracking-[0.14em] text-ink/50">
         {label}
       </p>
-      <p className="mt-1.5 font-display text-2xl font-bold text-ink">
+      <p className={`mt-1.5 font-display text-2xl font-bold ${accent ? "text-maroon" : "text-ink"}`}>
         {value.toLocaleString(undefined, { maximumFractionDigits: 2 })}
       </p>
     </div>
@@ -415,7 +433,7 @@ function ScoreHistogram({
                 onMouseEnter={() => setHover(i)}
                 onMouseLeave={() => setHover(null)}
               >
-                <title>{`${b.from}–${b.to} คะแนน · ${b.count.toLocaleString()} คน`}</title>
+                <title>{`${b.from}–${b.to} คะแนน ${b.count.toLocaleString()} คน`}</title>
               </rect>
             );
           })}
@@ -448,7 +466,7 @@ function ScoreHistogram({
             fontWeight={700}
             fill="#241016"
           >
-            คุณ · {myScore.toFixed(2)}
+            คุณ {myScore.toFixed(2)}
           </text>
         </g>
       </svg>
@@ -462,7 +480,7 @@ function ScoreHistogram({
             transform: "translateX(-50%)",
           }}
         >
-          {bins[hover].from}–{bins[hover].to} คะแนน · {bins[hover].count.toLocaleString()} คน (
+          {bins[hover].from}–{bins[hover].to} คะแนน {bins[hover].count.toLocaleString()} คน (
           {total ? Math.round((bins[hover].count * 100) / total) : 0}%)
         </div>
       )}
@@ -482,7 +500,7 @@ function QuestionTable({
     <details className="border border-grid bg-white" open={section.no === 1}>
       <summary className="flex cursor-pointer list-none flex-wrap items-baseline justify-between gap-2 px-5 py-3.5 marker:content-none">
         <span className="font-semibold text-ink">
-          ตอนที่ {section.no} · {section.title}
+          ตอนที่ {section.no} {section.title}
         </span>
         <span className="font-display text-sm font-bold text-maroon">
           ถูก {section.correct}/{section.total} ข้อ

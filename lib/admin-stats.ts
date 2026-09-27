@@ -102,6 +102,14 @@ export function isPaid(order: OrderRow): boolean {
   return order.status === "paid" || order.status === "delivered";
 }
 
+/**
+ * ออเดอร์ยอด 0 ที่ส่งไฟล์แล้ว = กด "รับฟรี" (lib/claim.ts) ไม่ใช่การขาย
+ * — นับแยกเป็นจำนวนคนรับฟรี ไม่ปนจำนวนชุด/อัตราปิดการขาย/กำไรต่อชุด
+ */
+export function isFreeClaim(order: OrderRow): boolean {
+  return isPaid(order) && (Number(order.amount) || 0) === 0;
+}
+
 /* ================= รูปแบบผลลัพธ์ ================= */
 
 export interface Bucket {
@@ -184,6 +192,8 @@ export interface SalesSummary {
   };
   /** ยอดขายรวมเดือนนี้ (ตามปฏิทินไทย) */
   thisMonth: Bucket;
+  /** จำนวนครั้งที่กดรับของฟรี (ออเดอร์ยอด 0) — ไม่นับรวมในยอดขายด้านบน */
+  freeClaims: { today: number; d7: number; d30: number; all: number };
   paidOrders: number;
   pendingOrders: number;
   /** อัตราปิดการขายทั้งร้าน (%) */
@@ -284,8 +294,18 @@ export function summarizeSales(orders: OrderRow[], nowMs: number = Date.now()): 
   const byEmail = new Map<string, { name: string; orders: number; revenue: number; lastAt: string }>();
   let paidOrders = 0;
   let pendingOrders = 0;
+  const freeClaims = { today: 0, d7: 0, d30: 0, all: 0 };
 
   for (const o of sorted) {
+    if (isFreeClaim(o)) {
+      const t = new Date(o.created_at).getTime();
+      freeClaims.all += 1;
+      if (t >= start30) freeClaims.d30 += 1;
+      if (t >= start7) freeClaims.d7 += 1;
+      if (t >= startToday) freeClaims.today += 1;
+      continue;
+    }
+
     const info = resolveProduct(o);
     const acc = accOf(info);
     acc.attempted += 1;
@@ -450,6 +470,7 @@ export function summarizeSales(orders: OrderRow[], nowMs: number = Date.now()): 
       all: { units: totals.all.units, revenue: round2(totals.all.revenue) },
     },
     thisMonth: { units: thisMonth.units, revenue: round2(thisMonth.revenue) },
+    freeClaims,
     paidOrders,
     pendingOrders,
     closeRate: pct(paidOrders, paidOrders + pendingOrders),

@@ -95,8 +95,8 @@ export async function sendPasswordResetEmail(input: {
     `<h2 style="color:#6E1423">ตั้งรหัสผ่าน Mr.tpat3</h2>` +
     `<p>${escapeHtml(lead)}</p>` +
     `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:18px 0"><tr><td style="background:#6E1423;border-radius:8px"><a href="${input.link}" style="display:inline-block;color:#ffffff;padding:14px 30px;text-decoration:none;font-weight:600;font-size:15px;font-family:Arial,sans-serif">ตั้งรหัสผ่าน &rarr;</a></td></tr></table>` +
-    `<p style="font-size:13px;color:#666">ลิงก์ใช้ได้ 30 นาที และใช้ได้ครั้งเดียว · ถ้าปุ่มกดไม่ได้ คัดลอกลิงก์นี้ไปเปิด:<br><a href="${input.link}" style="color:#6E1423;word-break:break-all">${input.link}</a></p>` +
-    `<p style="color:#666;font-size:13px;border-top:1px solid #eeeeee;padding-top:14px;margin-top:18px">ถ้าไม่ได้เป็นคนขอ ไม่ต้องทำอะไร รหัสผ่านเดิมยังใช้ได้ตามปกติ · ติดต่อ mr.tpat3@gmail.com</p>` +
+    `<p style="font-size:13px;color:#666">ลิงก์ใช้ได้ 30 นาที และใช้ได้ครั้งเดียว ถ้าปุ่มกดไม่ได้ คัดลอกลิงก์นี้ไปเปิด:<br><a href="${input.link}" style="color:#6E1423;word-break:break-all">${input.link}</a></p>` +
+    `<p style="color:#666;font-size:13px;border-top:1px solid #eeeeee;padding-top:14px;margin-top:18px">ถ้าไม่ได้เป็นคนขอ ไม่ต้องทำอะไร รหัสผ่านเดิมยังใช้ได้ตามปกติ ติดต่อ mr.tpat3@gmail.com</p>` +
     `</div>`;
 
   if (!ready.resend) {

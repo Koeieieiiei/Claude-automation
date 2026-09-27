@@ -16,7 +16,7 @@ export interface CourseStat {
 
 export interface CourseChapterGroup {
   title: string;
-  meta?: string; // เช่น "15 ข้อ · 20 คะแนน" หรือ "4 บท"
+  meta?: string; // เช่น "15 ข้อ / 20 คะแนน" หรือ "4 บท"
   items: string[];
 }
 
@@ -45,27 +45,27 @@ export interface CourseInfo {
 const MOCK_SECTIONS: CourseChapterGroup[] = [
   {
     title: "ตอนที่ 1 ความถนัดด้านตัวเลข",
-    meta: "ข้อ 1–15 · 20 คะแนน",
+    meta: "ข้อ 1–15 / 20 คะแนน",
     items: [],
   },
   {
     title: "ตอนที่ 2 ความถนัดด้านมิติสัมพันธ์",
-    meta: "ข้อ 16–30 · 20 คะแนน",
+    meta: "ข้อ 16–30 / 20 คะแนน",
     items: [],
   },
   {
     title: "ตอนที่ 3 ความถนัดด้านเชิงกลและความถนัดด้านฟิสิกส์",
-    meta: "ข้อ 31–45 · 20 คะแนน",
+    meta: "ข้อ 31–45 / 20 คะแนน",
     items: [],
   },
   {
     title: "ตอนที่ 4 ความคิดเชิงวิทยาศาสตร์ เทคโนโลยี และวิศวกรรมศาสตร์",
-    meta: "ข้อ 46–60 · 20 คะแนน",
+    meta: "ข้อ 46–60 / 20 คะแนน",
     items: [],
   },
   {
     title: "ตอนที่ 5 ความสนใจข่าวสารความรู้ทางด้านวิทยาศาสตร์ เทคโนโลยี และวิศวกรรมศาสตร์",
-    meta: "ข้อ 61–70 · 20 คะแนน",
+    meta: "ข้อ 61–70 / 20 คะแนน",
     items: [],
   },
 ];
@@ -191,12 +191,12 @@ export const COURSES: CourseInfo[] = [
     productId: "sum4",
     title: "เนื้อหาทั้งหมดสำหรับสอบ TPAT3",
     subject: "TPAT3 ความถนัดทางวิทยาศาสตร์ เทคโนโลยี และวิศวกรรมศาสตร์",
-    tagline: "ครบ 5 พาร์ตในเล่มเดียว · แจกฟรี",
+    tagline: "ครบ 5 พาร์ตในเล่มเดียว แจกฟรี",
     covers: [CONTENT_COVER],
     bannerTone: "rose",
     stats: [
       { icon: "pages", label: "ความยาว", value: "174 หน้า" },
-      { icon: "chapters", label: "เนื้อหา", value: "5 Part · 38 บท" },
+      { icon: "chapters", label: "เนื้อหา", value: "5 Part / 38 บท" },
       { icon: "infinity", label: "อายุคอร์ส", value: "ไม่มีวันหมดอายุ" },
     ],
     facts: [

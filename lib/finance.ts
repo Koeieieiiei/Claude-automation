@@ -6,7 +6,7 @@
  * รายจ่ายมี 2 ทาง: (1) ค่าธรรมเนียม Stripe ดึงจาก Stripe อัตโนมัติ
  *                 (2) รายจ่ายที่กรอกเอง เช่น ค่าโฆษณา ค่าโดเมน
  */
-import { bkkDayKey, isPaid, type OrderRow } from "./admin-stats";
+import { bkkDayKey, isFreeClaim, isPaid, type OrderRow } from "./admin-stats";
 import type { LedgerEntry } from "./ledger";
 
 /**
@@ -88,7 +88,8 @@ export function summarizeFinance(input: {
   // (ต้องไม่ปนรายรับนอกเว็บ เพราะค่าธรรมเนียมเกิดจากการขายผ่าน Stripe เท่านั้น)
   const shopByMonth = new Map<string, number>();
   for (const o of input.orders) {
-    if (!isPaid(o)) continue;
+    // รับฟรี (ยอด 0) ไม่ใช่การขาย — ไม่งั้นกำไรต่อชุดจะถูกหารด้วยจำนวนที่มากเกินจริง
+    if (!isPaid(o) || isFreeClaim(o)) continue;
     const day = bkkDayKey(o.created_at);
     if (day < startDate) continue;
     const amount = Number(o.amount) || 0;

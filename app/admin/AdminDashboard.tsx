@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import type { ProductStats, SalesSummary } from "@/lib/admin-stats";
+import type { SalesSummary } from "@/lib/admin-stats";
 import type { FinanceSummary } from "@/lib/finance";
 import type { GaSummary } from "@/lib/ga";
 
@@ -57,9 +57,6 @@ const dayLabel = (ymd: string) =>
     month: "short",
   });
 
-const WEEKDAYS = ["อาทิตย์", "จันทร์", "อังคาร", "พุธ", "พฤหัส", "ศุกร์", "เสาร์"];
-const WEEKDAYS_SHORT = ["อา", "จ", "อ", "พ", "พฤ", "ศ", "ส"];
-
 /* ================= ชิ้นส่วน UI เล็ก ๆ ================= */
 
 /**
@@ -78,26 +75,6 @@ function Card({
 }) {
   return (
     <div className={`rounded-2xl border p-4 shadow-sm ${surface} ${className}`}>{children}</div>
-  );
-}
-
-function Section({
-  title,
-  hint,
-  children,
-}: {
-  title: string;
-  hint?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <section className="mt-8">
-      <div className="mb-3 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-        <h2 className="text-lg font-bold">{title}</h2>
-        {hint && <p className="text-xs text-ink/50">{hint}</p>}
-      </div>
-      {children}
-    </section>
   );
 }
 
@@ -168,29 +145,6 @@ function Meter({ value, className = "" }: { value: number; className?: string })
   );
 }
 
-/** กราฟเส้นจิ๋ว 14 วัน */
-function Spark({ data }: { data: number[] }) {
-  const max = Math.max(...data, 1);
-  const pts = data
-    .map((v, i) => `${(i / Math.max(data.length - 1, 1)) * 100},${28 - (v / max) * 26}`)
-    .join(" ");
-  return (
-    <svg viewBox="0 0 100 30" preserveAspectRatio="none" className="h-8 w-full" aria-hidden>
-      <polyline points={pts} fill="none" stroke="#6E1423" strokeWidth="1.6" vectorEffect="non-scaling-stroke" />
-    </svg>
-  );
-}
-
-function Trend({ value }: { value: number | null }) {
-  if (value === null) return <span className="text-xs text-ink/40">ไม่มีรอบก่อนให้เทียบ</span>;
-  const up = value >= 0;
-  return (
-    <span className={`text-xs font-semibold ${up ? "text-emerald-700" : "text-maroon"}`}>
-      {up ? "▲" : "▼"} {pct(Math.abs(value))} เทียบ 7 วันก่อนหน้า
-    </span>
-  );
-}
-
 /** กราฟแท่งแนวตั้ง */
 function Bars({
   data,
@@ -228,230 +182,6 @@ function StatusBadge({ status }: { status: string }) {
     <span className={`inline-block whitespace-nowrap rounded-full border px-2 py-0.5 text-[11px] ${s.cls}`}>
       {s.text}
     </span>
-  );
-}
-
-/* ================= แผนภูมิวงกลม: รายได้มาจากสินค้าอะไร ================= */
-
-/**
- * สีประจำสินค้า (ตายตัวต่อสินค้า ไม่ไล่ตามอันดับ — สินค้าเดิมต้องได้สีเดิมเสมอ)
- * ชุดสีผ่าน validate_palette.js ครบทุกเช็ค รวม CVD (คนตาบอดสีแยกได้) บนพื้นขาว
- */
-const PRODUCT_COLORS: Record<string, string> = {
-  mock1: "#A63248",
-  sum4: "#2E6FA3",
-  "bundle-all": "#B07818",
-};
-const OTHER_COLOR = "#7A5EA8";
-
-function polar(cx: number, cy: number, r: number, deg: number): [number, number] {
-  const rad = ((deg - 90) * Math.PI) / 180; // เริ่มที่ 12 นาฬิกา วนตามเข็ม
-  return [cx + r * Math.cos(rad), cy + r * Math.sin(rad)];
-}
-
-/** path วงแหวนหนึ่งชิ้น จากมุม a0 → a1 (องศา) */
-function arcPath(cx: number, cy: number, rOut: number, rIn: number, a0: number, a1: number): string {
-  const [x0, y0] = polar(cx, cy, rOut, a0);
-  const [x1, y1] = polar(cx, cy, rOut, a1);
-  const [x2, y2] = polar(cx, cy, rIn, a1);
-  const [x3, y3] = polar(cx, cy, rIn, a0);
-  const large = a1 - a0 > 180 ? 1 : 0;
-  return [
-    `M ${x0.toFixed(2)} ${y0.toFixed(2)}`,
-    `A ${rOut} ${rOut} 0 ${large} 1 ${x1.toFixed(2)} ${y1.toFixed(2)}`,
-    `L ${x2.toFixed(2)} ${y2.toFixed(2)}`,
-    `A ${rIn} ${rIn} 0 ${large} 0 ${x3.toFixed(2)} ${y3.toFixed(2)}`,
-    "Z",
-  ].join(" ");
-}
-
-function RevenueDonut({ products, total }: { products: ProductStats[]; total: number }) {
-  // รวมสินค้าที่ไม่มีสีประจำ (เลิกขาย/อื่น ๆ) เป็นชิ้นเดียว "อื่น ๆ"
-  const known = products.filter((p) => p.revenue > 0 && PRODUCT_COLORS[p.id]);
-  const otherRevenue = products
-    .filter((p) => p.revenue > 0 && !PRODUCT_COLORS[p.id])
-    .reduce((s, p) => s + p.revenue, 0);
-  const slices = [
-    ...known.map((p) => ({ id: p.id, label: p.name, value: p.revenue, color: PRODUCT_COLORS[p.id] })),
-    ...(otherRevenue > 0
-      ? [{ id: "other", label: "อื่น ๆ", value: otherRevenue, color: OTHER_COLOR }]
-      : []),
-  ];
-  const sum = slices.reduce((s, x) => s + x.value, 0);
-  if (!sum) return null;
-
-  let angle = 0;
-  const arcs = slices.map((sl) => {
-    const a0 = angle;
-    const a1 = (angle += (sl.value / sum) * 360);
-    return { ...sl, a0, a1: Math.min(a1, 359.999) };
-  });
-
-  return (
-    <Card>
-      <p className="mb-3 text-sm font-semibold">รายได้ส่วนใหญ่มาจากสินค้าอะไร</p>
-      <div className="flex flex-col items-center gap-5 sm:flex-row sm:items-center">
-        <div className="relative h-44 w-44 shrink-0">
-          <svg viewBox="0 0 200 200" className="h-full w-full" role="img" aria-label="สัดส่วนรายได้แยกตามสินค้า">
-            {arcs.map((a) => (
-              <path
-                key={a.id}
-                d={arcPath(100, 100, 96, 58, a.a0, a.a1)}
-                fill={a.color}
-                stroke="#fff"
-                strokeWidth="2"
-                className="transition-opacity hover:opacity-80"
-              >
-                <title>{`${a.label} · ${baht(a.value)} (${pct((a.value / sum) * 100)})`}</title>
-              </path>
-            ))}
-          </svg>
-          {/* ตัวเลขรวมกลางวง */}
-          <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-            <span className="text-lg font-bold tabular-nums">{baht(total)}</span>
-            <span className="text-[10px] text-ink/50">รายได้ทั้งหมด</span>
-          </div>
-        </div>
-
-        {/* คำอธิบายสี + ตัวเลขจริง (ทำหน้าที่เป็นตารางไปในตัว) */}
-        <ul className="w-full space-y-2">
-          {arcs.map((a) => (
-            <li key={a.id}>
-              <div className="flex items-baseline justify-between gap-3 text-sm">
-                <span className="flex min-w-0 items-center gap-2 text-ink/80">
-                  <span
-                    className="h-3 w-3 shrink-0 rounded-[3px]"
-                    style={{ backgroundColor: a.color }}
-                    aria-hidden
-                  />
-                  <span className="truncate">{a.label}</span>
-                </span>
-                <span className="shrink-0 font-semibold tabular-nums">
-                  {baht(a.value)}{" "}
-                  <span className="font-normal text-ink/50">({pct((a.value / sum) * 100)})</span>
-                </span>
-              </div>
-              {/* แถบสัดส่วนใช้สีเดียวกับชิ้นในวงกลม (สีตามสินค้า ไม่ใช่สีธีม) */}
-              <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-paper">
-                <div
-                  className="h-full rounded-full"
-                  style={{ width: `${(a.value / sum) * 100}%`, backgroundColor: a.color }}
-                />
-              </div>
-            </li>
-          ))}
-        </ul>
-      </div>
-    </Card>
-  );
-}
-
-/* ================= การ์ดสินค้าแต่ละตัว (หัวใจของหน้านี้) ================= */
-
-function ProductCard({ p, rank }: { p: ProductStats; rank: number }) {
-  const rows: { label: string; units: number; revenue: number }[] = [
-    { label: "วันนี้", ...p.today },
-    { label: "7 วันล่าสุด", ...p.d7 },
-    { label: "30 วันล่าสุด", ...p.d30 },
-    { label: "ทั้งหมด", units: p.units, revenue: p.revenue },
-  ];
-
-  return (
-    <Card className="flex flex-col">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="eyebrow">อันดับ {rank}</p>
-          <h3 className="mt-1 font-bold leading-6">{p.name}</h3>
-          <p className="mt-0.5 text-xs text-ink/50">
-            {p.price === null ? "ไม่ได้ขายแล้ว" : p.price === 0 ? "แจกฟรี (ตั้งแต่ 27 ก.ย. 2569)" : `ราคาป้าย ${baht(p.price)}`}
-            {p.avgPrice > 0 && p.avgPrice !== p.price && ` · ขายได้จริงเฉลี่ย ${baht(p.avgPrice)}/ชุด`}
-          </p>
-        </div>
-        <div className="shrink-0 text-right">
-          <p className="text-2xl font-bold tabular-nums text-maroon">{baht(p.revenue)}</p>
-          <p className="text-xs text-ink/50">{num(p.units)} ชุด</p>
-        </div>
-      </div>
-
-      {/* สัดส่วนของทั้งร้าน */}
-      <div className="mt-4 space-y-2">
-        <div>
-          <div className="flex justify-between text-xs">
-            <span className="text-ink/60">สัดส่วนรายได้ของร้าน</span>
-            <span className="font-semibold tabular-nums">{pct(p.revenueShare)}</span>
-          </div>
-          <Meter value={p.revenueShare} className="mt-1" />
-        </div>
-        <div>
-          <div className="flex justify-between text-xs">
-            <span className="text-ink/60">สัดส่วนจำนวนชุดที่ขายได้</span>
-            <span className="font-semibold tabular-nums">{pct(p.unitShare)}</span>
-          </div>
-          <Meter value={p.unitShare} className="mt-1" />
-        </div>
-      </div>
-
-      {/* ยอดแยกตามช่วงเวลา */}
-      <table className="mt-4 w-full text-sm">
-        <thead>
-          <tr className="text-left text-xs text-ink/40">
-            <th className="font-medium">ช่วงเวลา</th>
-            <th className="text-right font-medium">ชุด</th>
-            <th className="text-right font-medium">เป็นเงิน</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((r) => (
-            <tr key={r.label} className="border-t border-grid/60">
-              <td className="py-1.5 text-ink/70">{r.label}</td>
-              <td className="py-1.5 text-right tabular-nums">{num(r.units)}</td>
-              <td className="py-1.5 text-right font-semibold tabular-nums">{baht(r.revenue)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-
-      <div className="mt-3">
-        <Spark data={p.spark} />
-        <div className="flex items-center justify-between">
-          <span className="text-[10px] text-ink/40">ยอดขาย 14 วันล่าสุด</span>
-          <Trend value={p.trend7} />
-        </div>
-      </div>
-
-      {/* รายละเอียดอื่น ๆ */}
-      <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-2 border-t border-grid pt-3 text-xs">
-        <div>
-          <dt className="text-ink/50">อัตราปิดการขาย</dt>
-          <dd className="font-semibold tabular-nums">
-            {pct(p.closeRate)}{" "}
-            <span className="font-normal text-ink/50">
-              ({num(p.units)}/{num(p.attempted)} ที่กดสั่ง)
-            </span>
-          </dd>
-        </div>
-        <div>
-          <dt className="text-ink/50">กดสั่งแล้วไม่จ่าย</dt>
-          <dd className="font-semibold tabular-nums">{num(p.abandoned)} ครั้ง</dd>
-        </div>
-        <div>
-          <dt className="text-ink/50">ลูกค้าไม่ซ้ำ</dt>
-          <dd className="font-semibold tabular-nums">{num(p.customers)} คน</dd>
-        </div>
-        <div>
-          <dt className="text-ink/50">เฉลี่ยต่อวัน (30 วัน)</dt>
-          <dd className="font-semibold tabular-nums">{p.perDay30.toFixed(2)} ชุด</dd>
-        </div>
-        <div>
-          <dt className="text-ink/50">ขายได้ครั้งแรก</dt>
-          <dd className="font-semibold">{p.firstSaleAt ? dateOnly(p.firstSaleAt) : "—"}</dd>
-        </div>
-        <div>
-          <dt className="text-ink/50">ขายได้ล่าสุด</dt>
-          <dd className="font-semibold">{p.lastSaleAt ? dateTime(p.lastSaleAt) : "—"}</dd>
-        </div>
-      </dl>
-    </Card>
   );
 }
 
@@ -495,18 +225,12 @@ function RatioCard({
  * เพิ่งเริ่มเก็บ 26 ก.ค. กรอบเวลาไม่ตรงกัน (เคยได้ 400% หลอกตามาแล้ว)
  * จำนวน "ซื้อ" จึงนับจากอีเวนต์ purchase_success ที่ยิงตอนถึงหน้าชำระเงินสำเร็จ
  */
-function RatiosBlock({ ga }: { ga: GaSummary | null }) {
-  if (!ga) {
-    return (
-      <p className="rounded-xl border border-grid bg-white px-3 py-2 text-sm text-ink/50">
-        อัตราส่วนต่าง ๆ (ยอดขายต่อคนเข้าเว็บ ฯลฯ) จะคำนวณให้เมื่อเชื่อม Google Analytics แล้ว
-      </p>
-    );
-  }
-  const buys = ga.events.find((e) => e.event === "purchase_success")?.count ?? 0;
-  const demo = ga.events.find((e) => e.event === "download_sample")?.count ?? 0;
+function RatioCards({ ga }: { ga: GaSummary }) {
+  const count = (event: string) => ga.events.find((e) => e.event === event)?.count ?? 0;
+  const buys = count("purchase_success");
+  const demo = count("download_sample");
   return (
-    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+    <>
       <RatioCard
         title="คนเข้าเว็บ → ซื้อ"
         numerator={buys}
@@ -520,7 +244,6 @@ function RatiosBlock({ ga }: { ga: GaSummary | null }) {
         denominator={ga.activeUsers}
         numLabel="โหลดเดโม"
         denLabel="ผู้เข้าชม"
-        hint="เพิ่งเริ่มนับการโหลดเดโมวันนี้ — รอคนกดครั้งแรก"
       />
       <RatioCard
         title="โหลดเดโม → ซื้อ"
@@ -528,16 +251,15 @@ function RatiosBlock({ ga }: { ga: GaSummary | null }) {
         denominator={demo}
         numLabel="ซื้อ"
         denLabel="คนโหลดเดโม"
-        hint="เพิ่งเริ่มนับการโหลดเดโมวันนี้ — รอคนกดครั้งแรก"
       />
       <RatioCard
         title="เปิดฟอร์ม → จ่ายจริง"
-        numerator={ga.events.find((e) => e.event === "purchase_success")?.count ?? 0}
-        denominator={ga.events.find((e) => e.event === "open_buy_form")?.count ?? 0}
+        numerator={buys}
+        denominator={count("open_buy_form")}
         numLabel="จ่ายสำเร็จ"
         denLabel="เปิดฟอร์ม"
       />
-    </div>
+    </>
   );
 }
 
@@ -709,6 +431,8 @@ function FinanceBlock({
     onChanged();
   }
 
+  const stripeDiff = meta.stripe ? meta.stripe.gross - f.income.shop : 0;
+
   return (
     <div className="space-y-4">
       {!meta.ledgerReady && (
@@ -719,95 +443,37 @@ function FinanceBlock({
       )}
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Kpi label="รายรับรวม" value={baht(f.income.total)} sub={`ขายได้ ${num(f.income.shopUnits)} ชุด`} />
-        <Kpi label="รายจ่ายรวม" value={baht(f.expense.total)} sub={`ค่าธรรมเนียม ${baht(f.expense.stripeFees)}`} />
-        <Kpi label="กำไรสุทธิ" value={baht(f.profit)} sub={`อัตรากำไร ${pct(f.margin)}`} accent />
         <Kpi
-          label="กำไรต่อ 1 ชุด"
-          value={baht(f.profitPerUnit)}
-          sub={meta.stripe ? `เงินสุทธิจากการขาย ${baht(meta.stripe.net)}` : undefined}
+          label="รายรับรวม"
+          value={baht(f.income.total)}
+          sub={`ขายได้ ${num(f.income.shopUnits)} ชุด${
+            f.income.manual > 0 ? ` + นอกเว็บ ${baht(f.income.manual)}` : ""
+          }`}
         />
+        <Kpi
+          label="รายจ่ายรวม"
+          value={baht(f.expense.total)}
+          sub={`ค่าธรรมเนียม Stripe ${baht(f.expense.stripeFees)}`}
+        />
+        <Kpi label="กำไรสุทธิ" value={baht(f.profit)} sub={`อัตรากำไร ${pct(f.margin)}`} accent />
+        <Kpi label="กำไรต่อ 1 ชุด" value={baht(f.profitPerUnit)} />
       </div>
 
-      {meta.stripe && (
-        <Card>
-          <p className="text-sm font-semibold">กระทบยอดกับ Stripe</p>
-          <div className="mt-2 grid gap-2 text-sm sm:grid-cols-3">
-            <div className="flex justify-between gap-2 sm:block">
-              <span className="text-ink/50">ยอดขายที่บันทึกในเว็บ</span>
-              <span className="block font-semibold tabular-nums">{baht(f.income.shop)}</span>
-            </div>
-            <div className="flex justify-between gap-2 sm:block">
-              <span className="text-ink/50">
-                ยอดที่ Stripe รับจริง <span className="text-xs">({num(meta.stripe.saleCount)} รายการ)</span>
-              </span>
-              <span className="block font-semibold tabular-nums">{baht(meta.stripe.gross)}</span>
-            </div>
-            <div className="flex justify-between gap-2 sm:block">
-              <span className="text-ink/50">ส่วนต่าง</span>
-              <span
-                className={`block font-semibold tabular-nums ${
-                  Math.abs(meta.stripe.gross - f.income.shop) > 1 ? "text-maroon" : "text-emerald-700"
-                }`}
-              >
-                {baht(meta.stripe.gross - f.income.shop)}
-              </span>
-            </div>
-          </div>
-          <p className="mt-2 text-xs text-ink/40">
-            ตัวเลขสองฝั่งควรตรงกัน ถ้าต่างกันมากแปลว่ามีออเดอร์ที่สถานะในเว็บไม่ตรงกับเงินที่เข้าจริง
-          </p>
-        </Card>
-      )}
-
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card>
-          <p className="mb-2 text-sm font-semibold">รายรับมาจากไหน</p>
-          <ul className="space-y-2 text-sm">
-            <li className="flex justify-between border-b border-grid/60 pb-2">
-              <span className="text-ink/70">
-                ขายบนเว็บ <span className="text-xs text-ink/40">({num(f.income.shopUnits)} ชุด)</span>
-              </span>
-              <span className="font-semibold tabular-nums">{baht(f.income.shop)}</span>
-            </li>
-            <li className="flex justify-between border-b border-grid/60 pb-2">
-              <span className="text-ink/70">รายรับนอกเว็บ (กรอกเอง)</span>
-              <span className="font-semibold tabular-nums">{baht(f.income.manual)}</span>
-            </li>
-            <li className="flex justify-between pt-1 font-bold">
-              <span>รวม</span>
-              <span className="tabular-nums">{baht(f.income.total)}</span>
-            </li>
-          </ul>
-        </Card>
-
-        <Card>
-          <p className="mb-2 text-sm font-semibold">รายจ่ายแยกหมวด</p>
-          {f.expense.byCategory.length ? (
-            <ul className="space-y-2">
-              {f.expense.byCategory.map((c) => (
-                <li key={c.label}>
-                  <div className="flex items-baseline justify-between gap-2 text-sm">
-                    <span className="truncate text-ink/70">
-                      {c.label}
-                      {c.auto && <span className="ml-1 text-[10px] text-ink/40">(อัตโนมัติ)</span>}
-                    </span>
-                    <span className="shrink-0 font-semibold tabular-nums">{baht(c.amount)}</span>
-                  </div>
-                  <Meter value={c.share} className="mt-1 h-1.5" />
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-sm text-ink/40">ยังไม่มีรายจ่ายในระบบ</p>
-          )}
-          {!f.expense.stripeFeesAvailable && (
-            <p className="mt-3 text-xs text-ink/50">
-              * ยังดึงค่าธรรมเนียมจาก Stripe ไม่ได้ ตัวเลขรายจ่ายจึงยังไม่รวมส่วนนี้
-            </p>
-          )}
-        </Card>
-      </div>
+      {/* กระทบยอดกับ Stripe — สองฝั่งควรตรงกัน ถ้าต่างกันมาก = มีออเดอร์ที่สถานะในเว็บไม่ตรงกับเงินที่เข้าจริง */}
+      <p className="text-xs text-ink/50">
+        {meta.stripe ? (
+          <>
+            Stripe รับจริง {baht(meta.stripe.gross)} ({num(meta.stripe.saleCount)} รายการ) ต่างจากยอดในเว็บ{" "}
+            <span
+              className={`font-semibold ${Math.abs(stripeDiff) > 1 ? "text-maroon" : "text-emerald-700"}`}
+            >
+              {baht(stripeDiff)}
+            </span>
+          </>
+        ) : (
+          "ยังดึงข้อมูลจาก Stripe ไม่ได้ รายจ่ายจึงยังไม่รวมค่าธรรมเนียม"
+        )}
+      </p>
 
       <Card>
         <p className="mb-3 text-sm font-semibold">บันทึกรายการใหม่</p>
@@ -938,18 +604,16 @@ function GaBlock({ ga, configured }: { ga: GaSummary | null; configured: boolean
     );
   }
 
-  const maxDaily = Math.max(...ga.daily.map((d) => d.users), 1);
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <Kpi label={`ผู้เข้าชม (${ga.days} วัน)`} value={num(ga.activeUsers)} sub={`ใหม่ ${num(ga.newUsers)} คน`} />
-        <Kpi label="เซสชัน" value={num(ga.sessions)} />
-        <Kpi label="จำนวนหน้าที่เปิด" value={num(ga.pageViews)} />
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
+        <Kpi label="ผู้เข้าชม" value={num(ga.activeUsers)} sub={`ใหม่ ${num(ga.newUsers)} คน`} />
         <Kpi
           label="เวลาอยู่บนเว็บเฉลี่ย"
           value={`${Math.floor(ga.avgEngagementSec / 60)}:${String(ga.avgEngagementSec % 60).padStart(2, "0")}`}
           sub="นาที : วินาที ต่อเซสชัน"
         />
+        <RatioCards ga={ga} />
       </div>
 
       <Card>
@@ -958,20 +622,15 @@ function GaBlock({ ga, configured }: { ga: GaSummary | null; configured: boolean
           data={ga.daily.map((d) => ({
             label: dayLabel(d.date).split(" ")[0],
             value: d.users,
-            title: `${dayLabel(d.date)} · ${num(d.users)} คน / ${num(d.sessions)} เซสชัน`,
+            title: `${dayLabel(d.date)} ${num(d.users)} คน`,
           }))}
           height="h-24"
         />
-        <p className="mt-1 text-[10px] text-ink/40">สูงสุด {num(maxDaily)} คนต่อวัน</p>
       </Card>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-3">
         <Card>
-          <p className="mb-2 text-sm font-semibold">คนมาจากไหน (ช่องทาง)</p>
-          <RankList rows={ga.channels.map((c) => ({ label: c.label, value: c.users }))} unit="คน" />
-        </Card>
-        <Card>
-          <p className="mb-2 text-sm font-semibold">แหล่งที่มาละเอียด</p>
+          <p className="mb-2 text-sm font-semibold">คนมาจากไหน</p>
           <RankList rows={ga.sources.map((c) => ({ label: c.label, value: c.users }))} unit="คน" />
         </Card>
         <Card>
@@ -979,19 +638,14 @@ function GaBlock({ ga, configured }: { ga: GaSummary | null; configured: boolean
           <RankList rows={ga.pages.map((c) => ({ label: c.label, value: c.views }))} unit="ครั้ง" />
         </Card>
         <Card>
-          <p className="mb-2 text-sm font-semibold">อุปกรณ์</p>
-          <RankList rows={ga.devices.map((c) => ({ label: c.label, value: c.users }))} unit="คน" />
+          <p className="mb-2 text-sm font-semibold">กรวยการขาย</p>
+          <RankList
+            rows={ga.events.map((e) => ({ label: e.label, value: e.count }))}
+            unit="ครั้ง"
+            keepOrder
+          />
         </Card>
       </div>
-
-      <Card>
-        <p className="mb-2 text-sm font-semibold">กรวยการขาย (นับจากอีเวนต์ใน GA)</p>
-        <RankList
-          rows={ga.events.map((e) => ({ label: e.label, value: e.count }))}
-          unit="ครั้ง"
-          keepOrder
-        />
-      </Card>
     </div>
   );
 }
@@ -1077,6 +731,10 @@ export default function AdminDashboard() {
   }
 
   const s = data?.sales;
+  const ga = data?.ga ?? null;
+  const gaBuys = ga?.events.find((e) => e.event === "purchase_success")?.count ?? 0;
+  const exams = data?.exams ?? [];
+  const examAttempts = exams.reduce((n, e) => n + e.attempts, 0);
 
   return (
     <main className="min-h-screen grid-paper px-4 py-6 sm:px-6 lg:px-10">
@@ -1084,11 +742,11 @@ export default function AdminDashboard() {
         {/* หัวหน้า */}
         <header className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="eyebrow">Mr.tpat3 · หลังร้าน</p>
+            <p className="eyebrow">Mr.tpat3 หลังร้าน</p>
             <h1 className="text-2xl font-bold sm:text-3xl">สรุปยอดขาย</h1>
             <p className="mt-0.5 text-xs text-ink/50">
               {updatedAt
-                ? `อัปเดตล่าสุด ${updatedAt.toLocaleTimeString("th-TH", TH_DATE)} · รีเฟรชอัตโนมัติทุก 30 วินาที`
+                ? `อัปเดตล่าสุด ${updatedAt.toLocaleTimeString("th-TH", TH_DATE)} (รีเฟรชเองทุก 30 วินาที)`
                 : "กำลังอัปเดต…"}
             </p>
           </div>
@@ -1121,221 +779,65 @@ export default function AdminDashboard() {
           </p>
         )}
 
-        {s && (
+        {data && s && (
           <>
-            {/* ===== ภาพรวม ===== */}
-            <Section title="ภาพรวม" hint={`ข้อมูลตั้งแต่ ${s.firstOrderAt ? dateOnly(s.firstOrderAt) : "—"} ถึงตอนนี้`}>
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-                <Kpi label="วันนี้" value={baht(s.totals.today.revenue)} sub={`${num(s.totals.today.units)} ชุด`} accent />
-                <Kpi label="7 วันล่าสุด" value={baht(s.totals.d7.revenue)} sub={`${num(s.totals.d7.units)} ชุด`} />
-                <Kpi label="30 วันล่าสุด" value={baht(s.totals.d30.revenue)} sub={`${num(s.totals.d30.units)} ชุด`} />
-                <Kpi label="เดือนนี้" value={baht(s.thisMonth.revenue)} sub={`${num(s.thisMonth.units)} ชุด`} />
-                <Kpi label="ยอดขายรวมทั้งหมด" value={baht(s.totals.all.revenue)} sub={`${num(s.totals.all.units)} ชุด`} />
-                <Kpi label="เฉลี่ยต่อออเดอร์" value={baht(s.avgOrderValue)} sub={`ลูกค้า ${num(s.customers)} คน`} />
-              </div>
+            {/* ===== ตัวเลขหลัก (ร้านเหลือสินค้าขายตัวเดียว จึงไม่แจกแจงรายสินค้าแล้ว — เจ้าของสั่ง 2026-09-27) ===== */}
+            <div className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
+              <Kpi label="วันนี้" value={baht(s.totals.today.revenue)} sub={`${num(s.totals.today.units)} ชุด`} accent />
+              <Kpi label="7 วันล่าสุด" value={baht(s.totals.d7.revenue)} sub={`${num(s.totals.d7.units)} ชุด`} />
+              <Kpi label="30 วันล่าสุด" value={baht(s.totals.d30.revenue)} sub={`${num(s.totals.d30.units)} ชุด`} />
+              <Kpi label="ทั้งหมด" value={baht(s.totals.all.revenue)} sub={`${num(s.totals.all.units)} ชุด`} />
+              <Kpi
+                label="กำไรสุทธิ"
+                value={baht(data.finance.profit)}
+                sub={`อัตรากำไร ${pct(data.finance.margin)}`}
+              />
+              <Kpi
+                label="คนเข้าเว็บ → ซื้อ"
+                value={ga && ga.activeUsers > 0 ? pct((gaBuys / ga.activeUsers) * 100) : "—"}
+                sub={
+                  ga
+                    ? `ซื้อ ${num(gaBuys)} จากผู้เข้าชม ${num(ga.activeUsers)} คน`
+                    : "ยังไม่มีข้อมูล Google Analytics"
+                }
+              />
+              <Kpi
+                label="รับเล่มเนื้อหาฟรี"
+                value={`${num(s.freeClaims.all)} คน`}
+                sub={`วันนี้ ${num(s.freeClaims.today)} คน`}
+              />
+              <Kpi
+                label="ทำข้อสอบแล้ว"
+                value={`${num(examAttempts)} คน`}
+                sub={
+                  exams.length === 1 && examAttempts > 0
+                    ? `เฉลี่ย ${exams[0].avgScore} สูงสุด ${exams[0].maxScore}`
+                    : undefined
+                }
+              />
+            </div>
 
-              <div className="mt-3 grid gap-3 sm:grid-cols-3">
-                <Card>
-                  <p className="text-xs text-ink/50">อัตราปิดการขาย</p>
-                  <p className="mt-1 text-2xl font-bold tabular-nums">{pct(s.closeRate)}</p>
-                  <Meter value={s.closeRate} className="mt-2" />
-                  <p className="mt-1.5 text-xs text-ink/50">
-                    กดสั่งซื้อ {num(s.paidOrders + s.pendingOrders)} ครั้ง → จ่ายจริง {num(s.paidOrders)} ครั้ง
-                    (ค้างจ่าย {num(s.pendingOrders)})
-                  </p>
-                </Card>
-                <Card>
-                  <p className="text-xs text-ink/50">ลูกค้าที่ซื้อซ้ำ</p>
-                  <p className="mt-1 text-2xl font-bold tabular-nums">{num(s.repeatCustomerCount)} คน</p>
-                  <p className="mt-1.5 text-xs text-ink/50">
-                    จากลูกค้าทั้งหมด {num(s.customers)} คน
-                    {s.customers > 0 && ` (${pct((s.repeatCustomerCount / s.customers) * 100)})`}
-                  </p>
-                </Card>
-                <Card>
-                  <p className="text-xs text-ink/50">ห้องสอบออนไลน์</p>
-                  {data.exams.length ? (
-                    <ul className="mt-1 space-y-1">
-                      {data.exams.map((e) => (
-                        <li key={e.id} className="text-sm">
-                          <span className="font-bold tabular-nums">{num(e.attempts)} คน</span>{" "}
-                          <span className="text-ink/50">
-                            ทำ {e.title} · เฉลี่ย {e.avgScore} · สูงสุด {e.maxScore}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p className="mt-1 text-sm text-ink/40">ยังไม่มีคนส่งข้อสอบ</p>
-                  )}
-                </Card>
-              </div>
-            </Section>
+            <Card className="mt-3">
+              <p className="mb-2 text-sm font-semibold">ยอดขายรายวัน (30 วันล่าสุด)</p>
+              <Bars
+                data={s.daily.map((d) => ({
+                  label: dayLabel(d.date).split(" ")[0],
+                  value: d.revenue,
+                  title: `${dayLabel(d.date)} ${baht(d.revenue)} (${num(d.units)} ชุด)`,
+                }))}
+              />
+            </Card>
 
-            {/* ===== อัตราส่วนสำคัญ ===== */}
-            <Section
-              title="อัตราส่วนสำคัญ"
-              hint="นับจาก Google Analytics ทั้งหมด กรอบเดียวกัน 30 วัน (เริ่มเก็บ 26 ก.ค. — ตัวเลขจะนิ่งขึ้นเมื่อสะสมได้หลายวัน)"
-            >
-              <RatiosBlock ga={data.ga} />
-            </Section>
-
-            {/* ===== บัญชีรายรับรายจ่าย ===== */}
-            <Section
+            <FoldSection
               title="บัญชีรายรับรายจ่าย"
-              hint={`นับตั้งแต่ ${dateOnly(`${data.finance.startDate}T00:00:00+07:00`)} (วันแรกที่ขาย Mock ราคา ฿159) · ค่าธรรมเนียม Stripe ดึงอัตโนมัติ`}
+              hint={`นับตั้งแต่ ${dateOnly(`${data.finance.startDate}T00:00:00+07:00`)}`}
             >
               <FinanceBlock f={data.finance} meta={data.meta} onChanged={load} />
-            </Section>
+            </FoldSection>
 
-            {/* ===== แจกแจงรายสินค้า ===== */}
-            <Section
-              title="แจกแจงรายสินค้า"
-              hint="เรียงตามรายได้มากไปน้อย · นับเฉพาะออเดอร์ที่จ่ายเงินแล้ว"
-            >
-              <RevenueDonut products={s.products} total={s.totals.all.revenue} />
-
-              <div className="mt-4 grid gap-4 lg:grid-cols-2">
-                {s.products.map((p, i) => (
-                  <ProductCard key={p.id} p={p} rank={i + 1} />
-                ))}
-              </div>
-
-              {/* ตารางสรุปเทียบกันในหน้าจอเดียว */}
-              <Card className="mt-4 overflow-x-auto">
-                <table className="w-full min-w-[640px] text-sm">
-                  <thead>
-                    <tr className="border-b border-grid text-left text-xs text-ink/50">
-                      <th className="pb-2 font-medium">สินค้า</th>
-                      <th className="pb-2 text-right font-medium">ขายได้ (ชุด)</th>
-                      <th className="pb-2 text-right font-medium">% จำนวน</th>
-                      <th className="pb-2 text-right font-medium">เป็นเงิน</th>
-                      <th className="pb-2 text-right font-medium">% รายได้</th>
-                      <th className="pb-2 text-right font-medium">ปิดการขาย</th>
-                      <th className="pb-2 text-right font-medium">ลูกค้า</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {s.products.map((p) => (
-                      <tr key={p.id} className="border-b border-grid/60 last:border-0">
-                        <td className="py-2 pr-3">{p.name}</td>
-                        <td className="py-2 text-right tabular-nums">{num(p.units)}</td>
-                        <td className="py-2 text-right tabular-nums">{pct(p.unitShare)}</td>
-                        <td className="py-2 text-right font-semibold tabular-nums">{baht(p.revenue)}</td>
-                        <td className="py-2 text-right tabular-nums">{pct(p.revenueShare)}</td>
-                        <td className="py-2 text-right tabular-nums">{pct(p.closeRate)}</td>
-                        <td className="py-2 text-right tabular-nums">{num(p.customers)}</td>
-                      </tr>
-                    ))}
-                    <tr className="border-t-2 border-grid font-bold">
-                      <td className="py-2">รวมทั้งร้าน</td>
-                      <td className="py-2 text-right tabular-nums">{num(s.totals.all.units)}</td>
-                      <td className="py-2 text-right">100%</td>
-                      <td className="py-2 text-right tabular-nums">{baht(s.totals.all.revenue)}</td>
-                      <td className="py-2 text-right">100%</td>
-                      <td className="py-2 text-right tabular-nums">{pct(s.closeRate)}</td>
-                      <td className="py-2 text-right tabular-nums">{num(s.customers)}</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </Card>
-            </Section>
-
-            {/* ===== แนวโน้ม ===== */}
-            <Section title="แนวโน้มยอดขาย">
-              <Card>
-                <p className="mb-2 text-sm font-semibold">รายวัน (30 วันล่าสุด)</p>
-                <Bars
-                  data={s.daily.map((d) => ({
-                    label: dayLabel(d.date).split(" ")[0],
-                    value: d.revenue,
-                    title: `${dayLabel(d.date)} · ${baht(d.revenue)} (${num(d.units)} ชุด)`,
-                  }))}
-                />
-              </Card>
-
-              <div className="mt-4 grid gap-4 md:grid-cols-2">
-                <Card>
-                  <p className="mb-2 text-sm font-semibold">รายเดือน</p>
-                  <table className="w-full text-sm">
-                    <tbody>
-                      {[...s.monthly].reverse().map((m) => (
-                        <tr key={m.date} className="border-b border-grid/60 last:border-0">
-                          <td className="py-1.5">
-                            {new Date(`${m.date}-01T00:00:00+07:00`).toLocaleDateString("th-TH", {
-                              ...TH_DATE,
-                              month: "long",
-                              year: "numeric",
-                            })}
-                          </td>
-                          <td className="py-1.5 text-right tabular-nums text-ink/60">{num(m.units)} ชุด</td>
-                          <td className="py-1.5 text-right font-semibold tabular-nums">{baht(m.revenue)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </Card>
-
-                <Card>
-                  <p className="mb-2 text-sm font-semibold">ขายดีวันไหน / เวลาไหน</p>
-                  <Bars
-                    data={s.weekday.map((w) => ({
-                      label: WEEKDAYS_SHORT[w.day],
-                      value: w.revenue,
-                      title: `วัน${WEEKDAYS[w.day]} · ${baht(w.revenue)} (${num(w.units)} ชุด)`,
-                    }))}
-                    height="h-20"
-                  />
-                  <p className="mb-1 mt-4 text-xs text-ink/50">ตามชั่วโมง (เวลาไทย)</p>
-                  <Bars
-                    data={s.hourly.map((h) => ({
-                      label: h.hour % 6 === 0 ? String(h.hour) : "",
-                      value: h.revenue,
-                      title: `${String(h.hour).padStart(2, "0")}:00 น. · ${baht(h.revenue)} (${num(h.units)} ชุด)`,
-                    }))}
-                    height="h-20"
-                  />
-                </Card>
-              </div>
-            </Section>
-
-            {/* ===== ลูกค้าซื้อซ้ำ ===== */}
-            {s.repeatCustomers.length > 0 && (
-              <FoldSection
-                title="ลูกค้าที่ซื้อซ้ำ"
-                hint={`${num(s.repeatCustomerCount)} คน · ซื้อมากกว่า 1 ครั้ง`}
-              >
-                <Card className="overflow-x-auto">
-                  <table className="w-full min-w-[520px] text-sm">
-                    <thead>
-                      <tr className="border-b border-grid text-left text-xs text-ink/50">
-                        <th className="pb-2 font-medium">ชื่อ</th>
-                        <th className="pb-2 font-medium">อีเมล</th>
-                        <th className="pb-2 text-right font-medium">ครั้ง</th>
-                        <th className="pb-2 text-right font-medium">รวมเป็นเงิน</th>
-                        <th className="pb-2 text-right font-medium">ซื้อล่าสุด</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {s.repeatCustomers.map((c) => (
-                        <tr key={c.email} className="border-b border-grid/60 last:border-0">
-                          <td className="py-2">{c.name}</td>
-                          <td className="py-2 text-ink/60">{c.email}</td>
-                          <td className="py-2 text-right tabular-nums">{num(c.orders)}</td>
-                          <td className="py-2 text-right font-semibold tabular-nums">{baht(c.revenue)}</td>
-                          <td className="py-2 text-right text-ink/60">{dateOnly(c.lastAt)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </Card>
-              </FoldSection>
-            )}
-
-            {/* ===== ออเดอร์ล่าสุด ===== */}
             <FoldSection
               title="ออเดอร์ล่าสุด"
-              hint={`${num(Math.min(s.recent.length, 40))} รายการ · รวมที่กดสั่งแล้วยังไม่จ่ายด้วย`}
+              hint={`กดสั่ง ${num(s.paidOrders + s.pendingOrders)} ครั้ง จ่ายจริง ${num(s.paidOrders)} ครั้ง (${pct(s.closeRate)})`}
             >
               <Card className="overflow-x-auto">
                 <table className="w-full min-w-[700px] text-sm">
@@ -1356,7 +858,9 @@ export default function AdminDashboard() {
                         <td className="py-2 pr-3">{o.name}</td>
                         <td className="py-2 pr-3 text-ink/60">{o.email}</td>
                         <td className="py-2 pr-3">{o.productName}</td>
-                        <td className="py-2 text-right font-semibold tabular-nums">{baht(o.amount)}</td>
+                        <td className="py-2 text-right font-semibold tabular-nums">
+                          {o.paid && o.amount === 0 ? "ฟรี" : baht(o.amount)}
+                        </td>
                         <td className="py-2 text-right">
                           <StatusBadge status={o.status} />
                         </td>
@@ -1367,13 +871,12 @@ export default function AdminDashboard() {
               </Card>
             </FoldSection>
 
-            {/* ===== Google Analytics ===== */}
-            <Section title="ผู้เข้าชมเว็บ (Google Analytics)" hint="30 วันล่าสุด">
-              <GaBlock ga={data.ga} configured={data.meta.gaConfigured} />
-            </Section>
+            <FoldSection title="ผู้เข้าชมเว็บ" hint="Google Analytics 30 วันล่าสุด">
+              <GaBlock ga={ga} configured={data.meta.gaConfigured} />
+            </FoldSection>
 
             <p className="mt-10 pb-6 text-center text-xs text-ink/40">
-              ข้อมูลอ่านสดจากฐานข้อมูลร้านทุกครั้งที่รีเฟรช · ออเดอร์ทั้งหมด {num(data.meta.orderCount)} รายการ
+              ออเดอร์ทั้งหมด {num(data.meta.orderCount)} รายการ
             </p>
           </>
         )}

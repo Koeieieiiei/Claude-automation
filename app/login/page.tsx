@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 
 /**
  * หน้าเข้าสู่ระบบ / สมัครสมาชิกด้วยอีเมล+รหัสผ่าน (แทนปุ่ม Google เดิม — เจ้าของสั่ง 2026-09-26)
- * /login?next=/exam&mode=signup&email=… · ล็อกอินอยู่แล้ว → ข้ามไป next เลย
+ * /login?next=/exam&mode=signup&email=… ถ้าล็อกอินอยู่แล้ว → ข้ามไป next เลย
  */
 export default async function LoginPage({
   searchParams,
@@ -30,11 +30,6 @@ export default async function LoginPage({
     <AuthCard
       badge="บัญชีผู้เรียน"
       title="Sign In / Sign Up"
-      intro={
-        <>
-          คอร์สทั้งหมดผูกกับอีเมลนี้ เคยซื้อไว้ให้ใช้<strong>อีเมลเดียวกับตอนสั่งซื้อ</strong>
-        </>
-      }
       next={next}
     >
       <AuthForm next={next} initialMode={mode === "signup" ? "signup" : "signin"} initialEmail={(email ?? "").slice(0, 254)} />

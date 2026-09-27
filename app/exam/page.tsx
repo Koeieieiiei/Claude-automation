@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import ExamView from "./ExamView";
 
 export const metadata = {
-  title: "ห้องสอบ Mock TPAT3 · Mr.tpat3",
+  title: "ห้องสอบ Mock TPAT3 | Mr.tpat3",
   robots: { index: false }, // หน้าเฉพาะผู้ซื้อ — ไม่ให้ search engine เก็บ
 };
 

@@ -55,7 +55,7 @@ export default function Home() {
     }
   }, []);
 
-  // เช็คสถานะผู้ซื้อแล้วเปลี่ยนปุ่ม hero: ยังไม่ทำ → "เข้าห้องสอบ", ทำแล้ว → "ดูผลสอบ"
+  // เช็คสถานะผู้ซื้อแล้วเปลี่ยนปุ่ม hero: ยังไม่ทำ → "เข้าห้องสอบ", ทำแล้ว → "ดูผลสอบและเฉลย"
   // ล็อกอินอยู่ = เช็คจากบัญชี (คุกกี้) · ไม่ได้ล็อกอิน = ใช้โทเค็นที่เครื่องนี้เคยเข้าห้องสอบไว้
   useEffect(() => {
     let cancelled = false;
@@ -152,7 +152,7 @@ export default function Home() {
               {examState === "in_progress"
                 ? "ทำข้อสอบต่อ — เวลากำลังเดิน"
                 : examState === "submitted"
-                  ? "ดูผลสอบ"
+                  ? "ดูผลสอบและเฉลย"
                   : "เข้าห้องสอบ TPAT3"}
               <Arrow />
             </a>
@@ -191,7 +191,7 @@ export default function Home() {
               desc="สอบออนไลน์ 70 ข้อ จับเวลา 3 ชม. รู้คะแนน อันดับ และจุดที่ต้องซ่อมทันที พร้อมเฉลยละเอียด"
               product={PRODUCTS.mock1}
               unit="/ ชุด"
-              buyLabel={`สั่งซื้อ · ฿${PRODUCTS.mock1.price.toLocaleString()}`}
+              buyLabel={`สั่งซื้อ ฿${PRODUCTS.mock1.price.toLocaleString()}`}
               onBuy={buy}
               // ไฟล์เดียว = โจทย์ 4 ข้อ + เฉลยละเอียด (สร้างด้วย Desktop/Project/MOCK/_build-sarabun/demo/make_sample.py)
               sample={{ href: "/samples/tpat3-mock-sample.pdf", downloadName: "TPat3 Mock Sample.pdf", label: "ตัวอย่างข้อสอบฟรี (PDF)" }}
@@ -250,7 +250,7 @@ export default function Home() {
             />
             <FaqItem
               q="ซื้อแล้วได้อะไร?"
-              a={`ชุด Mock (฿${PRODUCTS.mock1.price.toLocaleString()}): ห้องสอบออนไลน์ 1 ครั้ง + ผลวิเคราะห์ + เฉลยละเอียด (PDF) · เนื้อหา TPAT3 (ฟรี): PDF 174 หน้า · ทุกอย่างอยู่ในบัญชีถาวร ไม่มีวันหมดอายุ`}
+              a={`ชุด Mock (฿${PRODUCTS.mock1.price.toLocaleString()}): ห้องสอบออนไลน์ 1 ครั้ง + ผลวิเคราะห์ + เฉลยละเอียด (PDF) / เนื้อหา TPAT3 (ฟรี): PDF 174 หน้า ทุกอย่างอยู่ในบัญชีถาวร ไม่มีวันหมดอายุ`}
             />
             <FaqItem
               q="ขอคืนเงินได้ไหม?"

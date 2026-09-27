@@ -58,6 +58,17 @@ describe("summarizeFinance", () => {
     expect(f.income.total).toBe(358);
   });
 
+  it("รับเล่มฟรี (ยอด 0) ไม่นับเป็นชุดที่ขายได้ — กำไรต่อชุดไม่ถูกหารเกิน", () => {
+    const f = summarizeFinance({
+      orders: [order({ amount: 199 }), order({ amount: 0 }), order({ amount: 0 })],
+      entries: [],
+      stripeFees: 0,
+      startDate: START,
+    });
+    expect(f.income.shopUnits).toBe(1);
+    expect(f.profitPerUnit).toBe(199);
+  });
+
   it("ค่าธรรมเนียม Stripe ถูกนับเป็นรายจ่ายอัตโนมัติ และกำไร = รายรับ - รายจ่าย", () => {
     const f = summarizeFinance({
       orders: [order({ amount: 159 }), order({ amount: 199 })],

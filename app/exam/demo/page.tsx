@@ -111,7 +111,7 @@ export default function ExamDemoPage() {
           </p>
           <p className="mt-1.5 text-sm leading-relaxed text-ink/75">
             หน้านี้ใช้<strong>แทนการจ่ายเงินจริง</strong>: สร้าง “ผู้ซื้อจำลอง” แล้วไปทดสอบทำข้อสอบได้ทันที
-            ข้อมูลเก็บในเครื่องทั้งหมด (โฟลเดอร์ <code className="bg-white px-1">data/exam/</code>) ·
+            ข้อมูลเก็บในเครื่องทั้งหมด (โฟลเดอร์ <code className="bg-white px-1">data/exam/</code>)
             สถิติภาพรวมมาจากประชากรอ้างอิงของสนามสอบ (population.json)
           </p>
         </div>
@@ -257,7 +257,7 @@ export default function ExamDemoPage() {
                       </td>
                       <td className="px-4 py-2.5">
                         {b.attemptState === "submitted"
-                          ? `ส่งแล้ว · ถูก ${b.correctCount}/70`
+                          ? `ส่งแล้ว ถูก ${b.correctCount}/70`
                           : b.attemptState === "in_progress"
                             ? "กำลังสอบ (เวลาเดินอยู่)"
                             : "ยังไม่เริ่ม"}

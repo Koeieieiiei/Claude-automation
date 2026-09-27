@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import ResultsView from "./ResultsView";
 
 export const metadata = {
-  title: "ผลสอบ Mock TPAT3 · Mr.tpat3",
+  title: "ผลสอบ Mock TPAT3 | Mr.tpat3",
   robots: { index: false }, // ผลสอบส่วนบุคคล — ไม่ให้ search engine เก็บ
 };
 

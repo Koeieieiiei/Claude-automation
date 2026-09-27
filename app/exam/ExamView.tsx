@@ -402,7 +402,7 @@ export default function ExamView() {
               <>
                 <h1 className="font-display text-2xl font-bold text-ink">เข้าสู่ระบบก่อนเข้าห้องสอบ</h1>
                 <p className="mt-2 text-sm leading-relaxed text-ink/70">
-                  ใช้<strong>อีเมลเดียวกับที่สั่งซื้อ</strong> ({exam.totalQuestions} ข้อ · {durationText(exam)} · สอบได้ 1 รอบ)
+                  ใช้<strong>อีเมลเดียวกับที่สั่งซื้อ</strong> ({exam.totalQuestions} ข้อ / {durationText(exam)} / สอบได้ 1 รอบ)
                 </p>
                 <LoginButton next={examPath} className="mt-5" />
               </>
@@ -524,7 +524,7 @@ export default function ExamView() {
               disabled={busy}
               className="mt-8 w-full bg-maroon py-4 text-lg font-bold text-paper transition hover:bg-maroon-dark disabled:opacity-60"
             >
-              {busy ? "กำลังเข้าห้องสอบ…" : resumed ? "กลับเข้าห้องสอบ (เวลากำลังเดิน)" : `เริ่มสอบ · จับเวลา ${durationText(exam)}`}
+              {busy ? "กำลังเข้าห้องสอบ…" : resumed ? "กลับเข้าห้องสอบ (เวลากำลังเดิน)" : `เริ่มสอบ จับเวลา ${durationText(exam)}`}
             </button>
           </div>
         </div>
@@ -592,7 +592,7 @@ export default function ExamView() {
           <p className="mb-3 border border-grid bg-white px-4 py-2.5 text-sm text-ink/60">
             อ่านโจทย์แล้วฝนคำตอบใน<strong>กระดาษคำตอบ</strong>
             <span className="lg:hidden"> (ปุ่มมุมขวาล่าง)</span>
-            <span className="hidden lg:inline">ด้านขวา</span> · กดเลขข้อเพื่อไปที่โจทย์
+            <span className="hidden lg:inline">ด้านขวา</span> กดเลขข้อเพื่อไปที่โจทย์
           </p>
           <div className="space-y-2">
             {exam.questionPages.map((n) => (
@@ -633,7 +633,7 @@ export default function ExamView() {
         onClick={() => setSheetOpen(true)}
         className="fixed bottom-4 right-4 z-40 bg-maroon px-5 py-3.5 font-bold text-paper shadow-[0_12px_30px_-8px_rgba(110,20,35,0.6)] transition hover:bg-maroon-dark lg:hidden"
       >
-        กระดาษคำตอบ · {answeredCount}/{exam.totalQuestions}
+        กระดาษคำตอบ {answeredCount}/{exam.totalQuestions}
       </button>
       {sheetOpen && (
         <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal>
@@ -641,7 +641,7 @@ export default function ExamView() {
           <div className="absolute inset-x-0 bottom-0 flex max-h-[78vh] flex-col border-t-2 border-maroon bg-paper">
             <div className="flex items-center justify-between border-b border-grid px-4 py-3">
               <span className="font-label text-[11px] font-semibold uppercase tracking-[0.18em] text-maroon">
-                กระดาษคำตอบ · ตอบแล้ว {answeredCount}/{exam.totalQuestions}
+                กระดาษคำตอบ ตอบแล้ว {answeredCount}/{exam.totalQuestions}
               </span>
               <button
                 onClick={() => setSheetOpen(false)}
@@ -777,7 +777,7 @@ function AnswerSheet({
       {exam.sections.map((sec) => (
         <div key={sec.no}>
           <p className="mb-1.5 font-label text-[11px] font-semibold text-maroon">
-            ตอนที่ {sec.no} · ข้อ {sec.from}–{sec.to}
+            ตอนที่ {sec.no} ข้อ {sec.from}–{sec.to}
           </p>
           <div className="space-y-1">
             {Array.from({ length: sec.to - sec.from + 1 }, (_, i) => sec.from + i).map((no) => (

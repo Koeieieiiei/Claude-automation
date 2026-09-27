@@ -22,9 +22,9 @@ const priceText = (price: number) => (price === 0 ? "ฟรี" : `฿${price.to
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
   const course = getCourse(slug);
-  if (!course) return { title: "ไม่พบคอร์ส · Mr.tpat3" };
+  if (!course) return { title: "ไม่พบคอร์ส | Mr.tpat3" };
   const product = PRODUCTS[course.productId];
-  const description = `${course.tagline} — ${course.includes.join(" · ")} ${product.price === 0 ? "แจกฟรี" : `ราคา ${priceText(product.price)}`} โดย Mr.tpat3`;
+  const description = `${course.tagline} — ${course.includes.join(" / ")} ${product.price === 0 ? "แจกฟรี" : `ราคา ${priceText(product.price)}`} โดย Mr.tpat3`;
   return {
     title: `${course.title} | Mr.tpat3`,
     description,
@@ -93,7 +93,7 @@ export default async function CoursePage({ params }: { params: Promise<{ slug: s
                 <div className="relative grid items-center gap-6 px-7 py-9 sm:grid-cols-[1fr_auto] md:px-10 md:py-12">
                   <div>
                     <p className="font-label text-[11px] font-semibold uppercase tracking-[0.22em] opacity-80">
-                      by Mr.tpat3{free && " · แจกฟรี"}
+                      by Mr.tpat3{free && " / แจกฟรี"}
                     </p>
                     <h1 className="mt-2 font-display text-[2rem] font-bold leading-[1.15] md:text-[2.5rem]">{course.title}</h1>
                     <p className="mt-3 max-w-md text-[1.05rem] font-medium leading-relaxed opacity-90">{course.tagline}</p>
@@ -137,7 +137,7 @@ export default async function CoursePage({ params }: { params: Promise<{ slug: s
                   <p className="text-sm font-semibold text-ink">
                     {product.files.includes("questions") ? "สอบออนไลน์ + ไฟล์ PDF" : "ไฟล์ PDF"}
                   </p>
-                  <p className="mt-1 font-label text-[11px] text-ink/55">อยู่ที่ “คอร์สของฉัน” · ไม่มีวันหมดอายุ</p>
+                  <p className="mt-1 font-label text-[11px] text-ink/55">อยู่ที่ “คอร์สของฉัน” ไม่มีวันหมดอายุ</p>
                 </div>
 
                 <ul className="mt-4 space-y-1.5">
@@ -176,12 +176,7 @@ export default async function CoursePage({ params }: { params: Promise<{ slug: s
                     </p>
                   </>
                 ) : (
-                  <>
-                    <CourseBuyButton product={product} user={user} slug={course.slug} className="mt-4" />
-                    <p className="mt-2 text-center font-label text-[11px] text-ink/50">
-                      PromptPay ผ่าน Stripe
-                    </p>
-                  </>
+                  <CourseBuyButton product={product} user={user} slug={course.slug} className="mt-4" />
                 )}
                 {!owned && !user && (
                   <p className="mt-3 text-center font-label text-xs text-ink/60">

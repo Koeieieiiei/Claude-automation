@@ -38,7 +38,7 @@ export default async function ResetPasswordPage({ searchParams }: { searchParams
       title="ตั้งรหัสผ่านใหม่"
       intro={
         <>
-          บัญชี <strong className="text-ink">{payload.email}</strong> · ตั้งเสร็จเข้าสู่ระบบให้ทันที
+          บัญชี <strong className="text-ink">{payload.email}</strong> ตั้งเสร็จเข้าสู่ระบบให้ทันที
         </>
       }
       next="/login"

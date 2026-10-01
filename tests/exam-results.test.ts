@@ -8,6 +8,8 @@ import {
   submitAttempt,
   getAttempt,
   deleteAttempt,
+  computeStatistics,
+  STATS_MIN_SCORE,
 } from "@/lib/exam-store";
 import { GET as getResults } from "@/app/api/exam/results/route";
 
@@ -89,5 +91,35 @@ describe("API ผลสอบ", () => {
     await startAttempt(exam, buyer);
     const res = await call(tokenFor());
     expect(res.status).toBe(409);
+  });
+});
+
+describe("สถิติเทียบไม่นับคนที่ได้ต่ำกว่า STATS_MIN_SCORE (เจ้าของสั่ง 2026-10-02)", () => {
+  const LOW_EMAIL = "vitest-exam-low@example.com";
+  const blank = () => Array(exam.totalQuestions).fill(0); // ส่งกระดาษเปล่า = 0 คะแนน
+
+  afterEach(async () => {
+    await deleteAttempt(exam, LOW_EMAIL);
+  });
+
+  it("คนได้ต่ำกว่าเกณฑ์ไม่โผล่ในกราฟ / จำนวนผู้สอบ / ค่าต่ำสุดของคนอื่น", async () => {
+    const before = await computeStatistics(exam, 50);
+    await startAttempt(exam, { ...buyer, email: LOW_EMAIL });
+    const low = await submitAttempt(exam, LOW_EMAIL, blank());
+    expect(low.score).toBeLessThan(STATS_MIN_SCORE);
+
+    const after = await computeStatistics(exam, 50);
+    expect(after.nTotal).toBe(before.nTotal);
+    expect(after.histogram[0].count).toBe(0);
+    expect(after.min).toBeGreaterThanOrEqual(STATS_MIN_SCORE);
+  });
+
+  it("ผู้ดูที่ได้ต่ำกว่าเกณฑ์ยังเห็นตัวเองในกราฟ และอยู่อันดับสุดท้าย (ไม่เกินจำนวนผู้สอบ)", async () => {
+    await startAttempt(exam, { ...buyer, email: LOW_EMAIL });
+    const low = await submitAttempt(exam, LOW_EMAIL, blank());
+
+    const stats = await computeStatistics(exam, low.score!);
+    expect(stats.histogram[0].count).toBe(1);
+    expect(stats.rank).toBe(stats.nTotal);
   });
 });

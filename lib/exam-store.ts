@@ -795,12 +795,20 @@ export async function submitAttempt(
 const aggregateWriteCache = new Map<string, Aggregate>();
 
 /**
+ * คะแนนต่ำกว่านี้ไม่นับเข้าสถิติเทียบบนหน้าผลสอบ (กราฟ / อันดับ / ค่าเฉลี่ย / % คนตอบถูก)
+ * ส่วนใหญ่คือคนส่งกระดาษเปล่า (เจ้าของสั่ง 2026-10-02) · ข้อมูลยังอยู่ครบในฐานข้อมูล
+ * และหลังร้าน (getSubmittedScores) ยังนับทุกคน
+ */
+export const STATS_MIN_SCORE = 10;
+
+/**
  * คิดสถิติผู้สอบจริงสดจากตารางในฐานข้อมูล (คืน undefined ถ้ายังไม่มีตาราง)
  *
  * วิธีนี้ทำให้ไม่ต้องมีไฟล์ aggregate.json อีก — ไฟล์สรุปแยกคือจุดที่เคยเสี่ยง
  * ถูกสองคำขอเขียนทับกันจนคะแนนของคนก่อน ๆ หายทั้งไฟล์
+ * minScore = ข้ามคนที่ได้ต่ำกว่านี้ทั้งคะแนนและคำตอบรายข้อ
  */
-async function tableReadAggregate(exam: ExamDef): Promise<Aggregate | undefined> {
+async function tableReadAggregate(exam: ExamDef, minScore = 0): Promise<Aggregate | undefined> {
   const supabase = getSupabase();
   if (!supabase || attemptsTableReady === false) return undefined;
   const { data, error } = await supabase
@@ -820,7 +828,9 @@ async function tableReadAggregate(exam: ExamDef): Promise<Aggregate | undefined>
   const key = await getAnswerKey(exam);
   const agg: Aggregate = { scores: [], perQuestionCorrect: {} };
   for (const row of (data ?? []) as { score: number | string | null; answers: number[] }[]) {
-    agg.scores.push(Number(row.score) || 0);
+    const score = Number(row.score) || 0;
+    if (score < minScore) continue;
+    agg.scores.push(score);
     const answers = Array.isArray(row.answers) ? row.answers : [];
     for (let q = 1; q <= exam.totalQuestions; q++) {
       if (answers[q - 1] === key[String(q)].answer) {
@@ -831,8 +841,12 @@ async function tableReadAggregate(exam: ExamDef): Promise<Aggregate | undefined>
   return agg;
 }
 
-async function readAggregate(exam: ExamDef): Promise<Aggregate> {
-  const fromTable = await tableReadAggregate(exam);
+/**
+ * minScore ใช้เฉพาะตอนอ่านไปคิดสถิติ — ฝั่งเขียนไฟล์สรุป (add/removeFromAggregate) ต้องอ่านครบทุกคนเสมอ
+ * ไม่งั้นจะเขียนทับจนคะแนนต่ำหายจากไฟล์
+ */
+async function readAggregate(exam: ExamDef, minScore = 0): Promise<Aggregate> {
+  const fromTable = await tableReadAggregate(exam, minScore);
   if (fromTable) return fromTable;
   if (getSupabase()) {
     const stored = (await storageGetJson<Aggregate>(sAgg(exam), { strict: true })) ?? {
@@ -841,14 +855,16 @@ async function readAggregate(exam: ExamDef): Promise<Aggregate> {
     };
     const cached = aggregateWriteCache.get(exam.id);
     // สำเนาที่เราเขียนเองมีคะแนนมากกว่า = ที่อ่านได้เป็นเวอร์ชันเก่าค้างแคช
-    return cached && cached.scores.length > stored.scores.length ? cached : stored;
+    const agg = cached && cached.scores.length > stored.scores.length ? cached : stored;
+    // ไฟล์สรุปรุ่นเก่าไม่มีคำตอบรายคน — กรองได้แค่คะแนน (% คนตอบถูกในโหมดนี้ยังนับทุกคน)
+    return minScore ? { ...agg, scores: agg.scores.filter((s) => s >= minScore) } : agg;
   }
   // dev (ไม่มี Supabase): คิดสดจากไฟล์ attempts ในเครื่อง
   const agg: Aggregate = { scores: [], perQuestionCorrect: {} };
   const all = readLocalJson<Record<string, ExamAttempt>>(localAttemptsFile(exam), {});
   const key = await getAnswerKey(exam);
   for (const a of Object.values(all)) {
-    if (!a.submittedAt) continue;
+    if (!a.submittedAt || (a.score ?? 0) < minScore) continue;
     agg.scores.push(a.score ?? 0);
     for (let q = 1; q <= exam.totalQuestions; q++) {
       if (a.answers[q - 1] === key[String(q)].answer) {
@@ -952,10 +968,13 @@ export interface ExamStatistics {
 /**
  * สถิติเทียบกับผู้สอบทุกคนในสนามนี้ = ประชากรอ้างอิง + ผู้สอบจริงที่ส่งแล้ว
  * (ประชากรอ้างอิงจำเป็นช่วงแรกที่ผู้สอบจริงยังน้อย ไม่งั้นอันดับไม่มีความหมาย)
+ * ผู้สอบจริงที่ได้ต่ำกว่า STATS_MIN_SCORE ไม่นับ (ประชากรอ้างอิงชุดปัจจุบันต่ำสุด 15.33 อยู่แล้ว)
+ * ยกเว้นผู้ดูเองที่ได้ต่ำกว่าเกณฑ์ — ยังนับตัวเขาในผลของเขา ไม่งั้นอันดับจะเกินจำนวนผู้สอบ
  */
 export async function computeStatistics(exam: ExamDef, myScore: number): Promise<ExamStatistics> {
-  const [pop, agg] = await Promise.all([getPopulation(exam), readAggregate(exam)]);
+  const [pop, agg] = await Promise.all([getPopulation(exam), readAggregate(exam, STATS_MIN_SCORE)]);
   const scores = [...pop.scoresWeighted, ...agg.scores];
+  if (myScore < STATS_MIN_SCORE) scores.push(myScore);
 
   const n = scores.length;
   const mean = scores.reduce((s, v) => s + v, 0) / n;

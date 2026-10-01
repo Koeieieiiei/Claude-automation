@@ -123,13 +123,13 @@ export async function buildDeliverablePdf(
 
 /**
  * ลายน้ำแบรนด์ — แบบเดียวกับไฟล์ตัวอย่างฟรี (scripts/make-summary-sample.mjs):
- * "Mr.tpat3" / "Tiktok: Mrtpat3" 2 บรรทัด เอียง 35° สีเทาจาง สลับเยื้องซ้าย-ขวาทีละหน้า
+ * "Mr.tpat3" / "IG: Mr.tpat3" 2 บรรทัด เอียง 35° สีเทาจาง สลับเยื้องซ้าย-ขวาทีละหน้า
  * (เจ้าของสั่ง 2026-09-16: เลิกพิมพ์ชื่อ-อีเมลผู้ซื้อบนหน้ากระดาษ)
  * ตำแหน่งคิดเป็นสัดส่วนของหน้า A4 (595×842) ของต้นฉบับ เพื่อให้หน้าขนาดอื่นวางตรงกัน
  */
 const BRAND_LINES = [
   { text: "Mr.tpat3", size: 34, yFrac: 403.92 / 842 },
-  { text: "Tiktok: Mrtpat3", size: 28, yFrac: 347.92 / 842 },
+  { text: "IG: Mr.tpat3", size: 28, yFrac: 347.92 / 842 },
 ];
 const BRAND_X_LEFT = 124 / 595; // หน้าคี่ของชุด — เยื้องซ้าย
 const BRAND_X_RIGHT = 339 / 595; // หน้าคู่ของชุด — เยื้องขวา

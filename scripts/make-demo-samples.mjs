@@ -9,7 +9,7 @@ import { mkdir, readFile, writeFile } from "fs/promises";
 import { join } from "path";
 
 // ⚠️ ล็อกกันอุบัติเหตุ: ตอนนี้ไฟล์ตัวอย่างจริงใน public/samples/ เป็น PDF ที่ฝังลายน้ำแบรนด์
-// (Mr.tpat3 / IG: Mr.tpat3) และใช้งานบนเว็บจริงแล้ว — สคริปต์นี้จะ "เขียนทับ" ด้วยหน้าเปล่า
+// (Mr.tpat3 / IG: mako_tpat3) และใช้งานบนเว็บจริงแล้ว — สคริปต์นี้จะ "เขียนทับ" ด้วยหน้าเปล่า
 // placeholder ถ้าเผลอรัน ตัวอย่างจริงจะหายทันที จึงล็อกไว้ ต้องยืนยันเจตนาก่อนถึงจะรันได้
 if (process.env.ALLOW_OVERWRITE_SAMPLES !== "1") {
   console.error(

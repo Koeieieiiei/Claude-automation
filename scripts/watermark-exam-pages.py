@@ -10,7 +10,7 @@
 ชื่อโฟลเดอร์ (PAGES_DIR/PAGES_WM_DIR) ต้องตรงกับ upload-exam-assets.mjs และ storagePagePath ใน lib/exam-store.ts
 ชุดก่อนหน้า (ฟอนต์เดิม) ยังอยู่ที่ pages/ และ pages-wm/
 
-ลายน้ำ = แบบเดียวกับไฟล์ PDF ที่ลูกค้าโหลด (lib/watermark.ts): "Mr.tpat3" / "IG: Mr.tpat3"
+ลายน้ำ = แบบเดียวกับไฟล์ PDF ที่ลูกค้าโหลด (lib/watermark.ts): "Mr.tpat3" / "IG: mako_tpat3"
 2 บรรทัด เอียง 35° สีเทาจาง สลับเยื้องซ้าย-ขวาทีละหน้า — ค่าตำแหน่งต้องตรงกับไฟล์นั้น
 
 ต้องรันหลัง scripts/upload-exam-assets.mjs ทุกครั้งที่อัปรูปหน้าโจทย์ชุดใหม่
@@ -46,7 +46,7 @@ if not re.fullmatch(r"[a-z0-9-]+", EXAM_ID):
 # ---- ค่าลายน้ำ: ตรงกับ BRAND_* ใน lib/watermark.ts (หน่วย pt บนหน้า A4 595x842) ----
 BRAND_LINES = [
     {"text": "Mr.tpat3", "size": 34, "y_frac": 403.92 / 842},
-    {"text": "IG: Mr.tpat3", "size": 28, "y_frac": 347.92 / 842},
+    {"text": "IG: mako_tpat3", "size": 28, "y_frac": 347.92 / 842},
 ]
 BRAND_X_LEFT = 124 / 595
 BRAND_X_RIGHT = 339 / 595

@@ -8,14 +8,15 @@ export default function SiteFooter() {
           <a href="mailto:mr.tpat3@gmail.com" className="font-medium text-maroon underline-offset-2 hover:underline">
             mr.tpat3@gmail.com
           </a>{" "}
-          / TikTok{" "}
+          {/* เดิม TikTok @Mrtpat3 — เจ้าของสั่งเปลี่ยนเป็น IG: mr_tpat3 (2026-11-16 ตรงกับลายน้ำ) */}
+          / IG:{" "}
           <a
-            href="https://www.tiktok.com/@mrtpat3"
+            href="https://www.instagram.com/mr_tpat3/"
             target="_blank"
             rel="noopener noreferrer"
             className="font-medium text-maroon underline-offset-2 hover:underline"
           >
-            @Mrtpat3
+            mr_tpat3
           </a>
         </p>
         <nav className="flex flex-wrap gap-4" aria-label="ลิงก์ท้ายเว็บ">

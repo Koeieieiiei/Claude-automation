@@ -19,6 +19,12 @@ const FILES = {
   answers: { local: "assets/master-answers.pdf", storage: "master/answers-2026-09-16.pdf" },
   // เล่ม "เนื้อหา TPAT3" ฉบับ 174 หน้า (2026-09-26) — ฉบับก่อน 160 หน้าอยู่ที่ master/tpat3-content.pdf
   tpat3content: { local: "assets/master-tpat3-content.pdf", storage: "master/tpat3-content-2026-09-26.pdf" },
+  // สินค้าใหม่ 2026-11-16 — อัปก่อนเปิดขาย: node --env-file=.env.local scripts/upload-pdfs.mjs physQuestions physAnswers physAnswersheet tpat3Drill physDrill
+  physQuestions: { local: "assets/master-phys-questions.pdf", storage: "master/phys-questions-2026-11-16.pdf" },
+  physAnswers: { local: "assets/master-phys-answers.pdf", storage: "master/phys-answers-2026-11-16.pdf" },
+  physAnswersheet: { local: "assets/master-phys-answersheet.pdf", storage: "master/phys-answersheet-2026-11-16.pdf" },
+  tpat3Drill: { local: "assets/master-tpat3-drill.pdf", storage: "master/tpat3-drill-2026-11-16.pdf" },
+  physDrill: { local: "assets/master-phys-drill.pdf", storage: "master/phys-drill-2026-11-16.pdf" },
 };
 
 const wanted = process.argv.slice(2);

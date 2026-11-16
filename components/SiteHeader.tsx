@@ -21,10 +21,10 @@ export default function SiteHeader({
           <span className="font-display text-lg font-bold tracking-tight text-ink">Mr.tpat3</span>
         </a>
         <nav className="hidden items-center gap-6 md:flex" aria-label="เมนูหลัก">
-          <a href="/#mock" className="text-sm font-semibold text-ink/60 transition hover:text-maroon">ข้อสอบ Mock</a>
-          <a href="/#content" className="text-sm font-semibold text-ink/60 transition hover:text-maroon">ไฟล์เนื้อหา</a>
+          <a href="/#tpat3" className="text-sm font-semibold text-ink/60 transition hover:text-maroon">TPAT3</a>
+          <a href="/#physics" className="text-sm font-semibold text-ink/60 transition hover:text-maroon">A-Level ฟิสิกส์</a>
+          <a href="/#bundles" className="text-sm font-semibold text-ink/60 transition hover:text-maroon">Bundle</a>
           <a href="/#faq" className="text-sm font-semibold text-ink/60 transition hover:text-maroon">ข้อสงสัย</a>
-          <a href="/about" className="text-sm font-semibold text-ink/60 transition hover:text-maroon">เกี่ยวกับพี่</a>
         </nav>
         <AccountButton user={user} next={next} />
       </div>

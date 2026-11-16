@@ -5,8 +5,13 @@
  * import ได้ทั้ง client และ server
  * สารบัญเนื้อหาถอดจากไฟล์จริง: เล่มเนื้อหา (assets/master-tpat3-content.pdf, 174 หน้า)
  * และโครงข้อสอบจาก lib/exam-manifests/tpat3-1.json — เปลี่ยนไฟล์เมื่อไหร่ต้องแก้ตรงนี้ด้วย
+ *
+ * เพิ่ม 2026-11-16: Mock A-Level ฟิสิกส์ (lib/exam-manifests/phys-1.json) · หนังสือตะลุยโจทย์ TPAT3
+ * (assets/master-tpat3-drill.pdf 445 หน้า 4 ชุด × 70 ข้อ) · หนังสือตะลุยโจทย์ A-Level ฟิสิกส์
+ * (assets/master-phys-drill.pdf 284 หน้า 4 ชุด × 30 ข้อ) · หน้าของ Bundle 3 แบบ
+ * (ช่วงหน้าในสารบัญถอดจากหน้าสารบัญของเล่มจริง)
  */
-import type { ProductId } from "./catalog";
+import { PRODUCTS, bundleSaving, type ProductId } from "./catalog";
 
 export interface CourseStat {
   icon: "questions" | "clock" | "pages" | "chapters" | "infinity" | "exam";
@@ -30,7 +35,11 @@ export interface CourseInfo {
   /** ปกที่วางบนแบนเนอร์ (public/covers) */
   covers: { src: string; alt: string }[];
   /** สีพื้นแบนเนอร์ (โทนเดียวกับปก) */
-  bannerTone: "blue" | "rose" | "maroon";
+  bannerTone: "blue" | "rose" | "maroon" | "orange" | "green" | "magenta";
+  /** วิชา — ใช้จัดกลุ่มบนหน้าแรก ("all" = bundle รวมทุกวิชา) */
+  group: "tpat3" | "physics" | "all";
+  /** ประเภท — mock (มีห้องสอบ) / book (หนังสือ PDF) / content (เล่มเนื้อหาแจกฟรี) / bundle */
+  kind: "mock" | "book" | "content" | "bundle";
   stats: CourseStat[];
   /** บรรทัด "หัวข้อ: ค่า" ต้นรายละเอียด */
   facts: { label: string; value: string }[];
@@ -141,6 +150,55 @@ const MOCK_COVERS = [
   { src: "/covers/mock.png", alt: "ปกข้อสอบ Mock TPAT3" },
 ];
 const CONTENT_COVER = { src: "/covers/tpat3-content.png", alt: "ปกเนื้อหา TPAT3" };
+const PHYS_MOCK_COVER = { src: "/covers/mock-physics.png", alt: "ปกข้อสอบ Mock A-Level ฟิสิกส์" };
+// กระดาษคำตอบวางคู่ปก แบบเดียวกับ MOCK_COVERS ของ TPAT3 (เจ้าของสั่ง 2026-11-16)
+const PHYS_MOCK_COVERS = [
+  { src: "/covers/answersheet-physics.png", alt: "กระดาษคำตอบ Mock A-Level ฟิสิกส์" },
+  PHYS_MOCK_COVER,
+];
+const TPAT3_DRILL_COVER = { src: "/covers/drill-tpat3.png", alt: "ปกหนังสือตะลุยโจทย์ TPAT3" };
+const PHYS_DRILL_COVER = { src: "/covers/drill-physics.png", alt: "ปกหนังสือตะลุยโจทย์ A-Level ฟิสิกส์" };
+
+const PHYS_MOCK_SECTIONS: CourseChapterGroup[] = [
+  { title: "ตอนที่ 1 แบบปรนัย 5 ตัวเลือก", meta: "ข้อ 1–25 / 75 คะแนน", items: [] },
+  { title: "ตอนที่ 2 แบบระบายคำตอบที่เป็นตัวเลข", meta: "ข้อ 26–30 / 25 คะแนน", items: [] },
+];
+
+/** สารบัญหนังสือตะลุยโจทย์ — ช่วงหน้าตามหน้าสารบัญของเล่มจริง */
+function drillContents(perSet: number, setPages: [number, number][], lastPage: number): CourseChapterGroup[] {
+  return [
+    ...setPages.map(([from, to], i) => ({
+      title: `ชุดที่ ${i + 1}`,
+      meta: `${perSet} ข้อ / หน้า ${from}–${to}`,
+      items: [`ข้อสอบ ${perSet} ข้อ`, "ตารางเฉลยรวม + ระดับความยากรายข้อ", "เฉลยละเอียดทุกข้อ"],
+    })),
+    { title: "ท้ายเล่ม", meta: `หน้า ${lastPage}`, items: ["แนะนำการเตรียมตัวในวันสอบ"] },
+  ];
+}
+
+/** ข้อความส่วนลดของ bundle เช่น "ประหยัด ฿99 (17%)" */
+function savingText(id: ProductId): string {
+  const s = bundleSaving(PRODUCTS[id]);
+  return s ? `ประหยัด ฿${s.amount.toLocaleString()} (${s.percent}%)` : "";
+}
+
+/** สินค้าย่อยที่อยู่ใน bundle ได้ + สิ่งที่ได้ (ใช้บนหน้า bundle) */
+type PartId = "mock1" | "drill-tpat3" | "mock-phys1" | "drill-phys";
+const PART_ITEMS: Record<PartId, string[]> = {
+  mock1: ["ห้องสอบออนไลน์ 70 ข้อ 3 ชม. (1 ครั้ง) + ผลวิเคราะห์", "เฉลยละเอียดทุกข้อ (PDF)"],
+  "drill-tpat3": ["ข้อสอบเสมือนจริง 4 ชุด ชุดละ 70 ข้อ", "เฉลยละเอียดทุกข้อ (PDF 445 หน้า)"],
+  "mock-phys1": ["ห้องสอบออนไลน์ 30 ข้อ 90 นาที (1 ครั้ง) + ผลวิเคราะห์", "เฉลยละเอียดทุกข้อ (PDF)"],
+  "drill-phys": ["ข้อสอบเสมือนจริง 4 ชุด ชุดละ 30 ข้อ", "เฉลยละเอียดทุกข้อ (PDF 284 หน้า)"],
+};
+
+/** สารบัญของ bundle = สินค้าย่อยแต่ละตัว พร้อมราคาซื้อแยก */
+function bundleContents(parts: PartId[]): CourseChapterGroup[] {
+  return parts.map((id) => ({
+    title: PRODUCTS[id].shortName ?? PRODUCTS[id].name,
+    meta: `ซื้อแยก ฿${PRODUCTS[id].price.toLocaleString()}`,
+    items: PART_ITEMS[id],
+  }));
+}
 
 export const COURSES: CourseInfo[] = [
   {
@@ -151,6 +209,8 @@ export const COURSES: CourseInfo[] = [
     tagline: "ซ้อมเหมือนสนามจริง รู้ผลทันที",
     covers: MOCK_COVERS,
     bannerTone: "blue",
+    group: "tpat3",
+    kind: "mock",
     stats: [
       { icon: "questions", label: "จำนวนข้อ", value: "70 ข้อ" },
       { icon: "clock", label: "จับเวลาสอบ", value: "3 ชั่วโมง" },
@@ -194,6 +254,8 @@ export const COURSES: CourseInfo[] = [
     tagline: "ครบ 5 พาร์ตในเล่มเดียว แจกฟรี",
     covers: [CONTENT_COVER],
     bannerTone: "rose",
+    group: "tpat3",
+    kind: "content",
     stats: [
       { icon: "pages", label: "ความยาว", value: "174 หน้า" },
       { icon: "chapters", label: "เนื้อหา", value: "5 Part / 38 บท" },
@@ -220,6 +282,218 @@ export const COURSES: CourseInfo[] = [
     ],
     contentsTitle: "เนื้อหาในคอร์ส",
     contents: CONTENT_PARTS,
+  },
+
+  // ===== เพิ่ม 2026-11-16 (เจ้าของสั่ง) =====
+  {
+    slug: "mock-alevel-physics",
+    productId: "mock-phys1",
+    title: "ข้อสอบ Mock A-Level ฟิสิกส์ ชุดที่ 1",
+    subject: "A-Level ฟิสิกส์ (Physics)",
+    tagline: "ซ้อมเหมือนสนามจริง รู้ผลทันที",
+    covers: PHYS_MOCK_COVERS,
+    bannerTone: "orange",
+    group: "physics",
+    kind: "mock",
+    stats: [
+      { icon: "questions", label: "จำนวนข้อ", value: "30 ข้อ" },
+      { icon: "clock", label: "จับเวลาสอบ", value: "90 นาที" },
+      { icon: "infinity", label: "อายุคอร์ส", value: "ไม่มีวันหมดอายุ" },
+    ],
+    facts: [
+      { label: "คอร์ส", value: "Mock A-Level ฟิสิกส์ ชุดที่ 1" },
+      { label: "วิชา", value: "A-Level ฟิสิกส์ (Physics)" },
+      { label: "ผู้สอน", value: "Mr.tpat3" },
+      { label: "เหมาะสำหรับ", value: "น้องที่อยากวัดความพร้อมก่อนสอบจริง" },
+      { label: "รูปแบบ", value: "สอบออนไลน์ + ไฟล์ PDF" },
+    ],
+    includes: PART_ITEMS["mock-phys1"],
+    highlights: [
+      "จับเวลา 90 นาทีเหมือนสนามจริง",
+      "ปรนัย 25 ข้อ + ตอบเป็นตัวเลข 5 ข้อ แบบข้อสอบจริง",
+      "รู้ผลทันที: คะแนน อันดับ ค่าเฉลี่ย และกราฟการแจกแจง",
+      "คะแนนรายตอน + วิเคราะห์รายข้อพร้อมคำแนะนำ",
+      "บันทึกคำตอบอัตโนมัติ เน็ตหลุดหรือรีเฟรชก็ทำต่อได้",
+      "เฉลยละเอียดทีละขั้น เข้าใจวิธีคิด",
+      "อยู่ที่ “คอร์สของฉัน” ตลอด ไม่มีวันหมดอายุ",
+    ],
+    contentsTitle: "โครงข้อสอบ",
+    contents: PHYS_MOCK_SECTIONS,
+  },
+  {
+    slug: "tpat3-drill",
+    productId: "drill-tpat3",
+    title: "หนังสือตะลุยโจทย์ TPAT3",
+    subject: "TPAT3 ความถนัดทางวิทยาศาสตร์ เทคโนโลยี และวิศวกรรมศาสตร์",
+    tagline: "ข้อสอบเสมือนจริง 4 ชุด พร้อมเฉลยละเอียด",
+    covers: [TPAT3_DRILL_COVER],
+    bannerTone: "magenta",
+    group: "tpat3",
+    kind: "book",
+    stats: [
+      { icon: "questions", label: "โจทย์", value: "4 ชุด / 280 ข้อ" },
+      { icon: "pages", label: "ความยาว", value: "445 หน้า" },
+      { icon: "infinity", label: "อายุคอร์ส", value: "ไม่มีวันหมดอายุ" },
+    ],
+    facts: [
+      { label: "หนังสือ", value: "ตะลุยโจทย์ TPAT3 ข้อสอบเสมือนจริง ชุดที่ 1–4" },
+      { label: "วิชา", value: "TPAT3 (ความถนัดวิศวกรรมศาสตร์)" },
+      { label: "ผู้เขียน", value: "Mr.tpat3" },
+      { label: "เหมาะสำหรับ", value: "น้องที่อยากฝึกทำข้อสอบเต็มชุดหลายรอบก่อนสอบจริง" },
+      { label: "รูปแบบ", value: "หนังสือ PDF 1 เล่ม" },
+    ],
+    includes: ["หนังสือตะลุยโจทย์ TPAT3 (PDF 445 หน้า)"],
+    highlights: [
+      "ข้อสอบเสมือนจริง 4 ชุด ชุดละ 70 ข้อ 5 ตอนแบบข้อสอบจริง",
+      "โจทย์คนละชุดกับ Mock TPAT3 ทำทั้งคู่ได้ไม่ซ้ำ",
+      "ทุกชุดมีตารางเฉลยรวม + ระดับความยากรายข้อ",
+      "เฉลยละเอียดทุกข้อ พร้อมกล่อง Key สรุปหลักคิด",
+      "สารบัญกดไปหน้านั้นได้ทันที",
+      "อยู่ที่ “คอร์สของฉัน” ตลอด ไม่มีวันหมดอายุ",
+    ],
+    contentsTitle: "เนื้อหาในเล่ม",
+    contents: drillContents(70, [[3, 111], [112, 225], [226, 336], [337, 444]], 445),
+  },
+  {
+    slug: "physics-drill",
+    productId: "drill-phys",
+    title: "หนังสือตะลุยโจทย์ A-Level ฟิสิกส์",
+    subject: "A-Level ฟิสิกส์ (Physics)",
+    tagline: "ข้อสอบเสมือนจริง 4 ชุด พร้อมเฉลยละเอียด",
+    covers: [PHYS_DRILL_COVER],
+    bannerTone: "green",
+    group: "physics",
+    kind: "book",
+    stats: [
+      { icon: "questions", label: "โจทย์", value: "4 ชุด / 120 ข้อ" },
+      { icon: "pages", label: "ความยาว", value: "284 หน้า" },
+      { icon: "infinity", label: "อายุคอร์ส", value: "ไม่มีวันหมดอายุ" },
+    ],
+    facts: [
+      { label: "หนังสือ", value: "ตะลุยโจทย์ A-Level ฟิสิกส์ ข้อสอบเสมือนจริง ชุดที่ 1–4" },
+      { label: "วิชา", value: "A-Level ฟิสิกส์ (Physics)" },
+      { label: "ผู้เขียน", value: "Mr.tpat3" },
+      { label: "เหมาะสำหรับ", value: "น้องที่อยากฝึกทำข้อสอบเต็มชุดหลายรอบก่อนสอบจริง" },
+      { label: "รูปแบบ", value: "หนังสือ PDF 1 เล่ม" },
+    ],
+    includes: ["หนังสือตะลุยโจทย์ A-Level ฟิสิกส์ (PDF 284 หน้า)"],
+    highlights: [
+      "ข้อสอบเสมือนจริง 4 ชุด ชุดละ 30 ข้อ (ปรนัย 25 + ตอบเป็นตัวเลข 5)",
+      "โจทย์คนละชุดกับ Mock A-Level ฟิสิกส์ ทำทั้งคู่ได้ไม่ซ้ำ",
+      "ทุกชุดมีตารางเฉลยรวม + ระดับความยากรายข้อ",
+      "เฉลยละเอียดทุกข้อ พร้อมกล่อง Key สรุปหลักคิด",
+      "สารบัญกดไปหน้านั้นได้ทันที",
+      "อยู่ที่ “คอร์สของฉัน” ตลอด ไม่มีวันหมดอายุ",
+    ],
+    contentsTitle: "เนื้อหาในเล่ม",
+    contents: drillContents(30, [[3, 71], [72, 140], [141, 209], [210, 283]], 284),
+  },
+  {
+    slug: "tpat3-bundle",
+    productId: "bundle-tpat3",
+    title: "TPAT3 Bundle",
+    subject: "TPAT3 ความถนัดทางวิทยาศาสตร์ เทคโนโลยี และวิศวกรรมศาสตร์",
+    tagline: `Mock TPAT3 + หนังสือตะลุยโจทย์ TPAT3 ${savingText("bundle-tpat3")}`,
+    covers: [MOCK_COVERS[1], TPAT3_DRILL_COVER],
+    bannerTone: "blue",
+    group: "tpat3",
+    kind: "bundle",
+    stats: [
+      { icon: "exam", label: "ห้องสอบ", value: "TPAT3 70 ข้อ" },
+      { icon: "questions", label: "โจทย์ทั้งหมด", value: "5 ชุด / 350 ข้อ" },
+      { icon: "infinity", label: "อายุคอร์ส", value: "ไม่มีวันหมดอายุ" },
+    ],
+    facts: [
+      { label: "แพ็กเกจ", value: "Mock TPAT3 ชุดที่ 1 + หนังสือตะลุยโจทย์ TPAT3" },
+      { label: "วิชา", value: "TPAT3 (ความถนัดวิศวกรรมศาสตร์)" },
+      { label: "ผู้สอน", value: "Mr.tpat3" },
+      { label: "เหมาะสำหรับ", value: "น้องที่จะสอบ TPAT3 และอยากซ้อมให้ครบ" },
+      { label: "รูปแบบ", value: "สอบออนไลน์ + ไฟล์ PDF" },
+    ],
+    includes: [...PART_ITEMS.mock1, "หนังสือตะลุยโจทย์ TPAT3 4 ชุด (PDF)"],
+    highlights: [
+      `ถูกกว่าซื้อแยก ${savingText("bundle-tpat3")}`,
+      "ข้อสอบ TPAT3 ไม่ซ้ำกัน 5 ชุด (Mock 1 + ตะลุยโจทย์ 4)",
+      "สอบออนไลน์จับเวลาจริง รู้ผล อันดับ และจุดที่ต้องซ่อม",
+      "เฉลยละเอียดทุกข้อทั้ง Mock และหนังสือ",
+      "ทุกอย่างอยู่ที่ “คอร์สของฉัน” ไม่มีวันหมดอายุ",
+    ],
+    contentsTitle: "ใน Bundle นี้มี",
+    contents: bundleContents(["mock1", "drill-tpat3"]),
+  },
+  {
+    slug: "physics-bundle",
+    productId: "bundle-phys",
+    title: "A-Level Physics Bundle",
+    subject: "A-Level ฟิสิกส์ (Physics)",
+    tagline: `Mock A-Level ฟิสิกส์ + หนังสือตะลุยโจทย์ ${savingText("bundle-phys")}`,
+    covers: [PHYS_MOCK_COVER, PHYS_DRILL_COVER],
+    bannerTone: "orange",
+    group: "physics",
+    kind: "bundle",
+    stats: [
+      { icon: "exam", label: "ห้องสอบ", value: "ฟิสิกส์ 30 ข้อ" },
+      { icon: "questions", label: "โจทย์ทั้งหมด", value: "5 ชุด / 150 ข้อ" },
+      { icon: "infinity", label: "อายุคอร์ส", value: "ไม่มีวันหมดอายุ" },
+    ],
+    facts: [
+      { label: "แพ็กเกจ", value: "Mock A-Level ฟิสิกส์ ชุดที่ 1 + หนังสือตะลุยโจทย์ A-Level ฟิสิกส์" },
+      { label: "วิชา", value: "A-Level ฟิสิกส์ (Physics)" },
+      { label: "ผู้สอน", value: "Mr.tpat3" },
+      { label: "เหมาะสำหรับ", value: "น้องที่จะสอบ A-Level ฟิสิกส์ และอยากซ้อมให้ครบ" },
+      { label: "รูปแบบ", value: "สอบออนไลน์ + ไฟล์ PDF" },
+    ],
+    includes: [...PART_ITEMS["mock-phys1"], "หนังสือตะลุยโจทย์ A-Level ฟิสิกส์ 4 ชุด (PDF)"],
+    highlights: [
+      `ถูกกว่าซื้อแยก ${savingText("bundle-phys")}`,
+      "ข้อสอบ A-Level ฟิสิกส์ไม่ซ้ำกัน 5 ชุด (Mock 1 + ตะลุยโจทย์ 4)",
+      "สอบออนไลน์จับเวลาจริง รู้ผล อันดับ และจุดที่ต้องซ่อม",
+      "เฉลยละเอียดทุกข้อทั้ง Mock และหนังสือ",
+      "ทุกอย่างอยู่ที่ “คอร์สของฉัน” ไม่มีวันหมดอายุ",
+    ],
+    contentsTitle: "ใน Bundle นี้มี",
+    contents: bundleContents(["mock-phys1", "drill-phys"]),
+  },
+  {
+    slug: "engineer-pack",
+    productId: "bundle-engineer",
+    title: "แพ็คสอบติดวิศวะ",
+    subject: "TPAT3 + A-Level ฟิสิกส์",
+    tagline: `ครบทุกอย่างทั้ง TPAT3 และ A-Level ฟิสิกส์ ${savingText("bundle-engineer")}`,
+    covers: [MOCK_COVERS[1], TPAT3_DRILL_COVER, PHYS_MOCK_COVER, PHYS_DRILL_COVER],
+    bannerTone: "maroon",
+    group: "all",
+    kind: "bundle",
+    stats: [
+      { icon: "exam", label: "ห้องสอบ", value: "2 วิชา" },
+      { icon: "questions", label: "โจทย์ทั้งหมด", value: "10 ชุด / 500 ข้อ" },
+      { icon: "infinity", label: "อายุคอร์ส", value: "ไม่มีวันหมดอายุ" },
+    ],
+    facts: [
+      {
+        label: "แพ็กเกจ",
+        value: "Mock TPAT3 + หนังสือตะลุยโจทย์ TPAT3 + Mock A-Level ฟิสิกส์ + หนังสือตะลุยโจทย์ A-Level ฟิสิกส์",
+      },
+      { label: "วิชา", value: "TPAT3 และ A-Level ฟิสิกส์" },
+      { label: "ผู้สอน", value: "Mr.tpat3" },
+      { label: "เหมาะสำหรับ", value: "น้องที่จะยื่นวิศวะ ต้องใช้ทั้ง TPAT3 และ A-Level ฟิสิกส์" },
+      { label: "รูปแบบ", value: "สอบออนไลน์ + ไฟล์ PDF" },
+    ],
+    includes: [
+      "ห้องสอบออนไลน์ TPAT3 70 ข้อ + A-Level ฟิสิกส์ 30 ข้อ",
+      "เฉลยละเอียด Mock ทั้ง 2 วิชา (PDF)",
+      "หนังสือตะลุยโจทย์ TPAT3 + A-Level ฟิสิกส์ (PDF)",
+    ],
+    highlights: [
+      `ถูกกว่าซื้อแยก ${savingText("bundle-engineer")} คุ้มที่สุด`,
+      "ได้ทั้ง TPAT3 และ A-Level ฟิสิกส์ ในคำสั่งซื้อเดียว",
+      "ข้อสอบไม่ซ้ำกัน 10 ชุด: TPAT3 5 ชุด + A-Level ฟิสิกส์ 5 ชุด",
+      "สอบออนไลน์จับเวลาจริงทั้ง 2 วิชา รู้ผลทันที",
+      "เฉลยละเอียดทุกข้อ",
+      "ทุกอย่างอยู่ที่ “คอร์สของฉัน” ไม่มีวันหมดอายุ",
+    ],
+    contentsTitle: "ในแพ็คนี้มี",
+    contents: bundleContents(["mock1", "drill-tpat3", "mock-phys1", "drill-phys"]),
   },
 ];
 

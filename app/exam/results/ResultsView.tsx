@@ -3,7 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { formatExpiry } from "@/lib/format-expiry";
-import { DEFAULT_EXAM_ID } from "@/lib/exams";
+import { DEFAULT_EXAM_ID, examPath, getExam } from "@/lib/exams";
+import { isAnswered } from "@/lib/exam-answers";
 
 /**
  * หน้าผลสอบ + บทวิเคราะห์ละเอียด
@@ -38,8 +39,9 @@ interface ResultsData {
   questions: {
     no: number;
     section: number;
-    myAnswer: number;
-    correctAnswer: number;
+    myAnswer: number | string; // ปรนัย 0 / ข้อตัวเลข "" = ไม่ได้ตอบ
+    correctAnswer: number | string;
+    unit?: string; // หน่วยของข้อตอบเป็นตัวเลข
     correct: boolean;
     difficultyLabel: string;
     pctCorrect: number;
@@ -137,7 +139,7 @@ export default function ResultsView() {
             เพิ่งกดส่ง? กดปุ่มด้านล่างแล้ว<strong>เข้าสู่ระบบด้วยอีเมลที่ใช้สอบ</strong> ผลสอบไม่หาย
           </p>
           <a
-            href="/exam"
+            href={examPath(getExam(params.get("exam")))}
             className="mt-6 inline-block bg-maroon px-6 py-3 font-bold text-paper transition hover:bg-maroon-dark"
           >
             ไปห้องสอบ
@@ -521,17 +523,25 @@ function QuestionTable({
               <tr key={q.no} className="border-b border-dashed border-grid align-top">
                 <td className="px-3 py-2.5 text-center font-mono font-bold text-ink">{q.no}</td>
                 <td className="px-3 py-2.5 text-center font-mono">
-                  {q.myAnswer > 0 ? q.myAnswer : <span className="text-ink/35">—</span>}
+                  {isAnswered(q.myAnswer) ? (
+                    <>
+                      {q.myAnswer}
+                      {q.unit && <span className="ml-1 font-label text-[11px] text-ink/50">{q.unit}</span>}
+                    </>
+                  ) : (
+                    <span className="text-ink/35">—</span>
+                  )}
                 </td>
                 <td className="px-3 py-2.5 text-center font-mono font-semibold text-ink">
                   {q.correctAnswer}
+                  {q.unit && <span className="ml-1 font-label text-[11px] font-normal text-ink/50">{q.unit}</span>}
                 </td>
                 <td className="px-3 py-2.5 text-center">
                   {q.correct ? (
                     <span className="inline-block border border-[#1E6E42]/40 bg-[#1E6E42]/10 px-2 py-0.5 font-label text-[11px] font-bold text-[#1E6E42]">
                       ✓ ถูก
                     </span>
-                  ) : q.myAnswer > 0 ? (
+                  ) : isAnswered(q.myAnswer) ? (
                     <span className="inline-block border border-maroon/40 bg-maroon/10 px-2 py-0.5 font-label text-[11px] font-bold text-maroon">
                       ✗ ผิด
                     </span>

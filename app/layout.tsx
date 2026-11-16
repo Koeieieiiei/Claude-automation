@@ -3,11 +3,11 @@ import "./globals.css";
 import Analytics from "@/components/Analytics";
 
 const SITE_URL = "https://tpat3mock.com";
-const TITLE = "ข้อสอบ Mock TPAT3 พร้อมเฉลยละเอียด | Mr.tpat3";
+const TITLE = "ข้อสอบ Mock TPAT3 และ A-Level ฟิสิกส์ พร้อมเฉลยละเอียด | Mr.tpat3";
 // ข้อความที่ขึ้นใต้ชื่อเว็บในผลค้นหา Google และตอนแชร์ลิงก์ — ชูจุดขายที่ร้านอื่นไม่มี
 // (ทำข้อสอบบนเว็บ จับเวลา แล้ววิเคราะห์ผลให้) แล้วค่อยตามด้วยไฟล์ที่ได้และราคา
 const DESCRIPTION =
-  "Mock TPAT3 สอบออนไลน์ 70 ข้อ จับเวลา 3 ชม. รู้คะแนน อันดับ และจุดที่ต้องซ่อมทันที พร้อมเฉลยละเอียด ฿199 / เนื้อหา TPAT3 174 หน้า แจกฟรี";
+  "Mock TPAT3 และ A-Level ฟิสิกส์ สอบออนไลน์ จับเวลา รู้คะแนน อันดับ และจุดที่ต้องซ่อมทันที พร้อมเฉลยละเอียด / หนังสือตะลุยโจทย์ 4 ชุด / เนื้อหา TPAT3 174 หน้า แจกฟรี";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),

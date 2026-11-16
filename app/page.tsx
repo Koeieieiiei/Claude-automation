@@ -6,20 +6,29 @@ import AccountButton, { ClientUser, fetchCurrentUser } from "@/components/Accoun
 import ClaimButton from "@/components/ClaimButton";
 import Gear from "@/components/Gear";
 import SiteFooter from "@/components/SiteFooter";
-import { getProduct, isPurchasableProduct, PRODUCTS, Product } from "@/lib/catalog";
+import {
+  displayName,
+  getProduct,
+  isPurchasableProduct,
+  PRODUCTS,
+  Product,
+  ProductId,
+} from "@/lib/catalog";
 import { courseForProduct } from "@/lib/courses";
+import { DEFAULT_EXAM_ID, EXAMS, ExamDef, examPath, examResultsPath } from "@/lib/exams";
 import { trackEvent } from "@/lib/analytics";
 
 type ExamState = "eligible" | "in_progress" | "submitted";
 
-/* หน้าแรก (โครง "จดหมายจากพี่มาโก้" เจ้าของอนุมัติ 2026-09-16 จาก https://claude.ai/artifact/1ReGvb49DjfUFuTdJaq6gS)
-   - คำทักทายของพี่มาโก้เป็น "จดหมาย" ตัวใหญ่แทน hero เดิม บนกระดาษตาราง + เฟืองหมุนแบบเดิม
-   - สินค้า 2 อย่างเป็นการ์ดขาวบนพื้นขาว (ส่วน "ซื้อแล้วทำอะไรต่อ" 3 ขั้น เจ้าของสั่งเอาออก 2026-09-27)
-   - 2026-09-27 (เจ้าของสั่ง): หัวข้อ "My Product" · Mock ขาย ฿199 (ไม่มีป้ายเหนือชื่อ) · เล่มเนื้อหา 174 หน้า "แจกฟรี"
-     (ปุ่มรับฟรี → /api/claim ไม่มีปุ่มตัวอย่าง) · เอาส่วน Bundles/ป้ายคุ้มสุดออกทั้งหมด · ข้อความจดหมายเติม "ซึ่งแจกฟรี" */
+/* หน้าแรก
+   - โครงเดิม (เจ้าของอนุมัติ 2026-09-16): กระดาษตาราง + เฟืองหมุน, การ์ดสินค้าขาวบนพื้นขาว, หัวข้อ "My Product"
+   - 2026-11-16 (เจ้าของสั่ง): เอาจดหมายทักทาย "สวัสดีครับน้อง ๆ" และปุ่ม/ลิงก์ "บทความเกี่ยวกับฉัน" ออก
+     hero เหลือหัวเรื่อง + ปุ่มเข้าห้องสอบ 2 วิชา · เพิ่มสินค้า Mock A-Level ฟิสิกส์ / หนังสือตะลุยโจทย์ 2 เล่ม
+     จัดกลุ่มตามวิชา (TPAT3 / A-Level ฟิสิกส์) + ส่วน Bundle 3 แบบ (แพ็คสอบติดวิศวะ = คุ้มที่สุด) */
 export default function Home() {
   const [buying, setBuying] = useState<Product | null>(null);
-  const [examState, setExamState] = useState<ExamState | null>(null);
+  // สถานะห้องสอบต่อสนาม (ไม่มี key = ยังไม่รู้/ไม่มีสิทธิ์ → ปุ่มเป็น "เข้าห้องสอบ")
+  const [examStates, setExamStates] = useState<Record<string, ExamState>>({});
   // undefined = กำลังถาม server · null = ยังไม่ล็อกอิน
   const [user, setUser] = useState<ClientUser | null | undefined>(undefined);
   const [claimError, setClaimError] = useState(false);
@@ -55,41 +64,46 @@ export default function Home() {
     }
   }, []);
 
-  // เช็คสถานะผู้ซื้อแล้วเปลี่ยนปุ่ม hero: ยังไม่ทำ → "เข้าห้องสอบ", ทำแล้ว → "ดูผลสอบและเฉลย"
-  // ล็อกอินอยู่ = เช็คจากบัญชี (คุกกี้) · ไม่ได้ล็อกอิน = ใช้โทเค็นที่เครื่องนี้เคยเข้าห้องสอบไว้
+  // เช็คสถานะผู้ซื้อแล้วเปลี่ยนปุ่มห้องสอบ: ยังไม่ทำ → "เข้าห้องสอบ", กำลังทำ → "ทำต่อ", ทำแล้ว → "ดูผลสอบ"
+  // ล็อกอินอยู่ = เช็คจากบัญชี (คุกกี้) · ไม่ได้ล็อกอิน = ใช้โทเค็นที่เครื่องนี้เคยเข้าห้องสอบไว้ (แยกต่อสนาม)
   useEffect(() => {
     let cancelled = false;
     (async () => {
       const u = await fetchCurrentUser();
       if (cancelled) return;
       setUser(u);
-      let body: { useSession: true } | { token: string } | null = null;
-      if (u) {
-        body = { useSession: true };
-      } else {
-        let token = "";
-        try {
-          token = localStorage.getItem("exam.token") ?? "";
-        } catch {}
-        if (token) body = { token };
-      }
-      if (!body) return;
-      const data = await fetch("/api/exam/access", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      })
-        .then((res) => (res.ok ? res.json() : null))
-        .catch(() => null);
-      if (cancelled || !data) return;
-      if (data.state === "eligible" || data.state === "in_progress" || data.state === "submitted") {
-        setExamState(data.state);
-        if (data.token) {
-          try {
-            localStorage.setItem("exam.token", data.token);
-          } catch {}
-        }
-      }
+      await Promise.all(
+        Object.values(EXAMS).map(async (exam) => {
+          const lsKey = exam.id === DEFAULT_EXAM_ID ? "exam.token" : `exam.token.${exam.id}`;
+          let body: { useSession: true; examId: string } | { token: string } | null = null;
+          if (u) {
+            body = { useSession: true, examId: exam.id };
+          } else {
+            let token = "";
+            try {
+              token = localStorage.getItem(lsKey) ?? "";
+            } catch {}
+            if (token) body = { token };
+          }
+          if (!body) return;
+          const data = await fetch("/api/exam/access", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+          })
+            .then((res) => (res.ok ? res.json() : null))
+            .catch(() => null);
+          if (cancelled || !data) return;
+          if (data.state === "eligible" || data.state === "in_progress" || data.state === "submitted") {
+            setExamStates((prev) => ({ ...prev, [exam.id]: data.state }));
+            if (data.token) {
+              try {
+                localStorage.setItem(lsKey, data.token);
+              } catch {}
+            }
+          }
+        })
+      );
     })();
     return () => {
       cancelled = true;
@@ -102,6 +116,10 @@ export default function Home() {
     setBuying(p);
   };
 
+  const tpat3Exam = EXAMS["tpat3-1"];
+  const physExam = EXAMS["phys-1"];
+  const anyNotSubmitted = Object.values(EXAMS).some((e) => examStates[e.id] !== "submitted");
+
   return (
     <div className="min-h-screen">
       {/* ===== Top bar ===== */}
@@ -112,67 +130,44 @@ export default function Home() {
             <span className="font-display text-xl font-bold tracking-tight text-ink">Mr.tpat3</span>
           </a>
           <nav className="hidden items-center gap-8 md:flex" aria-label="เมนูหลัก">
-            <a href="#mock" className="text-base font-semibold text-ink/60 transition hover:text-maroon">ข้อสอบ Mock</a>
-            <a href="#content" className="text-base font-semibold text-ink/60 transition hover:text-maroon">ไฟล์เนื้อหา</a>
+            <a href="#tpat3" className="text-base font-semibold text-ink/60 transition hover:text-maroon">TPAT3</a>
+            <a href="#physics" className="text-base font-semibold text-ink/60 transition hover:text-maroon">A-Level ฟิสิกส์</a>
+            <a href="#bundles" className="text-base font-semibold text-ink/60 transition hover:text-maroon">Bundle</a>
             <a href="#faq" className="text-base font-semibold text-ink/60 transition hover:text-maroon">ข้อสงสัย</a>
-            <a href="/about" className="text-base font-semibold text-ink/60 transition hover:text-maroon">เกี่ยวกับพี่</a>
           </nav>
           <AccountButton user={user} />
         </div>
       </header>
 
-      {/* ===== Hero: จดหมายจากพี่ (คำทักทายเป็นพระเอกของหน้า — ข้อความตามที่เจ้าของส่งมา 2026-09-27) ===== */}
+      {/* ===== Hero: หัวเรื่อง + ปุ่มเข้าห้องสอบ 2 วิชา (จดหมายทักทายเจ้าของสั่งเอาออก 2026-11-16) ===== */}
       <section className="grid-paper relative overflow-hidden border-b border-grid">
         <Gear teeth={16} className="pointer-events-none absolute -right-16 -top-16 h-72 w-72 text-maroon/[0.07]" spin="cw" />
         <Gear teeth={12} className="pointer-events-none absolute right-28 top-40 hidden h-36 w-36 text-steel/20 md:block" spin="ccw" />
         <Gear teeth={14} className="pointer-events-none absolute -bottom-16 left-[-3rem] h-56 w-56 text-maroon/[0.06]" spin="ccw" />
 
-        <div className="relative mx-auto max-w-6xl px-5 py-16 md:py-24 lg:py-32">
-          <h1 className="font-display text-[clamp(2.5rem,6vw,4.25rem)] font-bold leading-[1.2] tracking-tight text-maroon">
-            สวัสดีครับน้อง ๆ
+        <div className="relative mx-auto max-w-6xl px-5 py-16 md:py-24">
+          <p className="font-label text-sm font-semibold uppercase tracking-[0.22em] text-maroon">by Mr.tpat3</p>
+          <h1 className="mt-3 font-display text-[clamp(2.4rem,5.6vw,4rem)] font-bold leading-[1.2] tracking-tight text-ink">
+            TPAT3 และ <span className="text-maroon">A-Level ฟิสิกส์</span>
           </h1>
-          <p className="mt-5 max-w-[960px] text-[clamp(1.4rem,2.7vw,2.15rem)] leading-[1.6] text-ink md:mt-7">
-            พี่ชื่อ <strong className="font-semibold text-maroon">มาโก้ ศุภวัฒน์</strong> กำลังศึกษาอยู่ที่{" "}
-            <strong className="font-semibold text-maroon">วิศวคอม จุฬาฯ</strong> พี่และเพื่อน ๆ ในกลุ่มได้รวมหัวกันออกแบบ{" "}
-            <strong className="font-semibold text-maroon">Mock TPAT3</strong> และ
-            <strong className="font-semibold text-maroon">เนื้อหาสำหรับสอบ TPAT3</strong> ซึ่ง
-            <strong className="font-semibold text-maroon">แจกฟรี</strong> หากน้องสนใจ
-            สามารถเลื่อนดูด้านล่าง<span className="whitespace-nowrap">ได้เลยครับ</span>
+          <p className="mt-4 max-w-[60ch] text-[clamp(1.1rem,1.8vw,1.35rem)] leading-relaxed text-ink/75">
+            ข้อสอบ Mock สอบออนไลน์รู้ผลทันที และหนังสือตะลุยโจทย์พร้อมเฉลยละเอียด
           </p>
 
-          <div className="mt-9 flex flex-wrap gap-3.5 md:mt-14">
-            {/* ปุ่มหลักคือ "เข้าห้องสอบ" ตั้งแต่เปิดหน้าแรก — คนยังไม่ซื้อกดได้เหมือนกัน
-                แล้วไปเจอหน้ายืนยันตัวตนที่ /exam (ไม่มีสิทธิ์จะมีลิงก์พาไปหน้าขายให้)
-                ถ้าเครื่องนี้เคยสอบแล้ว ปุ่มจะเปลี่ยนเป็นทำต่อ/ดูผลอัตโนมัติ */}
-            <a
-              href={examState === "submitted" ? "/exam/results" : "/exam"}
-              onClick={() => trackEvent("click_exam_cta", { state: examState ?? "visitor" })}
-              className="group inline-flex items-center justify-center gap-2.5 bg-maroon px-7 py-4 text-[1.1rem] font-semibold text-white transition hover:bg-maroon-dark max-sm:w-full"
-            >
-              {examState === "in_progress"
-                ? "ทำข้อสอบต่อ — เวลากำลังเดิน"
-                : examState === "submitted"
-                  ? "ดูผลสอบและเฉลย"
-                  : "เข้าห้องสอบ TPAT3"}
-              <Arrow />
-            </a>
-            <a
-              href="/about"
-              className="group inline-flex items-center justify-center gap-2.5 border border-maroon px-7 py-4 text-[1.1rem] font-semibold text-maroon transition hover:bg-maroon hover:text-white max-sm:w-full"
-            >
-              บทความเกี่ยวกับฉัน
-              <Arrow />
-            </a>
+          <div className="mt-9 flex flex-wrap gap-3.5 md:mt-11">
+            {/* ปุ่มหลักคือ "เข้าห้องสอบ" — คนยังไม่ซื้อกดได้เหมือนกัน แล้วไปเจอหน้ายืนยันตัวตน
+                (ไม่มีสิทธิ์จะมีลิงก์พาไปซื้อชุดของวิชานั้น) ถ้าเคยสอบแล้ว ปุ่มเปลี่ยนเป็นทำต่อ/ดูผลอัตโนมัติ */}
+            {/* ปุ่มทั้งสองวิชาเป็นสีเลือดหมูทึบเหมือนกัน (เจ้าของสั่ง 2026-11-16) */}
+            <ExamCta exam={tpat3Exam} state={examStates[tpat3Exam.id]} />
+            <ExamCta exam={physExam} state={examStates[physExam.id]} />
           </div>
 
-          {examState !== "submitted" && (
-            <p className="mt-4 text-sm text-ink/60">แนะนำทำในคอมพิวเตอร์หรือ iPad</p>
-          )}
+          {anyNotSubmitted && <p className="mt-4 text-sm text-ink/60">แนะนำทำในคอมพิวเตอร์หรือ iPad</p>}
         </div>
       </section>
 
-      {/* ===== สินค้า 2 อย่าง (พื้นขาวเฉพาะส่วนนี้ — เจ้าของขอ) ===== */}
-      <section id="mock" className="scroll-mt-20 bg-white">
+      {/* ===== สินค้า (พื้นขาวเฉพาะส่วนนี้ — เจ้าของขอ) ===== */}
+      <section id="products" className="scroll-mt-20 bg-white">
         <div className="mx-auto max-w-6xl px-5 py-14 md:py-24">
           <SectionHead title="My Product" />
 
@@ -182,34 +177,80 @@ export default function Home() {
             </p>
           )}
 
+          {/* ----- TPAT3 ----- */}
+          <GroupHead id="tpat3" title="TPAT3" note="ความถนัดทางวิทยาศาสตร์ เทคโนโลยี และวิศวกรรมศาสตร์" />
           <div className="grid gap-5">
-            {/* การ์ด Mock (ขาย) */}
             <ProductCard
+              id="mock"
               cover={<MockStack />}
               courseHref={courseHref(PRODUCTS.mock1)}
               title="ข้อสอบ Mock TPAT3"
+              badge="ขายดี"
               desc="สอบออนไลน์ 70 ข้อ จับเวลา 3 ชม. รู้คะแนน อันดับ และจุดที่ต้องซ่อมทันที พร้อมเฉลยละเอียด"
               product={PRODUCTS.mock1}
               unit="/ ชุด"
-              buyLabel={`สั่งซื้อ ฿${PRODUCTS.mock1.price.toLocaleString()}`}
               onBuy={buy}
               // ไฟล์เดียว = โจทย์ 4 ข้อ + เฉลยละเอียด (สร้างด้วย Desktop/Project/MOCK/_build-sarabun/demo/make_sample.py)
               sample={{ href: "/samples/tpat3-mock-sample.pdf", downloadName: "TPat3 Mock Sample.pdf", label: "ตัวอย่างข้อสอบฟรี (PDF)" }}
             />
-
+            <ProductCard
+              cover={<SingleCover src="/covers/drill-tpat3.png" alt="ปกหนังสือตะลุยโจทย์ TPAT3" />}
+              courseHref={courseHref(PRODUCTS["drill-tpat3"])}
+              title="หนังสือตะลุยโจทย์ TPAT3"
+              desc="ข้อสอบเสมือนจริง 4 ชุด ชุดละ 70 ข้อ พร้อมเฉลยละเอียดทุกข้อ (PDF 445 หน้า)"
+              product={PRODUCTS["drill-tpat3"]}
+              unit="/ เล่ม"
+              onBuy={buy}
+            />
             {/* การ์ดเนื้อหา (แจกฟรี) */}
             <ProductCard
               id="content"
-              cover={
-                <div className="mx-auto w-full max-w-[232px]">
-                  <Cover src="/covers/tpat3-content.png" alt="ปกเนื้อหาทั้งหมดสำหรับสอบ TPAT3" />
-                </div>
-              }
+              cover={<SingleCover src="/covers/tpat3-content.png" alt="ปกเนื้อหาทั้งหมดสำหรับสอบ TPAT3" />}
               courseHref={courseHref(PRODUCTS.sum4)}
               title="เนื้อหาทั้งหมดสำหรับสอบ TPAT3"
               product={PRODUCTS.sum4}
               onBuy={buy}
             />
+          </div>
+
+          {/* ----- A-Level ฟิสิกส์ ----- */}
+          <GroupHead id="physics" title="A-Level ฟิสิกส์" note="A-Level Physics" className="mt-16 md:mt-20" />
+          <div className="grid gap-5">
+            <ProductCard
+              cover={
+                <MockStack
+                  sheet={{ src: "/covers/answersheet-physics.png", alt: "กระดาษคำตอบ Mock A-Level ฟิสิกส์" }}
+                  cover={{ src: "/covers/mock-physics.png", alt: "ปกข้อสอบ Mock A-Level ฟิสิกส์" }}
+                />
+              }
+              courseHref={courseHref(PRODUCTS["mock-phys1"])}
+              title="ข้อสอบ Mock A-Level ฟิสิกส์"
+              desc="สอบออนไลน์ 30 ข้อ จับเวลา 90 นาที รู้คะแนน อันดับ และจุดที่ต้องซ่อมทันที พร้อมเฉลยละเอียด"
+              product={PRODUCTS["mock-phys1"]}
+              unit="/ ชุด"
+              onBuy={buy}
+            />
+            <ProductCard
+              cover={<SingleCover src="/covers/drill-physics.png" alt="ปกหนังสือตะลุยโจทย์ A-Level ฟิสิกส์" />}
+              courseHref={courseHref(PRODUCTS["drill-phys"])}
+              title="หนังสือตะลุยโจทย์ A-Level ฟิสิกส์"
+              desc="ข้อสอบเสมือนจริง 4 ชุด ชุดละ 30 ข้อ พร้อมเฉลยละเอียดทุกข้อ (PDF 284 หน้า)"
+              product={PRODUCTS["drill-phys"]}
+              unit="/ เล่ม"
+              onBuy={buy}
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* ===== Bundle 3 แบบ (ราคาตามที่เจ้าของกำหนด 2026-11-16) ===== */}
+      <section id="bundles" className="grid-paper scroll-mt-20 border-y border-grid">
+        <div className="mx-auto max-w-6xl px-5 py-14 md:py-24">
+          <SectionHead title="Bundle" note="ซื้อรวมกันถูกกว่าซื้อแยก ได้ของครบเหมือนซื้อทีละอย่าง" />
+          <div className="grid gap-5 lg:grid-cols-3">
+            <BundleCard product={PRODUCTS["bundle-tpat3"]} onBuy={buy} />
+            <BundleCard product={PRODUCTS["bundle-phys"]} onBuy={buy} />
+            <BundleCard product={PRODUCTS["bundle-engineer"]} onBuy={buy} best />
           </div>
         </div>
       </section>
@@ -230,15 +271,27 @@ export default function Home() {
             />
             <FaqItem
               q="ทำข้อสอบออนไลน์ยังไง?"
-              a="เข้าห้องสอบด้วยอีเมลที่ใช้ซื้อ แล้วกดเริ่ม ระบบจับเวลา 3 ชั่วโมงและบันทึกคำตอบให้อัตโนมัติ แนะนำทำในคอมพิวเตอร์หรือ iPad"
+              a="เข้าห้องสอบด้วยอีเมลที่ใช้ซื้อ แล้วกดเริ่ม ระบบจับเวลา (TPAT3 3 ชั่วโมง / A-Level ฟิสิกส์ 90 นาที) และบันทึกคำตอบให้อัตโนมัติ แนะนำทำในคอมพิวเตอร์หรือ iPad"
+            />
+            <FaqItem
+              q="A-Level ฟิสิกส์ ข้อที่ตอบเป็นตัวเลขทำยังไง?"
+              a="ข้อ 26–30 พิมพ์ตัวเลขลงช่องในกระดาษคำตอบ ตามหน่วยที่โจทย์กำหนด"
             />
             <FaqItem
               q="สอบได้กี่รอบ? ได้ผลอะไรบ้าง?"
-              a="1 บัญชีสอบได้ 1 รอบ ส่งแล้วรู้ผลทันที: คะแนนเต็ม 100 อันดับ ค่าเฉลี่ย กราฟการแจกแจง คะแนนรายตอน และวิเคราะห์รายข้อพร้อมคำแนะนำ"
+              a="1 บัญชีสอบได้ 1 รอบต่อวิชา ส่งแล้วรู้ผลทันที: คะแนนเต็ม 100 อันดับ ค่าเฉลี่ย กราฟการแจกแจง คะแนนรายตอน และวิเคราะห์รายข้อพร้อมคำแนะนำ"
+            />
+            <FaqItem
+              q="หนังสือตะลุยโจทย์ต่างจาก Mock ยังไง?"
+              a="Mock คือสอบออนไลน์จับเวลา 1 ชุด รู้ผลและอันดับทันที / หนังสือตะลุยโจทย์คือข้อสอบเสมือนจริงอีก 4 ชุด (โจทย์ไม่ซ้ำกับ Mock) เป็น PDF พร้อมเฉลยละเอียด ไว้ฝึกเอง"
+            />
+            <FaqItem
+              q="Bundle คืออะไร?"
+              a={`ซื้อหลายอย่างรวมกันในราคาถูกกว่าซื้อแยก ได้ของครบเหมือนซื้อทีละอย่าง: TPAT3 Bundle ฿${PRODUCTS["bundle-tpat3"].price.toLocaleString()} / A-Level Physics Bundle ฿${PRODUCTS["bundle-phys"].price.toLocaleString()} / แพ็คสอบติดวิศวะ ฿${PRODUCTS["bundle-engineer"].price.toLocaleString()} (ครบทุกอย่าง)`}
             />
             <FaqItem
               q="มีตัวอย่างข้อสอบให้ดูก่อนไหม?"
-              a="มี โหลดตัวอย่างโจทย์ + เฉลยของชุด Mock ได้ฟรี ไม่ต้องกรอกอะไร"
+              a="มี โหลดตัวอย่างโจทย์ + เฉลยของชุด Mock TPAT3 ได้ฟรี ไม่ต้องกรอกอะไร"
             />
             <FaqItem
               q="ซื้อแล้วแต่ไม่เห็นคอร์ส?"
@@ -250,7 +303,7 @@ export default function Home() {
             />
             <FaqItem
               q="ซื้อแล้วได้อะไร?"
-              a={`ชุด Mock (฿${PRODUCTS.mock1.price.toLocaleString()}): ห้องสอบออนไลน์ 1 ครั้ง + ผลวิเคราะห์ + เฉลยละเอียด (PDF) / เนื้อหา TPAT3 (ฟรี): PDF 174 หน้า ทุกอย่างอยู่ในบัญชีถาวร ไม่มีวันหมดอายุ`}
+              a={`Mock TPAT3 (฿${PRODUCTS.mock1.price.toLocaleString()}) และ Mock A-Level ฟิสิกส์ (฿${PRODUCTS["mock-phys1"].price.toLocaleString()}): ห้องสอบออนไลน์ 1 ครั้ง + ผลวิเคราะห์ + เฉลยละเอียด (PDF) / หนังสือตะลุยโจทย์ TPAT3 (฿${PRODUCTS["drill-tpat3"].price.toLocaleString()}) และ A-Level ฟิสิกส์ (฿${PRODUCTS["drill-phys"].price.toLocaleString()}): PDF ข้อสอบ 4 ชุดพร้อมเฉลย / เนื้อหา TPAT3 (ฟรี): PDF 174 หน้า ทุกอย่างอยู่ในบัญชีถาวร ไม่มีวันหมดอายุ`}
             />
             <FaqItem
               q="ขอคืนเงินได้ไหม?"
@@ -279,6 +332,26 @@ function courseHref(product: Product) {
   return `/courses/${courseForProduct(product.id)?.slug ?? ""}`;
 }
 
+/* ---------- ปุ่มเข้าห้องสอบของแต่ละวิชา (ข้อความเปลี่ยนตามสถานะการสอบของบัญชี/เครื่องนี้) ---------- */
+function ExamCta({ exam, state }: { exam: ExamDef; state?: ExamState }) {
+  const label =
+    state === "in_progress"
+      ? `ทำข้อสอบ ${exam.shortName} ต่อ — เวลากำลังเดิน`
+      : state === "submitted"
+        ? `ดูผลสอบ ${exam.shortName} และเฉลย`
+        : `เข้าห้องสอบ ${exam.shortName}`;
+  return (
+    <a
+      href={state === "submitted" ? examResultsPath(exam) : examPath(exam)}
+      onClick={() => trackEvent("click_exam_cta", { state: state ?? "visitor", exam_id: exam.id })}
+      className="group inline-flex items-center justify-center gap-2.5 bg-maroon px-7 py-4 text-[1.1rem] font-semibold text-white transition hover:bg-maroon-dark max-sm:w-full"
+    >
+      {label}
+      <Arrow />
+    </a>
+  );
+}
+
 /* ---------- ลูกศรท้ายปุ่ม (ขยับขวานิดตอนโฮเวอร์) ---------- */
 function Arrow({ className = "h-4 w-4" }: { className?: string }) {
   return (
@@ -304,22 +377,34 @@ function SectionHead({ title, note, small = false }: { title: string; note?: str
   );
 }
 
+/* ---------- หัวกลุ่มวิชาในส่วนสินค้า (เส้นแดงสั้น + ชื่อวิชา) ---------- */
+function GroupHead({ id, title, note, className = "" }: { id: string; title: string; note?: string; className?: string }) {
+  return (
+    <div id={id} className={`mb-5 flex scroll-mt-24 flex-wrap items-baseline gap-x-4 gap-y-1 border-b border-grid pb-3 ${className}`}>
+      <span className="h-[3px] w-8 self-center bg-maroon" aria-hidden />
+      <h3 className="font-display text-[clamp(1.35rem,2.4vw,1.7rem)] font-bold text-maroon">{title}</h3>
+      {note && <p className="text-[0.95rem] text-ink/55">{note}</p>}
+    </div>
+  );
+}
+
 /* ---------- การ์ดสินค้า: ปกซ้าย รายละเอียด + ราคา (หรือ "ฟรี") + ปุ่มขวา ---------- */
 function ProductCard({
-  id, cover, courseHref, kicker, title, desc, includes, product, unit = "", buyLabel = "", claimLabel = "รับฟรี", onBuy, sample,
+  id, cover, courseHref, kicker, badge, title, desc, includes, product, unit = "", claimLabel = "รับฟรี", onBuy, sample,
 }: {
   id?: string;
   cover: React.ReactNode;
   courseHref: string;
   /** ป้ายเล็กเหนือชื่อ (ไม่ใส่ = ไม่โชว์ — การ์ด Mock เจ้าของสั่งเอาออก 2026-09-27) */
   kicker?: string;
+  /** ป้ายมุมบนซ้ายของการ์ด เช่น "ขายดี" (เจ้าของสั่งใส่ที่ Mock TPAT3 2026-11-16) */
+  badge?: string;
   title: string;
   /** คำอธิบาย/รายการ ✓ — ไม่ใส่ = ไม่โชว์ (การ์ดเนื้อหาเจ้าของสั่งให้เหลือแค่ชื่อ + "ฟรี" 2026-09-27) */
   desc?: string;
   includes?: string[];
   product: Product;
   unit?: string;
-  buyLabel?: string;
   /** ข้อความปุ่มของสินค้าแจกฟรี (price 0) */
   claimLabel?: string;
   onBuy: (p: Product) => void;
@@ -333,6 +418,11 @@ function ProductCard({
       id={id}
       className="group relative grid scroll-mt-20 items-center gap-7 border border-grid bg-white p-7 transition hover:border-maroon sm:grid-cols-[220px_1fr] md:grid-cols-[300px_1fr] md:gap-12 md:p-11"
     >
+      {badge && (
+        <span className="absolute -top-3.5 left-6 z-10 bg-maroon px-3 py-1 font-label text-xs font-bold tracking-wide text-white md:left-11">
+          {badge}
+        </span>
+      )}
       <div>{cover}</div>
       <div>
         {kicker && <p className="font-label text-xs font-semibold uppercase tracking-[0.22em] text-maroon">{kicker}</p>}
@@ -366,7 +456,7 @@ function ProductCard({
               onClick={() => onBuy(product)}
               className="relative z-10 bg-maroon px-5 py-3.5 font-semibold text-white transition hover:bg-maroon-dark"
             >
-              {buyLabel}
+              สั่งซื้อ ฿{product.price.toLocaleString()}
             </button>
           )}
           {sample && <SampleButton href={sample.href} downloadName={sample.downloadName} label={sample.label} />}
@@ -384,12 +474,120 @@ function ProductCard({
   );
 }
 
+/* ---------- การ์ด Bundle: ปกสินค้าในชุดซ้อนกัน + รายการในชุด (ราคาซื้อแยก) + ราคาขีดฆ่า + ส่วนลด ----------
+   best = แพ็คสอบติดวิศวะ: กรอบแดง 2px + ป้าย "คุ้มที่สุด" (กรอบแบบเดิมที่เจ้าของเลือก ไม่มีเงาเรือง) */
+const BUNDLE_COVERS: Partial<Record<ProductId, string>> = {
+  mock1: "/covers/mock.png",
+  "drill-tpat3": "/covers/drill-tpat3.png",
+  "mock-phys1": "/covers/mock-physics.png",
+  "drill-phys": "/covers/drill-physics.png",
+};
+
+function BundleCard({ product, onBuy, best = false }: { product: Product; onBuy: (p: Product) => void; best?: boolean }) {
+  const parts = (product.bundleOf ?? []).map((id) => PRODUCTS[id]);
+  const covers = parts.map((p) => ({ src: BUNDLE_COVERS[p.id] ?? "", alt: `ปก ${displayName(p)}` })).filter((c) => c.src);
+  return (
+    <article
+      className={`group relative flex flex-col bg-white p-6 transition md:p-7 ${
+        best ? "border-2 border-maroon" : "border border-grid hover:border-maroon"
+      }`}
+    >
+      {best && (
+        <span className="absolute -top-3.5 left-6 bg-maroon px-3 py-1 font-label text-xs font-bold tracking-wide text-white">
+          คุ้มที่สุด
+        </span>
+      )}
+      <BundleStack covers={covers} />
+      <h3 className="mt-6 font-display text-[1.45rem] font-bold leading-snug text-ink">{displayName(product)}</h3>
+      <ul className="mt-3 space-y-1.5 text-[0.95rem] text-ink/75">
+        {parts.map((p) => (
+          <li key={p.id} className="flex items-baseline justify-between gap-3">
+            <span>
+              <span className="mr-1.5 font-bold text-maroon">✓</span>
+              {displayName(p)}
+            </span>
+            <span className="shrink-0 font-label text-xs text-ink/45">฿{p.price.toLocaleString()}</span>
+          </li>
+        ))}
+      </ul>
+      <div className="mt-auto pt-6">
+        <div className="h-1 w-10 bg-maroon" />
+        <div className="mt-4 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+          <span className="font-display text-[2rem] font-bold leading-none tracking-tight text-maroon">
+            ฿{product.price.toLocaleString()}
+          </span>
+          {product.compareAt && (
+            <span className="font-display text-lg text-ink/45 line-through">฿{product.compareAt.toLocaleString()}</span>
+          )}
+        </div>
+        {/* ป้าย "ประหยัด ฿.. (..%)" ใต้ราคา เจ้าของสั่งเอาออก 2026-11-16 — เหลือราคาเต็มขีดฆ่า */}
+        <div className="mt-5 flex flex-wrap items-center gap-3">
+          <button
+            onClick={() => onBuy(product)}
+            className="relative z-10 bg-maroon px-5 py-3.5 font-semibold text-white transition hover:bg-maroon-dark"
+          >
+            สั่งซื้อ ฿{product.price.toLocaleString()}
+          </button>
+          <a
+            href={courseHref(product)}
+            aria-label={`รายละเอียด ${displayName(product)}`}
+            className="ml-1 inline-flex items-center gap-1.5 font-semibold text-maroon underline-offset-4 after:absolute after:inset-0 after:z-[1] after:content-[''] group-hover:underline"
+          >
+            รายละเอียด
+            <Arrow className="h-3.5 w-3.5" />
+          </a>
+        </div>
+      </div>
+    </article>
+  );
+}
+
+/* ---------- ปกของในชุดวางเหลื่อมกัน (2 หรือ 4 เล่ม) ---------- */
+function BundleStack({ covers }: { covers: { src: string; alt: string }[] }) {
+  const n = covers.length;
+  const width = n > 2 ? "w-[34%]" : "w-[46%]";
+  return (
+    <div className="relative mx-auto flex h-[190px] w-full max-w-[300px] items-end justify-center">
+      {covers.map((c, i) => {
+        const offset = n === 1 ? 0 : (i / (n - 1) - 0.5) * (n > 2 ? 66 : 40); // % จากกลาง
+        const rotate = n === 1 ? 0 : (i / (n - 1) - 0.5) * (n > 2 ? 16 : 10);
+        return (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            key={c.src}
+            src={c.src}
+            alt={c.alt}
+            loading="lazy"
+            className={`absolute bottom-0 ${width} border border-grid bg-white shadow-[0_14px_30px_-16px_rgba(36,16,22,0.5)]`}
+            style={{
+              aspectRatio: "1792 / 2400",
+              objectFit: "cover",
+              left: `calc(50% + ${offset}% )`,
+              transform: `translateX(-50%) rotate(${rotate}deg)`,
+              zIndex: i,
+            }}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
 /* ---------- ไอคอนดาวน์โหลด ---------- */
 function DownloadIcon({ className = "h-4 w-4" }: { className?: string }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2} aria-hidden>
       <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v12m0 0l-4.5-4.5M12 16l4.5-4.5M4 20h16" />
     </svg>
+  );
+}
+
+/* ---------- ปกหนังสือเล่มเดียว (กว้างเท่าการ์ดเนื้อหาเดิม) ---------- */
+function SingleCover({ src, alt }: { src: string; alt: string }) {
+  return (
+    <div className="mx-auto w-full max-w-[232px]">
+      <Cover src={src} alt={alt} />
+    </div>
   );
 }
 
@@ -408,23 +606,29 @@ function Cover({ src, alt }: { src: string; alt: string }) {
   );
 }
 
-/* ---------- สแตกปก Mock + กระดาษคำตอบ (วางเหลื่อมซ้อนกัน) ---------- */
-function MockStack() {
+/* ---------- สแตกปก Mock + กระดาษคำตอบ (วางเหลื่อมซ้อนกัน) — ค่าเริ่มต้น = ชุด TPAT3 ---------- */
+function MockStack({
+  sheet = { src: "/covers/answersheet.png", alt: "กระดาษคำตอบ Mock TPAT3" },
+  cover = { src: "/covers/mock.png", alt: "ปกข้อสอบ Mock TPAT3" },
+}: {
+  sheet?: { src: string; alt: string };
+  cover?: { src: string; alt: string };
+}) {
   return (
     <div className="relative mx-auto w-full max-w-[300px]" style={{ aspectRatio: "1 / 1.12" }}>
       {/* กระดาษคำตอบ — เหลื่อมอยู่ด้านหลังขวา เอียงเล็กน้อย (แสดงเต็มสัดส่วนจริง ไม่ครอบ) */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src="/covers/answersheet.png"
-        alt="กระดาษคำตอบ Mock TPAT3"
+        src={sheet.src}
+        alt={sheet.alt}
         loading="lazy"
         className="absolute right-0 top-0 h-auto w-[64%] rotate-[6deg] border border-grid bg-white shadow-[0_14px_30px_-16px_rgba(36,16,22,0.45)]"
       />
       {/* ปก Mock — อยู่ด้านหน้าซ้าย เอียงสวนทาง */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src="/covers/mock.png"
-        alt="ปกข้อสอบ Mock TPAT3"
+        src={cover.src}
+        alt={cover.alt}
         loading="lazy"
         className="absolute bottom-0 left-0 h-auto w-[72%] -rotate-[4deg] border border-grid bg-white shadow-[0_20px_40px_-16px_rgba(36,16,22,0.6)] transition group-hover:-translate-y-1"
       />

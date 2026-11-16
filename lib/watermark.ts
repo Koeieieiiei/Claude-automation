@@ -21,6 +21,19 @@ const MASTER_SOURCES: Record<FileId, { local: string; storage: string }> = {
   // เล่ม "เนื้อหา TPAT3" ฉบับ 174 หน้า (2026-09-26 เจ้าของส่งไฟล์ใหม่ ยืนยันอีกครั้ง 2026-09-27) — อัปขึ้น path ใหม่แทนการทับ
   // (ฉบับ 160 หน้าเดิมยังอยู่ที่ master/tpat3-content.pdf เป็นสำรอง) อัปด้วย scripts/upload-pdfs.mjs tpat3content
   tpat3content: { local: join(ASSETS, "master-tpat3-content.pdf"), storage: "master/tpat3-content-2026-09-26.pdf" },
+  // ===== สินค้าใหม่ 2026-11-16 (เจ้าของวางไฟล์ใน assets/ ชื่อไทย → ก๊อปเป็น master-*.pdf) =====
+  // อัปขึ้น Storage ก่อนเปิดขายจริงด้วย `node --env-file=.env.local scripts/upload-pdfs.mjs <FileId>`
+  // Mock A-Level ฟิสิกส์ ชุดที่ 1 — ไฟล์โจทย์ไม่มีปก (หน้า 1 = คำชี้แจง) · เฉลยมีปก
+  physQuestions: { local: join(ASSETS, "master-phys-questions.pdf"), storage: "master/phys-questions-2026-11-16.pdf" },
+  physAnswers: { local: join(ASSETS, "master-phys-answers.pdf"), storage: "master/phys-answers-2026-11-16.pdf" },
+  // กระดาษคำตอบ (สร้างด้วย scripts/make-phys-answersheet.py) — ไม่ใส่ลายน้ำ แบบเดียวกับกระดาษคำตอบ TPAT3
+  physAnswersheet: {
+    local: join(ASSETS, "master-phys-answersheet.pdf"),
+    storage: "master/phys-answersheet-2026-11-16.pdf",
+  },
+  // หนังสือตะลุยโจทย์ (ข้อสอบเสมือนจริง 4 ชุด + เฉลย) — TPAT3 445 หน้า / ฟิสิกส์ 284 หน้า
+  tpat3Drill: { local: join(ASSETS, "master-tpat3-drill.pdf"), storage: "master/tpat3-drill-2026-11-16.pdf" },
+  physDrill: { local: join(ASSETS, "master-phys-drill.pdf"), storage: "master/phys-drill-2026-11-16.pdf" },
   // สรุป TPAT3 รุ่นเก่า (เลิกขายแล้ว) — ไฟล์ยังอยู่บน Storage ให้ลิงก์ในอีเมลเก่าโหลดได้
   sum4content: { local: join(ASSETS, "master-sum4-content.pdf"), storage: "master/sum4-content.pdf" },
   sum4formula: { local: join(ASSETS, "master-sum4-formula.pdf"), storage: "master/sum4-formula.pdf" },
@@ -99,14 +112,24 @@ function fitSize(font: PDFFont, text: string, preferred: number, min: number, ma
 }
 
 /** ไฟล์ที่ "ไม่ใส่ลายน้ำทั้งไฟล์" — กระดาษคำตอบมีไว้พิมพ์ฝนคำตอบจริง ลายน้ำจะกวนวงกลม OMR */
-const NO_WATERMARK: ReadonlySet<FileId> = new Set(["answersheet"]);
+const NO_WATERMARK: ReadonlySet<FileId> = new Set(["answersheet", "physAnswersheet"]);
 
 /** ไฟล์ที่ "ข้ามลายน้ำเฉพาะหน้าแรก" — หน้าแรกเป็นหน้าปก (เจ้าของขอให้ปกสะอาดไม่มีลายน้ำ)
  *  · questions    = ปก "MOCK TPAT3" (หน้า 1 ของ master-answers.pdf)
  *  · answers      = ปก "MOCK TPAT3" ของเฉลยฉบับ Master Answers (ฉบับก่อน 2026-09-16 ไม่มีปก)
  *  · tpat3content = ปก "เนื้อหา TPAT3"
- *  · sum4content  = ปก "สรุป TPAT3" ในตัว Mind Map รุ่นเก่า */
-const SKIP_COVER_PAGE: ReadonlySet<FileId> = new Set(["questions", "answers", "tpat3content", "sum4content"]);
+ *  · sum4content  = ปก "สรุป TPAT3" ในตัว Mind Map รุ่นเก่า
+ *  · physAnswers  = ปก "MOCK A-LEVEL PHYSICS" ของเฉลย (ไฟล์โจทย์ physQuestions ไม่มีปก — ใส่ลายน้ำครบทุกหน้า)
+ *  · tpat3Drill / physDrill = ปกหนังสือตะลุยโจทย์ */
+const SKIP_COVER_PAGE: ReadonlySet<FileId> = new Set([
+  "questions",
+  "answers",
+  "tpat3content",
+  "sum4content",
+  "physAnswers",
+  "tpat3Drill",
+  "physDrill",
+]);
 
 /**
  * เตรียมไฟล์ PDF พร้อมส่งให้ลูกค้า: โหลดต้นฉบับ + ใส่ลายน้ำตามกติการายไฟล์
@@ -123,13 +146,13 @@ export async function buildDeliverablePdf(
 
 /**
  * ลายน้ำแบรนด์ — แบบเดียวกับไฟล์ตัวอย่างฟรี (scripts/make-summary-sample.mjs):
- * "Mr.tpat3" / "IG: mako_tpat3" 2 บรรทัด เอียง 35° สีเทาจาง สลับเยื้องซ้าย-ขวาทีละหน้า
+ * "Mr.tpat3" / "IG: mr_tpat3" 2 บรรทัด เอียง 35° สีเทาจาง สลับเยื้องซ้าย-ขวาทีละหน้า
  * (เจ้าของสั่ง 2026-09-16: เลิกพิมพ์ชื่อ-อีเมลผู้ซื้อบนหน้ากระดาษ)
  * ตำแหน่งคิดเป็นสัดส่วนของหน้า A4 (595×842) ของต้นฉบับ เพื่อให้หน้าขนาดอื่นวางตรงกัน
  */
 const BRAND_LINES = [
   { text: "Mr.tpat3", size: 34, yFrac: 403.92 / 842 },
-  { text: "IG: mako_tpat3", size: 28, yFrac: 347.92 / 842 },
+  { text: "IG: mr_tpat3", size: 28, yFrac: 347.92 / 842 },
 ];
 const BRAND_X_LEFT = 124 / 595; // หน้าคี่ของชุด — เยื้องซ้าย
 const BRAND_X_RIGHT = 339 / 595; // หน้าคู่ของชุด — เยื้องขวา

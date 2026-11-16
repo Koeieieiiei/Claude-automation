@@ -23,7 +23,6 @@ export default function SiteFooter() {
           <a href="/my-courses" className="hover:text-maroon">คอร์สของฉัน</a>
           <a href="/exam" className="hover:text-maroon">ห้องสอบ</a>
           <a href="/#faq" className="hover:text-maroon">ข้อสงสัย</a>
-          <a href="/about" className="hover:text-maroon">เกี่ยวกับพี่</a>
           <a href="/privacy" className="hover:text-maroon">นโยบายความเป็นส่วนตัว</a>
           <a href="/terms" className="hover:text-maroon">ข้อกำหนดการใช้งาน</a>
         </nav>

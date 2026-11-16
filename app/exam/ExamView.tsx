@@ -3,6 +3,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getExam, DEFAULT_EXAM_ID, ExamDef } from "@/lib/exams";
+import { PRODUCTS, displayName } from "@/lib/catalog";
+import {
+  ExamAnswer,
+  cleanNumericInput,
+  countAnswered,
+  emptyAnswers,
+  isAnswered,
+  isNumericQuestion,
+} from "@/lib/exam-answers";
 import { trackEvent } from "@/lib/analytics";
 import LoginButton from "@/components/LoginButton";
 import { Avatar, ClientUser, fetchCurrentUser } from "@/components/AccountButton";
@@ -66,7 +75,7 @@ export default function ExamView() {
   // สถานะระหว่างสอบ
   const [deadline, setDeadline] = useState(0); // server ms
   const [clockOffset, setClockOffset] = useState(0); // serverNow - clientNow
-  const [answers, setAnswers] = useState<number[]>(() => Array(exam.totalQuestions).fill(0));
+  const [answers, setAnswers] = useState<ExamAnswer[]>(() => emptyAnswers(exam));
   const [savedAt, setSavedAt] = useState<Date | null>(null);
   const [confirmStart, setConfirmStart] = useState(false);
   const [confirmSubmit, setConfirmSubmit] = useState(false);
@@ -82,7 +91,7 @@ export default function ExamView() {
   // เขียนทับผลที่ตรวจแล้ว (เคยทำให้หน้าผลบอกว่า "ยังไม่มีผลสอบ")
   const submittedRef = useRef(false);
 
-  const answeredCount = useMemo(() => answers.filter((a) => a > 0).length, [answers]);
+  const answeredCount = useMemo(() => countAnswered(answers), [answers]);
 
   /* ---------- เข้าห้องสอบ: เช็คสิทธิ์จากโทเค็น (ลิงก์/localStorage) หรือชื่อ+อีเมล ---------- */
 
@@ -108,7 +117,7 @@ export default function ExamView() {
       } catch {}
 
       if (data.state === "submitted" && !data.retake) {
-        router.replace(`/exam/results?token=${encodeURIComponent(t)}`);
+        router.replace(`/exam/results?${exam.id === DEFAULT_EXAM_ID ? "" : `exam=${exam.id}&`}token=${encodeURIComponent(t)}`);
         return;
       }
       // ยังไม่เริ่มสอบ + ยังไม่ได้ยืนยันชื่อ-อีเมลรอบนี้ → ให้กรอกก่อนเสมอ (กติกาห้องสอบ)
@@ -225,7 +234,7 @@ export default function ExamView() {
       if (!res.ok) {
         if (res.status === 409) {
           // ส่งไปแล้ว — ไปหน้าผล
-          router.replace(`/exam/results?token=${encodeURIComponent(token)}`);
+          router.replace(`/exam/results?${exam.id === DEFAULT_EXAM_ID ? "" : `exam=${exam.id}&`}token=${encodeURIComponent(token)}`);
           return;
         }
         setGateError(data.error ?? "เริ่มสอบไม่สำเร็จ");
@@ -236,9 +245,10 @@ export default function ExamView() {
       setClockOffset(data.serverNow - Date.now());
       // นับเฉพาะรอบที่ "เริ่มใหม่จริง" ไม่นับตอนกลับเข้ามาทำต่อ
       if (!data.resumed) trackEvent("exam_start", { exam_id: exam.id });
-      const serverAnswers: number[] = Array.isArray(data.answers)
-        ? data.answers
-        : Array(exam.totalQuestions).fill(0);
+      // ข้อตัวเลขที่ server เก็บเป็น 0 (ค่าตั้งต้นของรอบเก่า) แปลงเป็นช่องว่าง
+      const serverAnswers: ExamAnswer[] = Array.isArray(data.answers)
+        ? (data.answers as ExamAnswer[]).map((a, i) => (isNumericQuestion(exam, i + 1) && !isAnswered(a) ? "" : a))
+        : emptyAnswers(exam);
       setAnswers(serverAnswers);
       setConfirmStart(false);
       setPhase("exam");
@@ -315,9 +325,9 @@ export default function ExamView() {
         if (res.ok) {
           trackEvent("exam_submit", {
             exam_id: exam.id,
-            answered: answersRef.current.filter((a) => a > 0).length,
+            answered: countAnswered(answersRef.current),
           });
-          router.replace(`/exam/results?token=${encodeURIComponent(token)}`);
+          router.replace(`/exam/results?${exam.id === DEFAULT_EXAM_ID ? "" : `exam=${exam.id}&`}token=${encodeURIComponent(token)}`);
           return;
         }
         if (res.status === 409) break; // server ยืนยันว่าไม่มีการสอบค้างอยู่ — ลองซ้ำไม่ช่วย
@@ -343,6 +353,18 @@ export default function ExamView() {
     setAnswers((prev) => {
       const next = [...prev];
       next[no - 1] = next[no - 1] === choice ? 0 : choice; // กดซ้ำ = ยกเลิกคำตอบ
+      return next;
+    });
+    dirtyRef.current = true;
+  }, []);
+
+  // ข้อตอบเป็นตัวเลข — รับเฉพาะตัวเลข/จุด/ลบ (พิมพ์อย่างอื่นไม่ขึ้น)
+  const typeNumber = useCallback((no: number, raw: string) => {
+    const clean = cleanNumericInput(raw);
+    if (clean === null) return;
+    setAnswers((prev) => {
+      const next = [...prev];
+      next[no - 1] = clean;
       return next;
     });
     dirtyRef.current = true;
@@ -419,10 +441,10 @@ export default function ExamView() {
             <p className="mt-5 border-t border-dashed border-grid pt-4 text-sm leading-relaxed text-ink/75">
               ยังไม่มีชุดข้อสอบ?{" "}
               <a
-                href="/?buy=mock1"
+                href={`/?buy=${exam.productId}`}
                 className="font-bold text-maroon underline underline-offset-2 hover:no-underline"
               >
-                สั่งซื้อ Mock TPAT3 →
+                สั่งซื้อ {displayName(PRODUCTS[exam.productId])} →
               </a>
             </p>
 
@@ -457,7 +479,7 @@ export default function ExamView() {
                 🔧 อีเมลนี้อยู่ในโหมดทดสอบ (ทำได้ไม่จำกัด) — ถ้าเริ่มรอบใหม่
                 ผลสอบรอบก่อนจะถูกแทนที่{" "}
                 <a
-                  href={`/exam/results?token=${encodeURIComponent(token)}`}
+                  href={`/exam/results?${exam.id === DEFAULT_EXAM_ID ? "" : `exam=${exam.id}&`}token=${encodeURIComponent(token)}`}
                   className="font-semibold text-maroon underline underline-offset-2"
                 >
                   ดูผลรอบล่าสุดก่อน →
@@ -617,7 +639,7 @@ export default function ExamView() {
               <SaveBadge savedAt={savedAt} />
             </div>
             <div className="overflow-y-auto p-3">
-              <AnswerSheet exam={exam} answers={answers} onPick={pick} onJump={jumpTo} />
+              <AnswerSheet exam={exam} answers={answers} onPick={pick} onType={typeNumber} onJump={jumpTo} />
             </div>
           </div>
         </aside>
@@ -646,7 +668,7 @@ export default function ExamView() {
               </button>
             </div>
             <div className="overflow-y-auto p-3">
-              <AnswerSheet exam={exam} answers={answers} onPick={pick} onJump={jumpTo} />
+              <AnswerSheet exam={exam} answers={answers} onPick={pick} onType={typeNumber} onJump={jumpTo} />
             </div>
           </div>
         </div>
@@ -760,11 +782,13 @@ function AnswerSheet({
   exam,
   answers,
   onPick,
+  onType,
   onJump,
 }: {
   exam: ExamDef;
-  answers: number[];
+  answers: ExamAnswer[];
   onPick: (no: number, choice: number) => void;
+  onType: (no: number, value: string) => void;
   onJump: (no: number) => void;
 }) {
   return (
@@ -773,6 +797,7 @@ function AnswerSheet({
         <div key={sec.no}>
           <p className="mb-1.5 font-label text-[11px] font-semibold text-maroon">
             ตอนที่ {sec.no} ข้อ {sec.from}–{sec.to}
+            {exam.numeric && sec.from >= exam.numeric.from && sec.to <= exam.numeric.to && " (ตอบเป็นตัวเลข)"}
           </p>
           <div className="space-y-1">
             {Array.from({ length: sec.to - sec.from + 1 }, (_, i) => sec.from + i).map((no) => (
@@ -781,13 +806,34 @@ function AnswerSheet({
                   onClick={() => onJump(no)}
                   title={`ไปที่โจทย์ข้อ ${no}`}
                   className={`w-8 shrink-0 border py-1 text-center font-mono text-xs font-bold transition ${
-                    answers[no - 1] > 0
+                    isAnswered(answers[no - 1])
                       ? "border-maroon bg-maroon/10 text-maroon"
                       : "border-ink/25 text-ink/60 hover:border-maroon hover:text-maroon"
                   }`}
                 >
                   {no}
                 </button>
+                {isNumericQuestion(exam, no) ? (
+                  // ข้อตอบเป็นตัวเลข: พิมพ์ค่า + หน่วยตามโจทย์ (ตรวจโดยปัดทศนิยมเท่าเฉลย — lib/exam-answers.ts)
+                  <label className="flex min-w-0 flex-1 items-center gap-2">
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      autoComplete="off"
+                      maxLength={16}
+                      value={typeof answers[no - 1] === "string" ? (answers[no - 1] as string) : ""}
+                      onChange={(e) => onType(no, e.target.value)}
+                      placeholder="พิมพ์คำตอบ"
+                      aria-label={`ข้อ ${no} ตอบเป็นตัวเลข`}
+                      className={`h-8 w-full min-w-0 max-w-[150px] border px-2.5 font-mono text-sm font-semibold outline-none transition placeholder:font-sans placeholder:font-normal placeholder:text-ink/35 focus:border-maroon ${
+                        isAnswered(answers[no - 1]) ? "border-maroon bg-maroon/[0.06] text-maroon" : "border-ink/30 bg-white text-ink"
+                      }`}
+                    />
+                    {exam.numericUnits?.[no] && (
+                      <span className="shrink-0 font-label text-xs text-ink/60">{exam.numericUnits[no]}</span>
+                    )}
+                  </label>
+                ) : (
                 <div className="flex gap-1.5">
                   {Array.from({ length: exam.choices }, (_, i) => i + 1).map((c) => (
                     <button
@@ -805,6 +851,7 @@ function AnswerSheet({
                     </button>
                   ))}
                 </div>
+                )}
               </div>
             ))}
           </div>

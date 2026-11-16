@@ -6,11 +6,11 @@
     python scripts/build-exam-assets.py [examId] --population-only
         สร้างเฉพาะประชากรอ้างอิงใหม่ (หลังแก้ TARGET_SCORES) ไม่แตะไฟล์อื่น
 
-⚠️ สคริปต์นี้ตั้งค่าตามชุด TPAT3 (โครงหน้า/ตอน/น้ำหนัก/ประชากร ในค่าคงที่ด้านล่าง)
-เพิ่มสนามใหม่ (เช่น A-Level) ต้องปรับค่าพวกนั้นให้ตรงกับชุดนั้นก่อนรัน
+ค่าตั้งต้นรายสนาม (ไฟล์ต้นฉบับ/โครงหน้า/ตอน/น้ำหนัก/ข้อตอบเป็นตัวเลข) อยู่ใน EXAM_CONFIGS ด้านล่าง
+ตอนนี้มี tpat3-1 และ phys-1 (Mock A-Level ฟิสิกส์ 2026-11-16) · เพิ่มสนามใหม่ = เพิ่ม config ที่นั่น
 แล้วอย่าลืมเพิ่ม entry ใน lib/exams.ts ให้ตรงกัน
 
-อ่าน:
+อ่าน (ตัวอย่างของ tpat3-1 — phys-1 ใช้ master-phys-questions.pdf / master-phys-answers.pdf):
   assets/master-questions.pdf   โจทย์ 1-70 (หน้า 1 ปก, 2-3 คำชี้แจง, 4-57 โจทย์)
       ฉบับ Sarabun 2026-09-15 ไม่มีหน้าปก (56 หน้า เริ่มที่คำชี้แจง) — สคริปต์เลื่อนเลขหน้าให้เอง
       เลขหน้าในห้องสอบจึงยังเป็น 2-57 เหมือนเดิม (ดู page_offset)
@@ -31,37 +31,91 @@ if not re.fullmatch(r"[a-z0-9-]+", EXAM_ID):
     sys.exit(f"examId ไม่ถูกต้อง: {EXAM_ID} (ใช้ a-z 0-9 และขีดกลางเท่านั้น)")
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-Q_PDF = os.path.join(ROOT, "assets", "master-questions.pdf")
-A_PDF = os.path.join(ROOT, "assets", "master-answers.pdf")
+
+# ---------------- ค่าตั้งต้นรายสนาม (ต้องตรงกับ entry ใน lib/exams.ts) ----------------
+# questions/answers = ไฟล์ต้นฉบับใน assets/ · first_q_page = หน้าที่โจทย์ข้อ 1 เริ่ม (เลขหน้าในห้องสอบ)
+# instruction_pages = หน้าคำชี้แจงที่โชว์ก่อนเริ่มสอบ · numeric = ช่วงข้อที่ตอบเป็นตัวเลข (ไม่มี = ปรนัยล้วน)
+# cover_offset = True → ไฟล์ไม่มีปกให้เลื่อนเลขหน้า +1 (กติกาเดิมของ TPAT3 ดู page_offset)
+EXAM_CONFIGS = {
+    "tpat3-1": {
+        "questions": "master-questions.pdf",
+        "answers": "master-answers.pdf",
+        "total_q": 70,
+        "choices": 5,
+        "duration_minutes": 180,
+        "first_q_page": 4,
+        "instruction_pages": [2, 3],
+        "cover_offset": True,
+        # ข้อ 1-60 ข้อละ 4/3 (รวม 80) · ข้อ 61-70 ข้อละ 2 (รวม 20)
+        "weights": [(1, 60, 4 / 3), (61, 70, 2.0)],
+        "numeric": None,
+        "sections": [
+            {"no": 1, "title": "ความถนัดด้านตัวเลข", "from": 1, "to": 15},
+            {"no": 2, "title": "ความถนัดด้านมิติสัมพันธ์", "from": 16, "to": 30},
+            {"no": 3, "title": "ความถนัดด้านเชิงกลและความถนัดด้านฟิสิกส์", "from": 31, "to": 45},
+            {"no": 4, "title": "ความคิดเชิงวิทยาศาสตร์ เทคโนโลยี และวิศวกรรมศาสตร์", "from": 46, "to": 60},
+            {"no": 5, "title": "ความสนใจข่าวสารความรู้ทางด้านวิทยาศาสตร์ เทคโนโลยี และวิศวกรรมศาสตร์", "from": 61, "to": 70},
+        ],
+    },
+    # Mock A-Level ฟิสิกส์ ชุดที่ 1 (เจ้าของส่งไฟล์ 2026-11-16) — 30 ข้อ 90 นาที เต็ม 100
+    # ไฟล์โจทย์ไม่มีปก: หน้า 1-3 คำชี้แจง/คำแนะนำ/กำหนดให้ · โจทย์เริ่มหน้า 4 (เลขหน้าในห้องสอบ = เลขหน้า PDF)
+    "phys-1": {
+        "questions": "master-phys-questions.pdf",
+        "answers": "master-phys-answers.pdf",
+        "total_q": 30,
+        "choices": 5,
+        "duration_minutes": 90,
+        "first_q_page": 4,
+        "instruction_pages": [1, 2, 3],
+        "cover_offset": False,
+        # ข้อ 1-25 ข้อละ 3 (รวม 75) · ข้อ 26-30 ข้อละ 5 (รวม 25)
+        "weights": [(1, 25, 3.0), (26, 30, 5.0)],
+        "numeric": (26, 30),
+        "sections": [
+            {"no": 1, "title": "แบบปรนัย 5 ตัวเลือก", "from": 1, "to": 25},
+            {"no": 2, "title": "แบบระบายคำตอบที่เป็นตัวเลข", "from": 26, "to": 30},
+        ],
+    },
+}
+if EXAM_ID not in EXAM_CONFIGS:
+    sys.exit(f"ยังไม่มีค่าตั้งต้นของสนาม {EXAM_ID} ใน EXAM_CONFIGS")
+CFG = EXAM_CONFIGS[EXAM_ID]
+
+Q_PDF = os.path.join(ROOT, "assets", CFG["questions"])
+A_PDF = os.path.join(ROOT, "assets", CFG["answers"])
 PAGES_DIR = os.path.join(ROOT, "assets", "exam-pages", EXAM_ID)
 DATA_DIR = os.path.join(ROOT, "data", "exam", EXAM_ID)
 MANIFEST = os.path.join(ROOT, "lib", "exam-manifests", f"{EXAM_ID}.json")
 
-TOTAL_Q = 70
+TOTAL_Q = CFG["total_q"]
 DPI = 150
-# เลขหน้าด้านล่างคือ "เลขหน้าในห้องสอบ" (ชื่อไฟล์ page-NN.png) นับแบบไฟล์ที่มีหน้าปกเป็นหน้า 1
-FIRST_Q_PAGE = 4  # หน้าที่โจทย์ข้อ 1 เริ่ม
-INSTRUCTION_PAGES = [2, 3]  # หน้าคำชี้แจง แสดงก่อนเริ่มสอบ
+# เลขหน้าด้านล่างคือ "เลขหน้าในห้องสอบ" (ชื่อไฟล์ page-NN.png)
+FIRST_Q_PAGE = CFG["first_q_page"]  # หน้าที่โจทย์ข้อ 1 เริ่ม
+INSTRUCTION_PAGES = CFG["instruction_pages"]  # หน้าคำชี้แจง แสดงก่อนเริ่มสอบ
+NUMERIC = CFG["numeric"]
 
 
 def page_offset(doc) -> int:
     """เลขหน้าในห้องสอบ = เลขหน้า PDF + ค่านี้
-    ไฟล์ที่ไม่มีหน้าปก (หน้า 1 เป็นคำชี้แจงเลย) ต้องเลื่อน 1 ให้เลขหน้าในห้องสอบคงเดิม —
-    เครื่องผู้สอบที่เปิดห้องสอบค้างไว้จะได้ขอรูปหน้าเดิมได้ต่อ"""
+    (TPAT3) ไฟล์ที่ไม่มีหน้าปก (หน้า 1 เป็นคำชี้แจงเลย) ต้องเลื่อน 1 ให้เลขหน้าในห้องสอบคงเดิม —
+    เครื่องผู้สอบที่เปิดห้องสอบค้างไว้จะได้ขอรูปหน้าเดิมได้ต่อ · สนามใหม่ไม่ต้องเลื่อน"""
+    if not CFG["cover_offset"]:
+        return 0
     return 1 if "คำชี้แจง" in doc[0].get_text() else 0
 
-# น้ำหนักคะแนนรายข้อ (คะแนนเต็ม 100): ข้อ 1-60 ข้อละ 4/3 (รวม 80) · ข้อ 61-70 ข้อละ 2 (รวม 20)
+
 def question_weight(no: int) -> float:
-    return 4 / 3 if no <= 60 else 2.0
+    for lo, hi, w in CFG["weights"]:
+        if lo <= no <= hi:
+            return w
+    return 1.0
 
 
-SECTIONS = [
-    {"no": 1, "title": "ความถนัดด้านตัวเลข", "from": 1, "to": 15},
-    {"no": 2, "title": "ความถนัดด้านมิติสัมพันธ์", "from": 16, "to": 30},
-    {"no": 3, "title": "ความถนัดด้านเชิงกลและความถนัดด้านฟิสิกส์", "from": 31, "to": 45},
-    {"no": 4, "title": "ความคิดเชิงวิทยาศาสตร์ เทคโนโลยี และวิศวกรรมศาสตร์", "from": 46, "to": 60},
-    {"no": 5, "title": "ความสนใจข่าวสารความรู้ทางด้านวิทยาศาสตร์ เทคโนโลยี และวิศวกรรมศาสตร์", "from": 61, "to": 70},
-]
+def is_numeric(no: int) -> bool:
+    return bool(NUMERIC) and NUMERIC[0] <= no <= NUMERIC[1]
+
+
+SECTIONS = CFG["sections"]
 
 DIFF_MAP = {"ง่าย": "easy", "กลาง": "medium", "ยาก": "hard"}
 
@@ -80,8 +134,12 @@ def parse_answer_table():
         t = tokens[j]
         if t == str(expected):
             ans, diff = tokens[j + 1], tokens[j + 2]
-            if ans in {"1", "2", "3", "4", "5"} and diff in DIFF_MAP:
-                key[expected] = {"answer": int(ans), "difficulty": DIFF_MAP[diff]}
+            ok_choice = not is_numeric(expected) and ans in {"1", "2", "3", "4", "5"}
+            ok_numeric = is_numeric(expected) and re.fullmatch(r"-?\d+(\.\d+)?", ans)
+            if (ok_choice or ok_numeric) and diff in DIFF_MAP:
+                # ข้อตอบเป็นตัวเลขเก็บเป็นข้อความตามตารางเฉลย (เช่น "0.10") — จำนวนทศนิยมใช้ตัดสินตอนตรวจ
+                value = ans if is_numeric(expected) else int(ans)
+                key[expected] = {"answer": value, "difficulty": DIFF_MAP[diff]}
                 expected += 1
                 j += 3
                 continue
@@ -234,8 +292,8 @@ def main():
 
     manifest = {
         "totalQuestions": TOTAL_Q,
-        "choices": 5,
-        "durationMinutes": 180,
+        "choices": CFG["choices"],
+        "durationMinutes": CFG["duration_minutes"],
         "maxScore": 100,
         "instructionPages": INSTRUCTION_PAGES,
         "questionPages": question_pages,

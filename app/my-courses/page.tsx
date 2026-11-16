@@ -9,7 +9,7 @@ import { buildDownloadLinks, DownloadLink } from "@/lib/downloads";
 import ClaimButton from "@/components/ClaimButton";
 import { FileId, PRODUCTS } from "@/lib/catalog";
 import { COURSES, courseForProduct, getCourse } from "@/lib/courses";
-import { getExam } from "@/lib/exams";
+import { EXAMS, ExamDef, examPath, examResultsPath, getExam } from "@/lib/exams";
 import { getAttemptState, isUnlimitedEmail, AttemptState } from "@/lib/exam-store";
 
 export const runtime = "nodejs";
@@ -21,24 +21,41 @@ export const metadata = {
 };
 
 /**
- * "คอร์ส" ในหน้านี้มีแค่ 2 ตัวตายตัว (เจ้าของกำหนด 2026-09-16) ไม่ใช่รายการสั่งซื้อ:
- *   mock-tpat3    = ห้องสอบ + ไฟล์เฉลย        ← ได้เมื่อมีไฟล์ questions (ซื้อ Mock หรือ bundle)
- *   tpat3-content = ไฟล์เล่มเนื้อหา            ← ได้เมื่อมี tpat3content (หรือ sum4content รุ่นเก่า)
- * ซื้อ bundle = ได้ 2 การ์ดนี้เหมือนคนซื้อแยก ไม่มีการ์ด "ครบเซ็ต"
+ * "คอร์ส" ในหน้านี้เป็นการ์ดตายตัวต่อสินค้าเดี่ยว (เจ้าของกำหนด 2026-09-16 · เพิ่มสินค้าใหม่ 2026-11-16)
+ * ไม่ใช่รายการสั่งซื้อ:
+ *   mock-tpat3          = ห้องสอบ TPAT3 + ไฟล์เฉลย           ← มีไฟล์ questions (Mock TPAT3 / TPAT3 Bundle / แพ็คสอบติดวิศวะ)
+ *   mock-alevel-physics = ห้องสอบ A-Level ฟิสิกส์ + ไฟล์เฉลย  ← มีไฟล์ physQuestions
+ *   tpat3-drill         = หนังสือตะลุยโจทย์ TPAT3             ← มีไฟล์ tpat3Drill
+ *   physics-drill       = หนังสือตะลุยโจทย์ A-Level ฟิสิกส์    ← มีไฟล์ physDrill
+ *   tpat3-content       = ไฟล์เล่มเนื้อหา (แจกฟรี)           ← มี tpat3content (หรือ sum4content รุ่นเก่า)
+ * ซื้อ bundle = ได้การ์ดของสินค้าย่อยเหมือนคนซื้อแยก ไม่มีการ์ด bundle
  * ไฟล์โจทย์/กระดาษคำตอบ/สูตรล้วนไม่โชว์ที่นี่ (ยังโหลดได้จากลิงก์ในอีเมลตามเดิม)
  */
 interface LibraryCourse {
-  slug: "mock-tpat3" | "tpat3-content";
+  slug: string;
   /** ออเดอร์ที่ให้สิทธิ์ (ใช้ชื่อ-อีเมลใส่ลายน้ำ + วันที่ซื้อ) */
   item: LibraryItem;
   files: FileId[];
-  hasExam: boolean;
+  /** ห้องสอบของการ์ดนี้ (null = ไม่มีข้อสอบออนไลน์) */
+  exam: ExamDef | null;
 }
+
+/** การ์ดตามลำดับบนหน้า: เจอไฟล์ key ในออเดอร์ไหนก็ได้ = มีการ์ดนี้ แล้วโชว์ไฟล์ใน files */
+const LIBRARY_CARDS: { slug: string; key: FileId; files: FileId[]; examId?: string }[] = [
+  { slug: "mock-tpat3", key: "questions", files: ["answers"], examId: "tpat3-1" },
+  { slug: "mock-alevel-physics", key: "physQuestions", files: ["physAnswers"], examId: "phys-1" },
+  { slug: "tpat3-drill", key: "tpat3Drill", files: ["tpat3Drill"] },
+  { slug: "physics-drill", key: "physDrill", files: ["physDrill"] },
+];
 
 function deriveCourses(items: LibraryItem[]): LibraryCourse[] {
   const out: LibraryCourse[] = [];
-  const mockSrc = items.find((i) => i.files.includes("questions"));
-  if (mockSrc) out.push({ slug: "mock-tpat3", item: mockSrc, files: ["answers"], hasExam: true });
+  for (const card of LIBRARY_CARDS) {
+    const src = items.find((i) => i.files.includes(card.key));
+    if (src) {
+      out.push({ slug: card.slug, item: src, files: card.files, exam: card.examId ? getExam(card.examId) : null });
+    }
+  }
   const contentFile: FileId | null = items.some((i) => i.files.includes("tpat3content"))
     ? "tpat3content"
     : items.some((i) => i.files.includes("sum4content"))
@@ -46,7 +63,7 @@ function deriveCourses(items: LibraryItem[]): LibraryCourse[] {
       : null;
   if (contentFile) {
     const src = items.find((i) => i.files.includes(contentFile))!;
-    out.push({ slug: "tpat3-content", item: src, files: [contentFile], hasExam: false });
+    out.push({ slug: "tpat3-content", item: src, files: [contentFile], exam: null });
   }
   return out;
 }
@@ -94,7 +111,7 @@ export default async function MyCoursesPage({
               )}
               <p className="mt-5 border-t border-dashed border-grid pt-4 text-sm leading-relaxed text-ink/75">
                 ยังไม่มีคอร์ส?{" "}
-                <a href="/#mock" className="font-bold text-maroon underline underline-offset-2 hover:no-underline">
+                <a href="/#products" className="font-bold text-maroon underline underline-offset-2 hover:no-underline">
                   ดูคอร์สทั้งหมด →
                 </a>
               </p>
@@ -119,18 +136,24 @@ export default async function MyCoursesPage({
   // แถบแจ้งผลจากปุ่ม "รับฟรี" (/api/claim) — เพิ่งรับสำเร็จ / มีอยู่แล้ว / รับไม่สำเร็จ
   const claimedTitle = claimed ? courseForProduct(claimed)?.title ?? "คอร์ส" : null;
 
-  // สถานะห้องสอบ (สนามหลัก) — เฉพาะคนที่มีชุด Mock หรืออีเมลเจ้าของร้าน
-  const exam = getExam();
-  const hasMock = courses.some((c) => c.hasExam);
+  // สถานะห้องสอบแยกต่อสนาม — เฉพาะสนามที่มีชุด Mock หรืออีเมลเจ้าของร้าน (เข้าได้ทุกสนาม)
   const owner = isUnlimitedEmail(user.email);
-  let examState: AttemptState = "none";
-  if (hasMock || owner) {
-    try {
-      examState = (await getAttemptState(exam, user.email)).state;
-    } catch (err) {
-      console.error("อ่านสถานะการสอบไม่สำเร็จ:", err);
-    }
-  }
+  const ownedExamIds = new Set(courses.flatMap((c) => (c.exam ? [c.exam.id] : [])));
+  const examStates: Record<string, AttemptState> = {};
+  await Promise.all(
+    Object.values(EXAMS)
+      .filter((e) => owner || ownedExamIds.has(e.id))
+      .map(async (e) => {
+        try {
+          examStates[e.id] = (await getAttemptState(e, user.email)).state;
+        } catch (err) {
+          console.error(`อ่านสถานะการสอบ ${e.id} ไม่สำเร็จ:`, err);
+          examStates[e.id] = "none";
+        }
+      })
+  );
+  // เจ้าของร้านที่ไม่มีคำสั่งซื้อของสนามนั้น — การ์ดทดสอบระบบแยก
+  const ownerOnlyExams = owner ? Object.values(EXAMS).filter((e) => !ownedExamIds.has(e.id)) : [];
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -216,10 +239,10 @@ export default async function MyCoursesPage({
               <div className="mt-6 flex flex-wrap justify-center gap-3">
                 <ClaimButton productId="sum4" label="รับเนื้อหา TPAT3 ฟรี" source="my_courses_empty" />
                 <a
-                  href="/#mock"
+                  href="/#products"
                   className="inline-flex items-center border border-maroon px-6 py-3 font-bold text-maroon transition hover:bg-maroon hover:text-paper"
                 >
-                  ดูชุด Mock TPAT3 →
+                  ดูคอร์สทั้งหมด →
                 </a>
               </div>
             </div>
@@ -228,11 +251,11 @@ export default async function MyCoursesPage({
           {(courses.length > 0 || owner) && (
             <div className="grid gap-6 md:grid-cols-2">
               {courses.map((c) => (
-                <CourseCard key={c.slug} course={c} examState={examState} />
+                <CourseCard key={c.slug} course={c} examState={c.exam ? examStates[c.exam.id] ?? "none" : "none"} />
               ))}
-              {owner && !hasMock && (
-                <OwnerExamCard examState={examState} />
-              )}
+              {ownerOnlyExams.map((e) => (
+                <OwnerExamCard key={e.id} exam={e} examState={examStates[e.id] ?? "none"} />
+              ))}
             </div>
           )}
 
@@ -253,7 +276,8 @@ export default async function MyCoursesPage({
 
 /* ---------- การ์ดคอร์สที่ซื้อแล้ว ---------- */
 function CourseCard({ course: lc, examState }: { course: LibraryCourse; examState: AttemptState }) {
-  const { item, hasExam } = lc;
+  const { item, exam } = lc;
+  const hasExam = exam !== null;
   const course = getCourse(lc.slug);
 
   let links: DownloadLink[] = [];
@@ -292,7 +316,7 @@ function CourseCard({ course: lc, examState }: { course: LibraryCourse; examStat
         )}
         <div className="min-w-0">
           <p className="font-label text-[11px] font-semibold uppercase tracking-[0.18em] text-maroon">
-            {hasExam ? "คอร์ส + ห้องสอบออนไลน์" : "คอร์ส"}
+            {hasExam ? "คอร์ส + ห้องสอบออนไลน์" : course?.kind === "book" ? "หนังสือ" : "คอร์ส"}
           </p>
           <h2 className="mt-1 font-display text-xl font-bold leading-snug text-ink">
             {course ? <a href={`/courses/${course.slug}`} className="hover:text-maroon">{course.title}</a> : item.productName}
@@ -303,7 +327,7 @@ function CourseCard({ course: lc, examState }: { course: LibraryCourse; examStat
         </div>
       </div>
 
-      {hasExam && <ExamButton state={examState} />}
+      {exam && <ExamButton exam={exam} state={examState} />}
 
       <div className="mt-6">
         <p className="font-label text-[11px] font-semibold uppercase tracking-[0.18em] text-maroon">ไฟล์</p>
@@ -336,13 +360,13 @@ function CourseCard({ course: lc, examState }: { course: LibraryCourse; examStat
 }
 
 /* ---------- ปุ่มห้องสอบตามสถานะ ---------- */
-function ExamButton({ state }: { state: AttemptState }) {
+function ExamButton({ exam, state }: { exam: ExamDef; state: AttemptState }) {
   const cfg =
     state === "submitted"
-      ? { href: "/exam/results", label: "ดูผลสอบและเฉลย", sub: "ส่งแล้ว เปิดดูได้ตลอด" }
+      ? { href: examResultsPath(exam), label: "ดูผลสอบและเฉลย", sub: "ส่งแล้ว เปิดดูได้ตลอด" }
       : state === "in_progress"
-        ? { href: "/exam", label: "ทำข้อสอบต่อ — เวลากำลังเดิน", sub: "เริ่มสอบไปแล้ว" }
-        : { href: "/exam", label: "เริ่มสอบ 70 ข้อ / 3 ชม.", sub: "" };
+        ? { href: examPath(exam), label: "ทำข้อสอบต่อ — เวลากำลังเดิน", sub: "เริ่มสอบไปแล้ว" }
+        : { href: examPath(exam), label: `เริ่มสอบ ${exam.summary}`, sub: "" };
   return (
     <div className="mt-6">
       <a
@@ -360,13 +384,13 @@ function ExamButton({ state }: { state: AttemptState }) {
 }
 
 /* ---------- เจ้าของร้าน: เข้าห้องสอบได้เสมอแม้ไม่มีคำสั่งซื้อ ---------- */
-function OwnerExamCard({ examState }: { examState: AttemptState }) {
+function OwnerExamCard({ exam, examState }: { exam: ExamDef; examState: AttemptState }) {
   return (
     <article className="flex flex-col border border-dashed border-maroon/50 bg-white p-6 md:p-7">
       <p className="font-label text-[11px] font-semibold uppercase tracking-[0.18em] text-maroon">สิทธิ์เจ้าของร้าน</p>
-      <h2 className="mt-1 font-display text-xl font-bold text-ink">ห้องสอบ Mock TPAT3 (ทดสอบระบบ)</h2>
+      <h2 className="mt-1 font-display text-xl font-bold text-ink">ห้องสอบ {exam.title} (ทดสอบระบบ)</h2>
       <p className="mt-1.5 text-sm text-ink/60">สอบได้ไม่จำกัด ผลรอบใหม่แทนที่รอบเก่า</p>
-      <ExamButton state={examState} />
+      <ExamButton exam={exam} state={examState} />
     </article>
   );
 }
@@ -374,8 +398,12 @@ function OwnerExamCard({ examState }: { examState: AttemptState }) {
 /* ---------- คอร์สที่ยังไม่มีในบัญชี (เล่มเนื้อหาแจกฟรี → กดรับได้จากตรงนี้เลย · Mock → ไปหน้าคอร์ส) ---------- */
 function MoreCourses({ items }: { items: LibraryItem[] }) {
   const owned = new Set(items.flatMap((i) => i.files));
+  // เสนอเฉพาะสินค้าเดี่ยวที่ยังไม่มี (bundle ไม่เสนอที่นี่ — อาจมีของในชุดอยู่แล้วบางส่วน)
   const missing = COURSES.filter(
-    (c) => !PRODUCTS[c.productId].retired && !PRODUCTS[c.productId].files.every((f) => owned.has(f))
+    (c) =>
+      c.kind !== "bundle" &&
+      !PRODUCTS[c.productId].retired &&
+      !PRODUCTS[c.productId].files.every((f) => owned.has(f))
   );
   // มีครบทุกไฟล์แล้ว → ไม่ต้องเสนออะไร · ไม่มีอะไรเลย → กล่องด้านบนมีปุ่มอยู่แล้ว
   if (missing.length === 0 || items.length === 0) return null;

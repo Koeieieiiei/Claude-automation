@@ -5,6 +5,7 @@ import { getOrder } from "@/lib/orders";
 import { getStripe } from "@/lib/stripe";
 import { buildDownloadLinks } from "@/lib/downloads";
 import { afterReset } from "@/lib/access-reset";
+import { examPath, examsForFiles } from "@/lib/exams";
 
 // การสร้างลิงก์เกี่ยวข้องกับ crypto (เซ็นโทเค็น) + เรียก Stripe — ต้องรันบน Node
 export const runtime = "nodejs";
@@ -80,7 +81,15 @@ export async function GET(
   // ไฟล์ชุด Mock (โจทย์/เฉลย/กระดาษคำตอบ) ผูกกับการสอบออนไลน์ — หน้า success จะไม่โชว์
   // ปุ่มโหลดไฟล์กลุ่มนี้ก่อนสอบ (เปิดเฉลยก่อน ผลวิเคราะห์จะไม่ตรงฝีมือจริง)
   // ไฟล์อื่นของชุด เช่น ไฟล์เนื้อหาทั้งหมดใน bundle ไม่ใช่สปอยล์ข้อสอบ โหลดได้ทันที
-  const examFiles = new Set<string>(PRODUCTS.mock1.files);
+  // (ไฟล์ของชุด Mock ทุกวิชา — ตอนนี้ TPAT3 + A-Level ฟิสิกส์)
+  const examFiles = new Set<string>([...PRODUCTS.mock1.files, ...PRODUCTS["mock-phys1"].files]);
+  // ห้องสอบที่ชุดนี้ให้สิทธิ์ (bundle แพ็คสอบติดวิศวะ = 2 ห้อง) → หน้า success ชูปุ่มเริ่มสอบของแต่ละห้อง
+  const exams = examsForFiles(product.files).map((e) => ({
+    id: e.id,
+    title: e.title,
+    href: examPath(e),
+    summary: e.summary,
+  }));
 
   return NextResponse.json(
     {
@@ -89,7 +98,8 @@ export async function GET(
       expiryHours: config.download.expiryHours,
       email: order.email,
       // ชุดที่มีไฟล์โจทย์ = มีสิทธิ์ทำข้อสอบออนไลน์ → หน้า success ชูปุ่ม "เริ่มสอบ" เป็นหลัก
-      hasExam: product.files.includes("questions"),
+      hasExam: exams.length > 0,
+      exams,
       links: links.map((l) => ({
         label: l.label,
         downloadName: l.downloadName,

@@ -1,10 +1,20 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
+import { getExam } from "@/lib/exams";
 import ExamView from "./ExamView";
 
-export const metadata = {
-  title: "ห้องสอบ Mock TPAT3 | Mr.tpat3",
-  robots: { index: false }, // หน้าเฉพาะผู้ซื้อ — ไม่ให้ search engine เก็บ
-};
+// ชื่อแท็บตามสนามสอบใน ?exam= (ไม่ระบุ = TPAT3)
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<{ exam?: string }>;
+}): Promise<Metadata> {
+  const { exam } = await searchParams;
+  return {
+    title: `ห้องสอบ ${getExam(exam).title} | Mr.tpat3`,
+    robots: { index: false }, // หน้าเฉพาะผู้ซื้อ — ไม่ให้ search engine เก็บ
+  };
+}
 
 // useSearchParams ต้องอยู่ใต้ Suspense (แบบเดียวกับหน้า success)
 export default function ExamPage() {

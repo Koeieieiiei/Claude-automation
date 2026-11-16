@@ -9,7 +9,8 @@ import CourseIcon from "@/components/CourseIcons";
 import Gear from "@/components/Gear";
 import { USER_COOKIE, verifyUserSession } from "@/lib/user-session";
 import { getLibrary, ownsProduct } from "@/lib/library";
-import { PRODUCTS } from "@/lib/catalog";
+import { PRODUCTS, bundleSaving } from "@/lib/catalog";
+import { examsForFiles } from "@/lib/exams";
 import { COURSES, getCourse } from "@/lib/courses";
 
 export const runtime = "nodejs";
@@ -45,6 +46,10 @@ const TONE = {
   blue: "bg-[#DCE6F2] text-[#1F3A5F]",
   rose: "bg-[#EBDADA] text-[#5A1E2A]",
   maroon: "bg-maroon text-paper",
+  // สินค้าใหม่ 2026-11-16 — โทนเดียวกับปก
+  orange: "bg-[#FBE3D3] text-[#7A2E0E]", // Mock A-Level ฟิสิกส์ (ปกส้มพีช)
+  green: "bg-[#DCEBDF] text-[#1F4D2E]", // ตะลุยโจทย์ A-Level ฟิสิกส์ (ปกเขียว)
+  magenta: "bg-[#F3DCE6] text-[#6B1D42]", // ตะลุยโจทย์ TPAT3 (ปกชมพูบานเย็น)
 } as const;
 
 /**
@@ -58,6 +63,8 @@ export default async function CoursePage({ params }: { params: Promise<{ slug: s
   if (!course) notFound();
   const product = PRODUCTS[course.productId];
   const free = product.price === 0;
+  const saving = bundleSaving(product);
+  const hasExam = examsForFiles(product.files).length > 0;
 
   const user = verifyUserSession((await cookies()).get(USER_COOKIE)?.value);
   let owned = false;
@@ -69,7 +76,10 @@ export default async function CoursePage({ params }: { params: Promise<{ slug: s
     }
   }
 
-  const others = COURSES.filter((c) => c.slug !== course.slug);
+  // คอร์สอื่น: วิชาเดียวกันก่อน แล้วค่อยวิชาอื่น (bundle รวมทุกวิชาเห็นทุกอย่าง)
+  const others = COURSES.filter((c) => c.slug !== course.slug && !PRODUCTS[c.productId].retired).sort(
+    (a, b) => Number(b.group === course.group) - Number(a.group === course.group)
+  );
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -93,7 +103,7 @@ export default async function CoursePage({ params }: { params: Promise<{ slug: s
                 <div className="relative grid items-center gap-6 px-7 py-9 sm:grid-cols-[1fr_auto] md:px-10 md:py-12">
                   <div>
                     <p className="font-label text-[11px] font-semibold uppercase tracking-[0.22em] opacity-80">
-                      by Mr.tpat3{free && " / แจกฟรี"}
+                      by Mr.tpat3{free && " / แจกฟรี"}{saving && " / Bundle"}
                     </p>
                     <h1 className="mt-2 font-display text-[2rem] font-bold leading-[1.15] md:text-[2.5rem]">{course.title}</h1>
                     <p className="mt-3 max-w-md text-[1.05rem] font-medium leading-relaxed opacity-90">{course.tagline}</p>
@@ -105,10 +115,18 @@ export default async function CoursePage({ params }: { params: Promise<{ slug: s
                         key={c.src}
                         src={c.src}
                         alt={c.alt}
-                        className={`w-[132px] border border-black/10 bg-white shadow-[0_22px_45px_-18px_rgba(0,0,0,0.55)] md:w-[150px] ${
-                          arr.length > 1 ? (i === 0 ? "-rotate-[6deg]" : "z-10 -ml-9 mt-4 rotate-[6deg]") : ""
+                        className={`border border-black/10 bg-white shadow-[0_22px_45px_-18px_rgba(0,0,0,0.55)] ${
+                          arr.length > 2 ? "w-[84px] md:w-[96px]" : "w-[132px] md:w-[150px]"
+                        } ${
+                          arr.length > 2
+                            ? `${i === 0 ? "" : "-ml-8"} ${i % 2 === 0 ? "-rotate-[5deg]" : "mt-4 rotate-[5deg]"}`
+                            : arr.length > 1
+                              ? i === 0
+                                ? "-rotate-[6deg]"
+                                : "z-10 -ml-9 mt-4 rotate-[6deg]"
+                              : ""
                         }`}
-                        style={{ aspectRatio: "1792 / 2400", objectFit: "cover" }}
+                        style={{ aspectRatio: "1792 / 2400", objectFit: "cover", zIndex: i }}
                       />
                     ))}
                   </div>
@@ -135,7 +153,7 @@ export default async function CoursePage({ params }: { params: Promise<{ slug: s
                 <p className="font-display text-lg font-bold text-ink">รูปแบบการเรียน</p>
                 <div className="mt-3 border border-maroon/40 bg-maroon/[0.04] px-4 py-3 text-center">
                   <p className="text-sm font-semibold text-ink">
-                    {product.files.includes("questions") ? "สอบออนไลน์ + ไฟล์ PDF" : "ไฟล์ PDF"}
+                    {hasExam ? "สอบออนไลน์ + ไฟล์ PDF" : course.kind === "book" ? "หนังสือ PDF" : "ไฟล์ PDF"}
                   </p>
                   <p className="mt-1 font-label text-[11px] text-ink/55">อยู่ที่ “คอร์สของฉัน” ไม่มีวันหมดอายุ</p>
                 </div>
@@ -150,6 +168,16 @@ export default async function CoursePage({ params }: { params: Promise<{ slug: s
                 </ul>
 
                 <div className="mt-5 flex flex-wrap items-baseline justify-end gap-2.5 border-t border-dashed border-grid pt-4">
+                  {saving && (
+                    <>
+                      <span className="bg-maroon px-2 py-0.5 font-label text-xs font-bold text-paper">
+                        ประหยัด ฿{saving.amount.toLocaleString()} ({saving.percent}%)
+                      </span>
+                      <span className="font-display text-lg text-ink/45 line-through">
+                        ฿{product.compareAt!.toLocaleString()}
+                      </span>
+                    </>
+                  )}
                   <span className="font-display text-[2.1rem] font-bold leading-none text-maroon">{priceText(product.price)}</span>
                 </div>
 
@@ -293,7 +321,12 @@ export default async function CoursePage({ params }: { params: Promise<{ slug: s
                       <span className="min-w-0">
                         <span className="block font-display font-bold text-ink">{c.title}</span>
                         <span className="mt-0.5 block text-sm text-ink/60">{c.tagline}</span>
-                        <span className="mt-1 block font-display font-bold text-maroon">{priceText(p.price)}</span>
+                        <span className="mt-1 block font-display font-bold text-maroon">
+                          {priceText(p.price)}
+                          {p.compareAt && p.compareAt > p.price && (
+                            <span className="ml-2 text-sm font-normal text-ink/45 line-through">฿{p.compareAt.toLocaleString()}</span>
+                          )}
+                        </span>
                       </span>
                     </a>
                   );

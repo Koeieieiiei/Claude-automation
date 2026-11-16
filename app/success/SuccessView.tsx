@@ -14,6 +14,14 @@ interface DownloadLink {
 
 type Status = "loading" | "pending" | "ready" | "not_found" | "error";
 
+/** ห้องสอบที่ชุดที่ซื้อให้สิทธิ์ (จาก /api/order/<id>/downloads) */
+interface ExamLink {
+  id: string;
+  title: string;
+  href: string;
+  summary: string;
+}
+
 // หยุด poll หลังราว 5 นาที — ถ้ายังไม่ยืนยัน ลูกค้าเปิดคอร์สได้เองที่ "คอร์สของฉัน" เมื่อ webhook ทำงานเสร็จ
 const MAX_PENDING_POLLS = 100;
 // เน็ต/เซิร์ฟเวอร์สะดุด: ลองซ้ำไม่กี่ครั้งพอ (~25 วิ) แล้วหยุด — ไม่ยิงซ้ำไม่รู้จบ
@@ -43,7 +51,8 @@ export default function SuccessView() {
 
   const [status, setStatus] = useState<Status>("loading");
   const [email, setEmail] = useState("");
-  const [hasExam, setHasExam] = useState(false); // ชุดที่ซื้อมีข้อสอบให้ทำออนไลน์ไหม
+  const [exams, setExams] = useState<ExamLink[]>([]); // ห้องสอบของชุดที่ซื้อ (ว่าง = ไม่มีข้อสอบออนไลน์)
+  const hasExam = exams.length > 0;
 
   useEffect(() => {
     if (!order) {
@@ -72,7 +81,7 @@ export default function SuccessView() {
 
         if (data.status === "ready") {
           setEmail(typeof data.email === "string" ? data.email : "");
-          setHasExam(data.hasExam === true);
+          setExams(Array.isArray(data.exams) ? (data.exams as ExamLink[]) : []);
           setStatus("ready");
           // ยืนยันแล้วว่าจ่ายเงินสำเร็จจริง — ตัวชี้วัดสำคัญที่สุดของร้าน
           trackEvent("purchase_success", {
@@ -152,15 +161,19 @@ export default function SuccessView() {
             /* ชุดที่มีข้อสอบ: ชูปุ่มเข้าห้องสอบเป็นหลัก ไฟล์เฉลย/เนื้อหาอยู่ที่คอร์สของฉัน
                (เปิดเฉลยก่อนสอบ ผลวิเคราะห์จะไม่ตรงกับฝีมือจริง) */
             <>
-              <a
-                href="/exam"
-                className="mt-7 flex w-full items-center justify-center gap-3 border border-ink bg-maroon px-5 py-4 text-[1.05rem] font-bold text-paper transition hover:bg-maroon-dark"
-              >
-                เริ่มสอบ 70 ข้อ / 3 ชม.
-                <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} aria-hidden>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                </svg>
-              </a>
+              {exams.map((e, i) => (
+                <a
+                  key={e.id}
+                  href={e.href}
+                  className={`${i === 0 ? "mt-7" : "mt-3"} flex w-full items-center justify-center gap-3 border border-ink bg-maroon px-5 py-4 text-[1.05rem] font-bold text-paper transition hover:bg-maroon-dark`}
+                >
+                  {/* ชุดเดียว = ข้อความเดิม "เริ่มสอบ 70 ข้อ / 3 ชม." · หลายห้อง (bundle) = บอกวิชาด้วย */}
+                  เริ่มสอบ{exams.length > 1 ? ` ${e.title}` : ""} {e.summary}
+                  <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} aria-hidden>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                  </svg>
+                </a>
+              ))}
               <p className="mt-3 text-center font-label text-xs leading-relaxed text-ink/55">
                 แนะนำทำในคอมพิวเตอร์หรือ iPad
               </p>

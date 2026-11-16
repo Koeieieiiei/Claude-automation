@@ -7,6 +7,7 @@ import { config } from "./config";
 import { PRODUCTS } from "./catalog";
 import { GRACE_MS, Difficulty, roundScore } from "./exam-config";
 import { ExamDef, questionWeight } from "./exams";
+import { ExamAnswer, emptyAnswers, isCorrectAnswer, sanitizeAnswers } from "./exam-answers";
 import { accessResetIso, afterReset } from "./access-reset";
 
 /**
@@ -60,7 +61,7 @@ export interface ExamAttempt {
   orderId: string;
   startedAt: string; // ISO — เวลาเริ่มนับถอยหลัง (server เป็นคนกำหนด)
   submittedAt: string | null;
-  answers: number[]; // 0 = ยังไม่ตอบ, 1..choices = ช้อยส์ที่เลือก
+  answers: ExamAnswer[]; // ปรนัย: 0 = ยังไม่ตอบ, 1..choices = ช้อยส์ · ข้อตัวเลข: ข้อความที่พิมพ์ ("" = ยังไม่ตอบ)
   correctCount: number | null;
   score: number | null; // คะแนนถ่วงน้ำหนัก (เต็ม exam.maxScore)
 }
@@ -73,7 +74,7 @@ export interface Entitlement {
 }
 
 interface AnswerKeyEntry {
-  answer: number;
+  answer: ExamAnswer; // ปรนัย = เลขช้อยส์ · ข้อตัวเลข = ค่าตามตารางเฉลย เช่น "0.10"
   difficulty: Difficulty;
 }
 
@@ -452,7 +453,7 @@ interface AttemptRow {
   order_id: string;
   started_at: string;
   submitted_at: string | null;
-  answers: number[];
+  answers: ExamAnswer[];
   correct_count: number | null;
   score: number | string | null;
 }
@@ -696,23 +697,12 @@ export async function startAttempt(exam: ExamDef, buyer: Entitlement): Promise<E
     orderId: buyer.orderId,
     startedAt: new Date().toISOString(),
     submittedAt: null,
-    answers: Array(exam.totalQuestions).fill(0),
+    answers: emptyAnswers(exam),
     correctCount: null,
     score: null,
   };
   await putAttempt(exam, attempt);
   return attempt;
-}
-
-function sanitizeAnswers(exam: ExamDef, raw: unknown): number[] | null {
-  if (!Array.isArray(raw) || raw.length !== exam.totalQuestions) return null;
-  const out: number[] = [];
-  for (const v of raw) {
-    const n = Number(v);
-    if (!Number.isInteger(n) || n < 0 || n > exam.choices) return null;
-    out.push(n);
-  }
-  return out;
 }
 
 /** บันทึกคำตอบระหว่างสอบ (autosave) — รับเฉพาะช่วงยังไม่หมดเวลา */
@@ -770,7 +760,7 @@ export async function submitAttempt(
   let correct = 0;
   let score = 0;
   for (let q = 1; q <= exam.totalQuestions; q++) {
-    if (answers[q - 1] === key[String(q)].answer) {
+    if (isCorrectAnswer(answers[q - 1], key[String(q)].answer)) {
       correct++;
       score += questionWeight(exam, q);
     }
@@ -827,13 +817,13 @@ async function tableReadAggregate(exam: ExamDef, minScore = 0): Promise<Aggregat
 
   const key = await getAnswerKey(exam);
   const agg: Aggregate = { scores: [], perQuestionCorrect: {} };
-  for (const row of (data ?? []) as { score: number | string | null; answers: number[] }[]) {
+  for (const row of (data ?? []) as { score: number | string | null; answers: ExamAnswer[] }[]) {
     const score = Number(row.score) || 0;
     if (score < minScore) continue;
     agg.scores.push(score);
     const answers = Array.isArray(row.answers) ? row.answers : [];
     for (let q = 1; q <= exam.totalQuestions; q++) {
-      if (answers[q - 1] === key[String(q)].answer) {
+      if (isCorrectAnswer(answers[q - 1], key[String(q)].answer)) {
         agg.perQuestionCorrect[String(q)] = (agg.perQuestionCorrect[String(q)] ?? 0) + 1;
       }
     }
@@ -867,7 +857,7 @@ async function readAggregate(exam: ExamDef, minScore = 0): Promise<Aggregate> {
     if (!a.submittedAt || (a.score ?? 0) < minScore) continue;
     agg.scores.push(a.score ?? 0);
     for (let q = 1; q <= exam.totalQuestions; q++) {
-      if (a.answers[q - 1] === key[String(q)].answer) {
+      if (isCorrectAnswer(a.answers[q - 1], key[String(q)].answer)) {
         agg.perQuestionCorrect[String(q)] = (agg.perQuestionCorrect[String(q)] ?? 0) + 1;
       }
     }
@@ -892,7 +882,7 @@ async function addToAggregate(
     const agg = await readAggregate(exam);
     agg.scores.push(attempt.score ?? 0);
     for (let q = 1; q <= exam.totalQuestions; q++) {
-      if (attempt.answers[q - 1] === key[String(q)].answer) {
+      if (isCorrectAnswer(attempt.answers[q - 1], key[String(q)].answer)) {
         agg.perQuestionCorrect[String(q)] = (agg.perQuestionCorrect[String(q)] ?? 0) + 1;
       }
     }
@@ -914,7 +904,7 @@ async function removeFromAggregate(exam: ExamDef, attempt: ExamAttempt): Promise
     if (i >= 0) agg.scores.splice(i, 1);
     const key = await getAnswerKey(exam);
     for (let q = 1; q <= exam.totalQuestions; q++) {
-      if (attempt.answers[q - 1] === key[String(q)].answer) {
+      if (isCorrectAnswer(attempt.answers[q - 1], key[String(q)].answer)) {
         const cur = agg.perQuestionCorrect[String(q)] ?? 0;
         agg.perQuestionCorrect[String(q)] = Math.max(0, cur - 1);
       }

@@ -103,6 +103,8 @@ export async function POST(req: NextRequest) {
       const answers = Array.from({ length: exam.totalQuestions }, (_, i) => {
         const k = key[String(i + 1)];
         if (Math.random() < probs[k.difficulty]) return k.answer;
+        // ข้อตอบเป็นตัวเลข: ตอบผิดด้วยค่าที่คลาดไปเท่าตัว
+        if (typeof k.answer === "string") return String(Number(k.answer) * 2);
         // ตอบผิด: สุ่มช้อยส์อื่นที่ไม่ใช่คำตอบถูก
         const wrong = Array.from({ length: exam.choices }, (_, c) => c + 1).filter(
           (c) => c !== k.answer

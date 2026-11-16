@@ -3,6 +3,7 @@ import { verifyExamToken } from "@/lib/exam-token";
 import { getExam, sectionOf } from "@/lib/exams";
 import { getAttemptState, getAnswerKey, computeStatistics } from "@/lib/exam-store";
 import { adviceFor, DIFFICULTY_LABEL } from "@/lib/exam-config";
+import { countAnswered, isCorrectAnswer, isNumericQuestion } from "@/lib/exam-answers";
 import { PRODUCTS } from "@/lib/catalog";
 import { buildDownloadLinks } from "@/lib/downloads";
 import { config } from "@/lib/config";
@@ -53,12 +54,13 @@ export async function GET(req: NextRequest) {
       const no = i + 1;
       const k = key[String(no)];
       const my = attempt.answers[i];
-      const correct = my === k.answer;
+      const correct = isCorrectAnswer(my, k.answer);
       return {
         no,
         section: sectionOf(exam, no).no,
-        myAnswer: my, // 0 = ไม่ได้ตอบ
+        myAnswer: my, // ปรนัย 0 = ไม่ได้ตอบ · ข้อตัวเลข "" = ไม่ได้ตอบ
         correctAnswer: k.answer,
+        unit: isNumericQuestion(exam, no) ? exam.numericUnits?.[no] ?? "" : "",
         correct,
         difficulty: k.difficulty,
         difficultyLabel: DIFFICULTY_LABEL[k.difficulty],
@@ -92,7 +94,7 @@ export async function GET(req: NextRequest) {
         firstName: attempt.firstName,
         lastName: attempt.lastName,
         email: attempt.email,
-        product: { ...PRODUCTS.mock1, files: exam.resultFiles },
+        product: { ...PRODUCTS[exam.productId], files: exam.resultFiles },
       });
     } catch (err) {
       console.error(
@@ -116,7 +118,7 @@ export async function GET(req: NextRequest) {
         totalQuestions: exam.totalQuestions,
         scaled: attempt.score, // คะแนนถ่วงน้ำหนักตามสเกลของสนาม
         maxScore: exam.maxScore,
-        answered: attempt.answers.filter((a) => a > 0).length,
+        answered: countAnswered(attempt.answers),
       },
       overall: {
         nTotal: stats.nTotal,

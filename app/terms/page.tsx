@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "ข้อกำหนดการใช้งาน | Mr.tpat3",
-  description: "ข้อกำหนดการซื้อและใช้งานข้อสอบ Mock TPAT3 ห้องสอบออนไลน์ และไฟล์เนื้อหาของ Mr.tpat3",
+  description: "ข้อกำหนดการซื้อและใช้งานข้อสอบ Mock TPAT3 / A-Level ฟิสิกส์ ห้องสอบออนไลน์ หนังสือ และไฟล์เนื้อหาของ Mr.tpat3",
   alternates: { canonical: "/terms" },
 };
 
@@ -25,14 +25,15 @@ export default async function TermsPage() {
   );
 
   return (
-    <LegalLayout user={user} path="/terms" title="ข้อกำหนดการใช้งาน" updated="27 กันยายน 2569">
+    <LegalLayout user={user} path="/terms" title="ข้อกำหนดการใช้งาน" updated="16 พฤศจิกายน 2569">
       <p>
         การใช้งานและซื้อสินค้าบน <strong className="text-ink">tpat3mock.com</strong> (“Mr.tpat3”, “เรา”) ถือว่ายอมรับข้อกำหนดนี้
       </p>
 
       <H2>1. บริการ</H2>
       <p>
-        เราจำหน่ายสินค้าดิจิทัลสำหรับเตรียมสอบ TPAT3 ได้แก่ Mock TPAT3 (ห้องสอบออนไลน์ + เฉลย) และไฟล์เนื้อหา TPAT3
+        เราจำหน่ายสินค้าดิจิทัลสำหรับเตรียมสอบ TPAT3 และ A-Level ฟิสิกส์ ได้แก่ Mock TPAT3 และ Mock A-Level ฟิสิกส์
+        (ห้องสอบออนไลน์ + เฉลย) หนังสือตะลุยโจทย์ (PDF) แพ็กเกจรวม (Bundle) และไฟล์เนื้อหา TPAT3
         รายละเอียดอยู่ที่หน้าคอร์ส
       </p>
 

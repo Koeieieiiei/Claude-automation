@@ -129,11 +129,12 @@ export default function Home() {
             <Gear teeth={10} className="h-7 w-7 text-maroon" spin="cw" />
             <span className="font-display text-xl font-bold tracking-tight text-ink">Mr.tpat3</span>
           </a>
+          {/* กดแล้วเลื่อนไปยังส่วนนั้นแบบเร็ว ๆ แทนการกระโดด (เจ้าของสั่ง 2026-11-16) — ดู scrollToSection */}
           <nav className="hidden items-center gap-8 md:flex" aria-label="เมนูหลัก">
-            <a href="#tpat3" className="text-base font-semibold text-ink/60 transition hover:text-maroon">TPAT3</a>
-            <a href="#physics" className="text-base font-semibold text-ink/60 transition hover:text-maroon">A-Level ฟิสิกส์</a>
-            <a href="#bundles" className="text-base font-semibold text-ink/60 transition hover:text-maroon">Bundle</a>
-            <a href="#faq" className="text-base font-semibold text-ink/60 transition hover:text-maroon">ข้อสงสัย</a>
+            <a href="#tpat3" onClick={scrollToSection} className="text-base font-semibold text-ink/60 transition hover:text-maroon">TPAT3</a>
+            <a href="#physics" onClick={scrollToSection} className="text-base font-semibold text-ink/60 transition hover:text-maroon">A-Level ฟิสิกส์</a>
+            <a href="#bundles" onClick={scrollToSection} className="text-base font-semibold text-ink/60 transition hover:text-maroon">Bundle</a>
+            <a href="#faq" onClick={scrollToSection} className="text-base font-semibold text-ink/60 transition hover:text-maroon">ข้อสงสัย</a>
           </nav>
           <AccountButton user={user} />
         </div>
@@ -157,8 +158,8 @@ export default function Home() {
           <div className="mt-9 flex flex-wrap gap-3.5 md:mt-11">
             {/* ปุ่มหลักคือ "เข้าห้องสอบ" — คนยังไม่ซื้อกดได้เหมือนกัน แล้วไปเจอหน้ายืนยันตัวตน
                 (ไม่มีสิทธิ์จะมีลิงก์พาไปซื้อชุดของวิชานั้น) ถ้าเคยสอบแล้ว ปุ่มเปลี่ยนเป็นทำต่อ/ดูผลอัตโนมัติ */}
-            {/* ปุ่มทั้งสองวิชาเป็นสีเลือดหมูทึบเหมือนกัน (เจ้าของสั่ง 2026-11-16) */}
-            <ExamCta exam={tpat3Exam} state={examStates[tpat3Exam.id]} />
+            {/* TPAT3 = ปุ่มทึบสีเลือดหมู · A-Level ฟิสิกส์ = ปุ่มขาวขอบเลือดหมู (เจ้าของสั่งให้กลับเป็นแบบเดิม 2026-11-16) */}
+            <ExamCta exam={tpat3Exam} state={examStates[tpat3Exam.id]} primary />
             <ExamCta exam={physExam} state={examStates[physExam.id]} />
           </div>
 
@@ -178,7 +179,8 @@ export default function Home() {
           )}
 
           {/* ----- TPAT3 ----- */}
-          <GroupHead id="tpat3" title="TPAT3" note="ความถนัดทางวิทยาศาสตร์ เทคโนโลยี และวิศวกรรมศาสตร์" />
+          {/* คำอธิบายเทาข้างชื่อกลุ่ม (ชื่อเต็มวิชา / "A-Level Physics") เจ้าของสั่งเอาออก 2026-11-16 */}
+          <GroupHead id="tpat3" title="TPAT3" />
           <div className="grid gap-5">
             <ProductCard
               id="mock"
@@ -214,7 +216,7 @@ export default function Home() {
           </div>
 
           {/* ----- A-Level ฟิสิกส์ ----- */}
-          <GroupHead id="physics" title="A-Level ฟิสิกส์" note="A-Level Physics" className="mt-16 md:mt-20" />
+          <GroupHead id="physics" title="A-Level ฟิสิกส์" className="mt-16 md:mt-20" />
           <div className="grid gap-5">
             <ProductCard
               cover={
@@ -246,7 +248,8 @@ export default function Home() {
       {/* ===== Bundle 3 แบบ (ราคาตามที่เจ้าของกำหนด 2026-11-16) ===== */}
       <section id="bundles" className="grid-paper scroll-mt-20 border-y border-grid">
         <div className="mx-auto max-w-6xl px-5 py-14 md:py-24">
-          <SectionHead title="Bundle" note="ซื้อรวมกันถูกกว่าซื้อแยก ได้ของครบเหมือนซื้อทีละอย่าง" />
+          {/* คำโปรยข้างหัวข้อ Bundle เจ้าของสั่งเอาออก 2026-11-16 */}
+          <SectionHead title="Bundle" />
           <div className="grid gap-5 lg:grid-cols-3">
             <BundleCard product={PRODUCTS["bundle-tpat3"]} onBuy={buy} />
             <BundleCard product={PRODUCTS["bundle-phys"]} onBuy={buy} />
@@ -327,13 +330,47 @@ export default function Home() {
   );
 }
 
+/* ---------- เมนูบน: เลื่อนไปยังส่วนของหน้าแบบเร็ว ๆ (ไม่กระโดด) ----------
+   ระยะเวลาตามระยะทาง 300–650 ms แบบเร่งแล้วผ่อน · เผื่อแถบเมนูที่ติดด้านบนด้วย scroll-margin-top ของปลายทาง
+   (scroll-mt-* ในแต่ละส่วน) · คนที่ตั้งเครื่องให้ลดการเคลื่อนไหวจะไปถึงทันที · กดปุ่มกลาง/Ctrl เปิดแท็บใหม่ได้ตามปกติ */
+let scrollAnimation = 0;
+
+function scrollToSection(e: React.MouseEvent<HTMLAnchorElement>) {
+  if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+  const id = e.currentTarget.getAttribute("href")?.replace(/^#/, "") ?? "";
+  const el = id ? document.getElementById(id) : null;
+  if (!el) return; // ไม่เจอส่วนนั้น — ปล่อยให้เบราว์เซอร์ทำตามปกติ
+  e.preventDefault();
+  history.replaceState(null, "", `#${id}`); // คง URL แบบเดิม (แชร์ลิงก์ส่วนนั้นได้) โดยไม่เพิ่มประวัติย้อนกลับ
+
+  const offset = parseFloat(getComputedStyle(el).scrollMarginTop) || 0;
+  const maxY = document.documentElement.scrollHeight - window.innerHeight;
+  const target = Math.min(maxY, Math.max(0, el.getBoundingClientRect().top + window.scrollY - offset));
+  const start = window.scrollY;
+  const distance = target - start;
+  cancelAnimationFrame(scrollAnimation);
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches || Math.abs(distance) < 2) {
+    window.scrollTo(0, target);
+    return;
+  }
+  const duration = Math.min(650, Math.max(300, Math.abs(distance) * 0.25));
+  const ease = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+  const t0 = performance.now();
+  const step = (now: number) => {
+    const t = Math.min(1, (now - t0) / duration);
+    window.scrollTo(0, start + distance * ease(t));
+    if (t < 1) scrollAnimation = requestAnimationFrame(step);
+  };
+  scrollAnimation = requestAnimationFrame(step);
+}
+
 /* ---------- ลิงก์ไปหน้ารายละเอียดคอร์สของสินค้า ---------- */
 function courseHref(product: Product) {
   return `/courses/${courseForProduct(product.id)?.slug ?? ""}`;
 }
 
 /* ---------- ปุ่มเข้าห้องสอบของแต่ละวิชา (ข้อความเปลี่ยนตามสถานะการสอบของบัญชี/เครื่องนี้) ---------- */
-function ExamCta({ exam, state }: { exam: ExamDef; state?: ExamState }) {
+function ExamCta({ exam, state, primary = false }: { exam: ExamDef; state?: ExamState; primary?: boolean }) {
   const label =
     state === "in_progress"
       ? `ทำข้อสอบ ${exam.shortName} ต่อ — เวลากำลังเดิน`
@@ -344,7 +381,11 @@ function ExamCta({ exam, state }: { exam: ExamDef; state?: ExamState }) {
     <a
       href={state === "submitted" ? examResultsPath(exam) : examPath(exam)}
       onClick={() => trackEvent("click_exam_cta", { state: state ?? "visitor", exam_id: exam.id })}
-      className="group inline-flex items-center justify-center gap-2.5 bg-maroon px-7 py-4 text-[1.1rem] font-semibold text-white transition hover:bg-maroon-dark max-sm:w-full"
+      className={`group inline-flex items-center justify-center gap-2.5 px-7 py-4 text-[1.1rem] font-semibold transition max-sm:w-full ${
+        primary
+          ? "bg-maroon text-white hover:bg-maroon-dark"
+          : "border border-maroon text-maroon hover:bg-maroon hover:text-white"
+      }`}
     >
       {label}
       <Arrow />

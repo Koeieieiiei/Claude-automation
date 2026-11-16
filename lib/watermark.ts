@@ -26,11 +26,6 @@ const MASTER_SOURCES: Record<FileId, { local: string; storage: string }> = {
   // Mock A-Level ฟิสิกส์ ชุดที่ 1 — ไฟล์โจทย์ไม่มีปก (หน้า 1 = คำชี้แจง) · เฉลยมีปก
   physQuestions: { local: join(ASSETS, "master-phys-questions.pdf"), storage: "master/phys-questions-2026-11-16.pdf" },
   physAnswers: { local: join(ASSETS, "master-phys-answers.pdf"), storage: "master/phys-answers-2026-11-16.pdf" },
-  // กระดาษคำตอบ (สร้างด้วย scripts/make-phys-answersheet.py) — ไม่ใส่ลายน้ำ แบบเดียวกับกระดาษคำตอบ TPAT3
-  physAnswersheet: {
-    local: join(ASSETS, "master-phys-answersheet.pdf"),
-    storage: "master/phys-answersheet-2026-11-16.pdf",
-  },
   // หนังสือตะลุยโจทย์ (ข้อสอบเสมือนจริง 4 ชุด + เฉลย) — TPAT3 445 หน้า / ฟิสิกส์ 284 หน้า
   tpat3Drill: { local: join(ASSETS, "master-tpat3-drill.pdf"), storage: "master/tpat3-drill-2026-11-16.pdf" },
   physDrill: { local: join(ASSETS, "master-phys-drill.pdf"), storage: "master/phys-drill-2026-11-16.pdf" },
@@ -112,7 +107,7 @@ function fitSize(font: PDFFont, text: string, preferred: number, min: number, ma
 }
 
 /** ไฟล์ที่ "ไม่ใส่ลายน้ำทั้งไฟล์" — กระดาษคำตอบมีไว้พิมพ์ฝนคำตอบจริง ลายน้ำจะกวนวงกลม OMR */
-const NO_WATERMARK: ReadonlySet<FileId> = new Set(["answersheet", "physAnswersheet"]);
+const NO_WATERMARK: ReadonlySet<FileId> = new Set(["answersheet"]);
 
 /** ไฟล์ที่ "ข้ามลายน้ำเฉพาะหน้าแรก" — หน้าแรกเป็นหน้าปก (เจ้าของขอให้ปกสะอาดไม่มีลายน้ำ)
  *  · questions    = ปก "MOCK TPAT3" (หน้า 1 ของ master-answers.pdf)

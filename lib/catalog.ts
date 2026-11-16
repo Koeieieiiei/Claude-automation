@@ -24,7 +24,6 @@ export type FileId =
   | "tpat3content" // เนื้อหาทั้งหมดสำหรับสอบ TPAT3 (Part 1–5 ไฟล์เดียว)
   | "physQuestions" // Mock A-Level ฟิสิกส์: ไฟล์โจทย์ 1–30 (= สิทธิ์ห้องสอบ phys-1)
   | "physAnswers" // Mock A-Level ฟิสิกส์: ไฟล์เฉลยละเอียด
-  | "physAnswersheet" // Mock A-Level ฟิสิกส์: กระดาษคำตอบ (scripts/make-phys-answersheet.py)
   | "tpat3Drill" // หนังสือตะลุยโจทย์ TPAT3 (ข้อสอบเสมือนจริง 4 ชุด + เฉลย)
   | "physDrill" // หนังสือตะลุยโจทย์ A-Level ฟิสิกส์ (ข้อสอบเสมือนจริง 4 ชุด + เฉลย)
   // ↓ ไฟล์ของสินค้า "สรุป TPAT3" รุ่นเก่า (เลิกขาย 2026-09-16) — ห้ามลบ
@@ -47,10 +46,6 @@ export const FILE_INFO: Record<FileId, { label: string; downloadName: string }> 
   physAnswers: {
     label: "เฉลยละเอียด Mock A-Level ฟิสิกส์ (PDF)",
     downloadName: "mock-alevel-physics-answers.pdf",
-  },
-  physAnswersheet: {
-    label: "กระดาษคำตอบ Mock A-Level ฟิสิกส์",
-    downloadName: "mock-alevel-physics-answer-sheet.pdf",
   },
   tpat3Drill: {
     label: "หนังสือตะลุยโจทย์ TPAT3 (PDF)",
@@ -132,7 +127,8 @@ export const PRODUCTS: Record<ProductId, Product> = {
     name: "Mock A-Level ฟิสิกส์ ชุดที่ 1",
     shortName: "Mock A-Level ฟิสิกส์",
     price: 149,
-    files: ["physQuestions", "physAnswers", "physAnswersheet"],
+    // กระดาษคำตอบฟิสิกส์ใช้เป็นรูปปกบนเว็บอย่างเดียว ไม่แจกเป็นไฟล์ (เจ้าของสั่ง 2026-11-16)
+    files: ["physQuestions", "physAnswers"],
   },
   "drill-tpat3": {
     id: "drill-tpat3",
@@ -164,7 +160,7 @@ export const PRODUCTS: Record<ProductId, Product> = {
     price: 379,
     compareAt: 448,
     bundleOf: ["mock-phys1", "drill-phys"],
-    files: ["physQuestions", "physAnswers", "physAnswersheet", "physDrill"],
+    files: ["physQuestions", "physAnswers", "physDrill"],
   },
   // ชื่อตามที่เจ้าของตั้ง "แพ็คสอบติดวิศวะ" (สะกด "แพ็ค") = ครบทุกอย่างที่ขาย
   "bundle-engineer": {
@@ -181,7 +177,6 @@ export const PRODUCTS: Record<ProductId, Product> = {
       "tpat3Drill",
       "physQuestions",
       "physAnswers",
-      "physAnswersheet",
       "physDrill",
     ],
   },

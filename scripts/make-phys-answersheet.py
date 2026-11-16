@@ -6,9 +6,9 @@
     python scripts/make-phys-answersheet.py
 
 ได้ 2 ไฟล์:
-  assets/master-phys-answersheet.pdf     ไฟล์ที่ลูกค้าได้ (FileId physAnswersheet — ไม่ใส่ลายน้ำ แบบเดียวกับ TPAT3)
-                                         อัปขึ้น Storage: node --env-file=.env.local scripts/upload-pdfs.mjs physAnswersheet
   public/covers/answersheet-physics.png  รูปวางเหลื่อมหลังปก Mock ฟิสิกส์บนหน้าเว็บ (กว้าง 1400 เท่า answersheet.png)
+  assets/master-phys-answersheet.pdf     ต้นฉบับ PDF (git-ignored) — ไม่ได้แจกลูกค้า: เจ้าของสั่ง 2026-11-16
+                                         "ไฟล์กระดาษคำตอบเอามาเป็นหน้าปกอย่างเดียวพอ"
 ตอนที่ 1 ข้อ 1-25 ปรนัย 5 ตัวเลือก / ตอนที่ 2 ข้อ 26-30 ช่องตัวเลข (เครื่องหมายลบ + 4 หลัก . 2 ตำแหน่ง) / รหัสวิชา 64
 ต้องมี playwright (python) + เน็ต (ฟอนต์ Anuphan/Kanit จาก Google Fonts)
 """

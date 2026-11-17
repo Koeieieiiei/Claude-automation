@@ -45,8 +45,12 @@ const sAttempt = (exam: ExamDef, email: string) =>
 // ต้นฉบับสะอาดอยู่ที่ exam/<examId>/pages-2026-09-27/ ห้องสอบไม่เสิร์ฟจากที่นั่น
 // ชุด 2026-09-27 = Master Questions ฉบับฟอนต์ Sarabun (เจ้าของสั่ง) อัปขึ้นโฟลเดอร์ใหม่แทนการทับ
 // เหตุผลเดียวกับ sPop — ชุดก่อนหน้ายังอยู่ที่ pages/ และ pages-wm/
+// โฟลเดอร์รูปมีลายน้ำแยกรายสนาม — แก้รูปโจทย์ของสนามไหน ให้อัปโฟลเดอร์ใหม่ของสนามนั้นแล้วเพิ่มที่นี่
+// (ต้องตรงกับ PAGES_DIRS ใน scripts/watermark-exam-pages.py และ PAGES_TARGETS ใน scripts/upload-exam-assets.mjs)
+// phys-1 ชุด 2026-11-17 = เจ้าของแก้รูปกราฟข้อ 14 ให้เส้นหนาเท่ากันทุกช้อยส์ (หน้า 15)
+const PAGES_WM_DIRS: Record<string, string> = { "phys-1": "pages-wm-2026-11-17" };
 export const storagePagePath = (exam: ExamDef, pageNo: number) =>
-  `exam/${exam.id}/pages-wm-2026-09-27/page-${String(pageNo).padStart(2, "0")}.png`;
+  `exam/${exam.id}/${PAGES_WM_DIRS[exam.id] ?? "pages-wm-2026-09-27"}/page-${String(pageNo).padStart(2, "0")}.png`;
 
 const localAttemptsFile = (exam: ExamDef) => path.join(DATA_ROOT, exam.id, "attempts.json");
 const localDataFile = (exam: ExamDef, name: string) => path.join(DATA_ROOT, exam.id, name);

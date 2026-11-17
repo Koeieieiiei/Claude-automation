@@ -29,12 +29,15 @@ import path from "path";
 const ROOT = process.cwd();
 const POPULATION_ONLY = process.argv.includes("--population-only");
 const POPULATION_TARGET = "population-2026-09-27.json";
-const PAGES_TARGET = "pages-2026-09-27";
 const EXAM_ID = process.argv.slice(2).find((a) => !a.startsWith("--")) || "tpat3-1";
 if (!/^[a-z0-9-]+$/.test(EXAM_ID)) {
   console.error(`❌ examId ไม่ถูกต้อง: ${EXAM_ID}`);
   process.exit(1);
 }
+// โฟลเดอร์รูปต้นฉบับต่อสนาม — ต้องตรงกับ PAGES_DIRS ใน watermark-exam-pages.py และ PAGES_WM_DIRS ใน lib/exam-store.ts
+// phys-1 ชุด 2026-11-17 = เจ้าของแก้รูปกราฟข้อ 14
+const PAGES_TARGETS = { "phys-1": "pages-2026-11-17" };
+const PAGES_TARGET = PAGES_TARGETS[EXAM_ID] ?? "pages-2026-09-27";
 const BUCKET = process.env.SUPABASE_BUCKET || "ebooks";
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const key = process.env.SUPABASE_SERVICE_ROLE_KEY;

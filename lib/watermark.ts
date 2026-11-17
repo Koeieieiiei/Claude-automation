@@ -24,7 +24,8 @@ const MASTER_SOURCES: Record<FileId, { local: string; storage: string }> = {
   // ===== สินค้าใหม่ 2026-11-16 (เจ้าของวางไฟล์ใน assets/ ชื่อไทย → ก๊อปเป็น master-*.pdf) =====
   // อัปขึ้น Storage ก่อนเปิดขายจริงด้วย `node --env-file=.env.local scripts/upload-pdfs.mjs <FileId>`
   // Mock A-Level ฟิสิกส์ ชุดที่ 1 — ไฟล์โจทย์ไม่มีปก (หน้า 1 = คำชี้แจง) · เฉลยมีปก
-  physQuestions: { local: join(ASSETS, "master-phys-questions.pdf"), storage: "master/phys-questions-2026-11-16.pdf" },
+  // ฉบับ 2026-11-17 = เจ้าของแก้รูปกราฟข้อ 14 ให้เส้นหนาเท่ากันทุกช้อยส์ (ฉบับ 11-16 ยังอยู่บน Storage เป็นสำรอง)
+  physQuestions: { local: join(ASSETS, "master-phys-questions.pdf"), storage: "master/phys-questions-2026-11-17.pdf" },
   physAnswers: { local: join(ASSETS, "master-phys-answers.pdf"), storage: "master/phys-answers-2026-11-16.pdf" },
   // หนังสือตะลุยโจทย์ (ข้อสอบเสมือนจริง 4 ชุด + เฉลย) — TPAT3 445 หน้า / ฟิสิกส์ 284 หน้า
   tpat3Drill: { local: join(ASSETS, "master-tpat3-drill.pdf"), storage: "master/tpat3-drill-2026-11-16.pdf" },

@@ -153,6 +153,9 @@ export default function Home() {
           </h1>
           <p className="mt-4 max-w-[60ch] text-[clamp(1.1rem,1.8vw,1.35rem)] leading-relaxed text-ink/75">
             ข้อสอบ Mock สอบออนไลน์รู้ผลทันที และหนังสือตะลุยโจทย์พร้อมเฉลยละเอียด
+            {/* บรรทัดที่สอง — ข้อความเจ้าของเขียนเอง 2026-11-17 ห้ามแก้ถ้อยคำ */}
+            <br />
+            จัดทำโดยทีมรุ่นพี่วิศวะจุฬา
           </p>
 
           <div className="mt-9 flex flex-wrap gap-3.5 md:mt-11">

@@ -147,8 +147,8 @@ export default function Home() {
         <Gear teeth={14} className="pointer-events-none absolute -bottom-16 left-[-3rem] h-56 w-56 text-maroon/[0.06]" spin="ccw" />
 
         <div className="relative mx-auto max-w-6xl px-5 py-16 md:py-24">
-          <p className="font-label text-sm font-semibold uppercase tracking-[0.22em] text-maroon">by Mr.tpat3</p>
-          <h1 className="mt-3 font-display text-[clamp(2.4rem,5.6vw,4rem)] font-bold leading-[1.2] tracking-tight text-ink">
+          {/* ป้าย "by Mr.tpat3" เหนือหัวเรื่อง เจ้าของสั่งเอาออก 2026-11-17 */}
+          <h1 className="font-display text-[clamp(2.4rem,5.6vw,4rem)] font-bold leading-[1.2] tracking-tight text-ink">
             TPAT3 และ <span className="text-maroon">A-Level ฟิสิกส์</span>
           </h1>
           <p className="mt-4 max-w-[60ch] text-[clamp(1.1rem,1.8vw,1.35rem)] leading-relaxed text-ink/75">

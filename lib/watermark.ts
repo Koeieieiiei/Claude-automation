@@ -26,10 +26,12 @@ const MASTER_SOURCES: Record<FileId, { local: string; storage: string }> = {
   // Mock A-Level ฟิสิกส์ ชุดที่ 1 — ไฟล์โจทย์ไม่มีปก (หน้า 1 = คำชี้แจง) · เฉลยมีปก
   // ฉบับ 2026-11-17 = เจ้าของแก้รูปกราฟข้อ 14 ให้เส้นหนาเท่ากันทุกช้อยส์ (ฉบับ 11-16 ยังอยู่บน Storage เป็นสำรอง)
   physQuestions: { local: join(ASSETS, "master-phys-questions.pdf"), storage: "master/phys-questions-2026-11-17.pdf" },
-  physAnswers: { local: join(ASSETS, "master-phys-answers.pdf"), storage: "master/phys-answers-2026-11-16.pdf" },
-  // หนังสือตะลุยโจทย์ (ข้อสอบเสมือนจริง 4 ชุด + เฉลย) — TPAT3 445 หน้า / ฟิสิกส์ 284 หน้า
-  tpat3Drill: { local: join(ASSETS, "master-tpat3-drill.pdf"), storage: "master/tpat3-drill-2026-11-16.pdf" },
-  physDrill: { local: join(ASSETS, "master-phys-drill.pdf"), storage: "master/phys-drill-2026-11-16.pdf" },
+  // เฉลยฉบับ 2026-11-18 (53 หน้า — เจ้าของส่งไฟล์แก้ใหม่ ตารางเฉลยเท่าเดิมทุกข้อ) ฉบับ 11-16 ยังอยู่บน Storage
+  physAnswers: { local: join(ASSETS, "master-phys-answers.pdf"), storage: "master/phys-answers-2026-11-18.pdf" },
+  // หนังสือตะลุยโจทย์ (ข้อสอบเสมือนจริง 4 ชุด + เฉลย) ฉบับ 2026-11-18 — TPAT3 491 หน้า / ฟิสิกส์ 331 หน้า
+  // (เจ้าของส่งไฟล์แก้ใหม่ · ฉบับ 11-16 ที่ 445/284 หน้ายังอยู่บน Storage)
+  tpat3Drill: { local: join(ASSETS, "master-tpat3-drill.pdf"), storage: "master/tpat3-drill-2026-11-18.pdf" },
+  physDrill: { local: join(ASSETS, "master-phys-drill.pdf"), storage: "master/phys-drill-2026-11-18.pdf" },
   // สรุป TPAT3 รุ่นเก่า (เลิกขายแล้ว) — ไฟล์ยังอยู่บน Storage ให้ลิงก์ในอีเมลเก่าโหลดได้
   sum4content: { local: join(ASSETS, "master-sum4-content.pdf"), storage: "master/sum4-content.pdf" },
   sum4formula: { local: join(ASSETS, "master-sum4-formula.pdf"), storage: "master/sum4-formula.pdf" },

@@ -22,9 +22,9 @@ const FILES = {
   // สินค้าใหม่ 2026-11-16 — อัปก่อนเปิดขาย: node --env-file=.env.local scripts/upload-pdfs.mjs physQuestions physAnswers tpat3Drill physDrill
   // ฉบับ 2026-11-17 = แก้รูปกราฟข้อ 14 (ฉบับ 11-16 ยังอยู่บน Storage)
   physQuestions: { local: "assets/master-phys-questions.pdf", storage: "master/phys-questions-2026-11-17.pdf" },
-  physAnswers: { local: "assets/master-phys-answers.pdf", storage: "master/phys-answers-2026-11-16.pdf" },
-  tpat3Drill: { local: "assets/master-tpat3-drill.pdf", storage: "master/tpat3-drill-2026-11-16.pdf" },
-  physDrill: { local: "assets/master-phys-drill.pdf", storage: "master/phys-drill-2026-11-16.pdf" },
+  physAnswers: { local: "assets/master-phys-answers.pdf", storage: "master/phys-answers-2026-11-18.pdf" },
+  tpat3Drill: { local: "assets/master-tpat3-drill.pdf", storage: "master/tpat3-drill-2026-11-18.pdf" },
+  physDrill: { local: "assets/master-phys-drill.pdf", storage: "master/phys-drill-2026-11-18.pdf" },
 };
 
 const wanted = process.argv.slice(2);

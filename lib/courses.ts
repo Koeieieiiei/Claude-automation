@@ -7,8 +7,8 @@
  * และโครงข้อสอบจาก lib/exam-manifests/tpat3-1.json — เปลี่ยนไฟล์เมื่อไหร่ต้องแก้ตรงนี้ด้วย
  *
  * เพิ่ม 2026-11-16: Mock A-Level ฟิสิกส์ (lib/exam-manifests/phys-1.json) · หนังสือตะลุยโจทย์ TPAT3
- * (assets/master-tpat3-drill.pdf 445 หน้า 4 ชุด × 70 ข้อ) · หนังสือตะลุยโจทย์ A-Level ฟิสิกส์
- * (assets/master-phys-drill.pdf 284 หน้า 4 ชุด × 30 ข้อ) · หน้าของ Bundle 3 แบบ
+ * (assets/master-tpat3-drill.pdf 491 หน้า 4 ชุด × 70 ข้อ — ฉบับ 2026-11-18) · หนังสือตะลุยโจทย์ A-Level ฟิสิกส์
+ * (assets/master-phys-drill.pdf 331 หน้า 4 ชุด × 30 ข้อ — ฉบับ 2026-11-18) · หน้าของ Bundle 3 แบบ
  * (ช่วงหน้าในสารบัญถอดจากหน้าสารบัญของเล่มจริง)
  */
 import { PRODUCTS, bundleSaving, type ProductId } from "./catalog";
@@ -186,9 +186,9 @@ function savingText(id: ProductId): string {
 type PartId = "mock1" | "drill-tpat3" | "mock-phys1" | "drill-phys";
 const PART_ITEMS: Record<PartId, string[]> = {
   mock1: ["ห้องสอบออนไลน์ 70 ข้อ 3 ชม. (1 ครั้ง) + ผลวิเคราะห์", "เฉลยละเอียดทุกข้อ (PDF)"],
-  "drill-tpat3": ["ข้อสอบเสมือนจริง 4 ชุด ชุดละ 70 ข้อ", "เฉลยละเอียดทุกข้อ (PDF 445 หน้า)"],
+  "drill-tpat3": ["ข้อสอบเสมือนจริง 4 ชุด ชุดละ 70 ข้อ", "เฉลยละเอียดทุกข้อ (PDF 491 หน้า)"],
   "mock-phys1": ["ห้องสอบออนไลน์ 30 ข้อ 90 นาที (1 ครั้ง) + ผลวิเคราะห์", "เฉลยละเอียดทุกข้อ (PDF)"],
-  "drill-phys": ["ข้อสอบเสมือนจริง 4 ชุด ชุดละ 30 ข้อ", "เฉลยละเอียดทุกข้อ (PDF 284 หน้า)"],
+  "drill-phys": ["ข้อสอบเสมือนจริง 4 ชุด ชุดละ 30 ข้อ", "เฉลยละเอียดทุกข้อ (PDF 331 หน้า)"],
 };
 
 /** สารบัญของ bundle = สินค้าย่อยแต่ละตัว พร้อมราคาซื้อแยก */
@@ -332,7 +332,7 @@ export const COURSES: CourseInfo[] = [
     kind: "book",
     stats: [
       { icon: "questions", label: "โจทย์", value: "4 ชุด / 280 ข้อ" },
-      { icon: "pages", label: "ความยาว", value: "445 หน้า" },
+      { icon: "pages", label: "ความยาว", value: "491 หน้า" },
       { icon: "infinity", label: "อายุคอร์ส", value: "ไม่มีวันหมดอายุ" },
     ],
     facts: [
@@ -342,7 +342,7 @@ export const COURSES: CourseInfo[] = [
       { label: "เหมาะสำหรับ", value: "น้องที่อยากฝึกทำข้อสอบเต็มชุดหลายรอบก่อนสอบจริง" },
       { label: "รูปแบบ", value: "หนังสือ PDF 1 เล่ม" },
     ],
-    includes: ["หนังสือตะลุยโจทย์ TPAT3 (PDF 445 หน้า)"],
+    includes: ["หนังสือตะลุยโจทย์ TPAT3 (PDF 491 หน้า)"],
     highlights: [
       "ข้อสอบเสมือนจริง 4 ชุด ชุดละ 70 ข้อ 5 ตอนแบบข้อสอบจริง",
       "โจทย์คนละชุดกับ Mock TPAT3 ทำทั้งคู่ได้ไม่ซ้ำ",
@@ -352,7 +352,7 @@ export const COURSES: CourseInfo[] = [
       "อยู่ที่ “คอร์สของฉัน” ตลอด ไม่มีวันหมดอายุ",
     ],
     contentsTitle: "เนื้อหาในเล่ม",
-    contents: drillContents(70, [[3, 111], [112, 225], [226, 336], [337, 444]], 445),
+    contents: drillContents(70, [[3, 119], [120, 245], [246, 368], [369, 490]], 491),
   },
   {
     slug: "physics-drill",
@@ -366,7 +366,7 @@ export const COURSES: CourseInfo[] = [
     kind: "book",
     stats: [
       { icon: "questions", label: "โจทย์", value: "4 ชุด / 120 ข้อ" },
-      { icon: "pages", label: "ความยาว", value: "284 หน้า" },
+      { icon: "pages", label: "ความยาว", value: "331 หน้า" },
       { icon: "infinity", label: "อายุคอร์ส", value: "ไม่มีวันหมดอายุ" },
     ],
     facts: [
@@ -376,7 +376,7 @@ export const COURSES: CourseInfo[] = [
       { label: "เหมาะสำหรับ", value: "น้องที่อยากฝึกทำข้อสอบเต็มชุดหลายรอบก่อนสอบจริง" },
       { label: "รูปแบบ", value: "หนังสือ PDF 1 เล่ม" },
     ],
-    includes: ["หนังสือตะลุยโจทย์ A-Level ฟิสิกส์ (PDF 284 หน้า)"],
+    includes: ["หนังสือตะลุยโจทย์ A-Level ฟิสิกส์ (PDF 331 หน้า)"],
     highlights: [
       "ข้อสอบเสมือนจริง 4 ชุด ชุดละ 30 ข้อ (ปรนัย 25 + ตอบเป็นตัวเลข 5)",
       "โจทย์คนละชุดกับ Mock A-Level ฟิสิกส์ ทำทั้งคู่ได้ไม่ซ้ำ",
@@ -386,7 +386,7 @@ export const COURSES: CourseInfo[] = [
       "อยู่ที่ “คอร์สของฉัน” ตลอด ไม่มีวันหมดอายุ",
     ],
     contentsTitle: "เนื้อหาในเล่ม",
-    contents: drillContents(30, [[3, 71], [72, 140], [141, 209], [210, 283]], 284),
+    contents: drillContents(30, [[3, 84], [85, 163], [164, 245], [246, 330]], 331),
   },
   {
     slug: "tpat3-bundle",

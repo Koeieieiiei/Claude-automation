@@ -201,7 +201,7 @@ export default function Home() {
               cover={<SingleCover src="/covers/drill-tpat3.png" alt="ปกหนังสือตะลุยโจทย์ TPAT3" />}
               courseHref={courseHref(PRODUCTS["drill-tpat3"])}
               title="หนังสือตะลุยโจทย์ TPAT3"
-              desc="ข้อสอบเสมือนจริง 4 ชุด ชุดละ 70 ข้อ พร้อมเฉลยละเอียดทุกข้อ (PDF 445 หน้า)"
+              desc="ข้อสอบเสมือนจริง 4 ชุด ชุดละ 70 ข้อ พร้อมเฉลยละเอียดทุกข้อ (PDF 491 หน้า)"
               product={PRODUCTS["drill-tpat3"]}
               unit="/ เล่ม"
               onBuy={buy}
@@ -238,7 +238,7 @@ export default function Home() {
               cover={<SingleCover src="/covers/drill-physics.png" alt="ปกหนังสือตะลุยโจทย์ A-Level ฟิสิกส์" />}
               courseHref={courseHref(PRODUCTS["drill-phys"])}
               title="หนังสือตะลุยโจทย์ A-Level ฟิสิกส์"
-              desc="ข้อสอบเสมือนจริง 4 ชุด ชุดละ 30 ข้อ พร้อมเฉลยละเอียดทุกข้อ (PDF 284 หน้า)"
+              desc="ข้อสอบเสมือนจริง 4 ชุด ชุดละ 30 ข้อ พร้อมเฉลยละเอียดทุกข้อ (PDF 331 หน้า)"
               product={PRODUCTS["drill-phys"]}
               unit="/ เล่ม"
               onBuy={buy}

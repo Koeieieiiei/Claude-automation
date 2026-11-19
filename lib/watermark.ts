@@ -24,14 +24,14 @@ const MASTER_SOURCES: Record<FileId, { local: string; storage: string }> = {
   // ===== สินค้าใหม่ 2026-11-16 (เจ้าของวางไฟล์ใน assets/ ชื่อไทย → ก๊อปเป็น master-*.pdf) =====
   // อัปขึ้น Storage ก่อนเปิดขายจริงด้วย `node --env-file=.env.local scripts/upload-pdfs.mjs <FileId>`
   // Mock A-Level ฟิสิกส์ ชุดที่ 1 — ไฟล์โจทย์ไม่มีปก (หน้า 1 = คำชี้แจง) · เฉลยมีปก
-  // ฉบับ 2026-11-17 = เจ้าของแก้รูปกราฟข้อ 14 ให้เส้นหนาเท่ากันทุกช้อยส์ (ฉบับ 11-16 ยังอยู่บน Storage เป็นสำรอง)
-  physQuestions: { local: join(ASSETS, "master-phys-questions.pdf"), storage: "master/phys-questions-2026-11-17.pdf" },
-  // เฉลยฉบับ 2026-11-18 (53 หน้า — เจ้าของส่งไฟล์แก้ใหม่ ตารางเฉลยเท่าเดิมทุกข้อ) ฉบับ 11-16 ยังอยู่บน Storage
-  physAnswers: { local: join(ASSETS, "master-phys-answers.pdf"), storage: "master/phys-answers-2026-11-18.pdf" },
-  // หนังสือตะลุยโจทย์ (ข้อสอบเสมือนจริง 4 ชุด + เฉลย) ฉบับ 2026-11-18 — TPAT3 491 หน้า / ฟิสิกส์ 331 หน้า
+  // ฉบับ 2026-11-19 = เจ้าของสลับลำดับช้อยส์ 18 ข้อ (ฉบับ 11-17 แก้กราฟข้อ 14 / 11-16 ยังอยู่บน Storage เป็นสำรอง)
+  physQuestions: { local: join(ASSETS, "master-phys-questions.pdf"), storage: "master/phys-questions-2026-11-19.pdf" },
+  // เฉลยฉบับ 2026-11-19 (53 หน้า — ตรงกับโจทย์ที่สลับช้อยส์) ฉบับ 11-18 / 11-16 ยังอยู่บน Storage
+  physAnswers: { local: join(ASSETS, "master-phys-answers.pdf"), storage: "master/phys-answers-2026-11-19.pdf" },
+  // หนังสือตะลุยโจทย์ (ข้อสอบเสมือนจริง 4 ชุด + เฉลย) ฉบับ 2026-11-19 — TPAT3 506 หน้า / ฟิสิกส์ 331 หน้า
   // (เจ้าของส่งไฟล์แก้ใหม่ · ฉบับ 11-16 ที่ 445/284 หน้ายังอยู่บน Storage)
-  tpat3Drill: { local: join(ASSETS, "master-tpat3-drill.pdf"), storage: "master/tpat3-drill-2026-11-18.pdf" },
-  physDrill: { local: join(ASSETS, "master-phys-drill.pdf"), storage: "master/phys-drill-2026-11-18.pdf" },
+  tpat3Drill: { local: join(ASSETS, "master-tpat3-drill.pdf"), storage: "master/tpat3-drill-2026-11-19.pdf" },
+  physDrill: { local: join(ASSETS, "master-phys-drill.pdf"), storage: "master/phys-drill-2026-11-19.pdf" },
   // สรุป TPAT3 รุ่นเก่า (เลิกขายแล้ว) — ไฟล์ยังอยู่บน Storage ให้ลิงก์ในอีเมลเก่าโหลดได้
   sum4content: { local: join(ASSETS, "master-sum4-content.pdf"), storage: "master/sum4-content.pdf" },
   sum4formula: { local: join(ASSETS, "master-sum4-formula.pdf"), storage: "master/sum4-formula.pdf" },

@@ -35,8 +35,10 @@ if (!/^[a-z0-9-]+$/.test(EXAM_ID)) {
   process.exit(1);
 }
 // โฟลเดอร์รูปต้นฉบับต่อสนาม — ต้องตรงกับ PAGES_DIRS ใน watermark-exam-pages.py และ PAGES_WM_DIRS ใน lib/exam-store.ts
-// phys-1 ชุด 2026-11-17 = เจ้าของแก้รูปกราฟข้อ 14
-const PAGES_TARGETS = { "phys-1": "pages-2026-11-17" };
+// phys-1 ชุด 2026-11-19 = เจ้าของสลับลำดับช้อยส์ 18 ข้อ
+const PAGES_TARGETS = { "phys-1": "pages-2026-11-19" };
+// ชื่อไฟล์เฉลยต่อสนาม — ต้องตรงกับ KEY_FILES ใน lib/exam-store.ts (เปลี่ยนเฉลยให้ตั้งชื่อใหม่ อย่าอัปทับ)
+const KEY_TARGETS = { "phys-1": "answer-key-2026-11-19.json" };
 const PAGES_TARGET = PAGES_TARGETS[EXAM_ID] ?? "pages-2026-09-27";
 const BUCKET = process.env.SUPABASE_BUCKET || "ebooks";
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -61,7 +63,7 @@ async function main() {
   const pagesDir = path.join(ROOT, "assets", "exam-pages", EXAM_ID);
 
   const jsonFiles = [
-    ...(POPULATION_ONLY ? [] : [{ local: "answer-key.json", target: "answer-key.json" }]),
+    ...(POPULATION_ONLY ? [] : [{ local: "answer-key.json", target: KEY_TARGETS[EXAM_ID] ?? "answer-key.json" }]),
     { local: "population.json", target: POPULATION_TARGET },
   ];
   for (const f of jsonFiles) {

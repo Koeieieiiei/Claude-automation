@@ -34,7 +34,11 @@ const DATA_ROOT = path.join(process.cwd(), "data", "exam");
 const PAGES_ROOT = path.join(process.cwd(), "assets", "exam-pages");
 const BUYERS_FILE = path.join(DATA_ROOT, "demo-buyers.json"); // ผู้ซื้อจำลอง — ใช้ร่วมทุกสนาม
 
-const sKey = (exam: ExamDef) => `exam/${exam.id}/answer-key.json`;
+// ชื่อไฟล์เฉลยแยกรายสนาม — เปลี่ยนเฉลยเมื่อไหร่ให้อัปชื่อใหม่แล้วเพิ่มที่นี่ (อัปทับชื่อเดิม CDN อาจจ่ายเฉลยเก่า = ตรวจผิด)
+// ต้องตรงกับ KEY_TARGETS ใน scripts/upload-exam-assets.mjs
+// phys-1 ชุด 2026-11-19 = เจ้าของสลับลำดับช้อยส์ 18 ข้อ (คำตอบเปลี่ยนตำแหน่ง เนื้อหาเดิม)
+const KEY_FILES: Record<string, string> = { "phys-1": "answer-key-2026-11-19.json" };
+const sKey = (exam: ExamDef) => `exam/${exam.id}/${KEY_FILES[exam.id] ?? "answer-key.json"}`;
 // ประชากรอ้างอิงชุด 2026-09-27 (20 คน แจกแจงปกติ — เจ้าของสั่ง) อัปขึ้นชื่อไฟล์ใหม่แทนการทับ
 // เพราะ CDN ของ Supabase จ่ายไฟล์เก่าที่แคชไว้ได้อีกพักหลังอัปทับ (ชุดเดิม 15 คนยังอยู่ที่ population.json)
 const sPop = (exam: ExamDef) => `exam/${exam.id}/population-2026-09-27.json`;
@@ -47,8 +51,8 @@ const sAttempt = (exam: ExamDef, email: string) =>
 // เหตุผลเดียวกับ sPop — ชุดก่อนหน้ายังอยู่ที่ pages/ และ pages-wm/
 // โฟลเดอร์รูปมีลายน้ำแยกรายสนาม — แก้รูปโจทย์ของสนามไหน ให้อัปโฟลเดอร์ใหม่ของสนามนั้นแล้วเพิ่มที่นี่
 // (ต้องตรงกับ PAGES_DIRS ใน scripts/watermark-exam-pages.py และ PAGES_TARGETS ใน scripts/upload-exam-assets.mjs)
-// phys-1 ชุด 2026-11-17 = เจ้าของแก้รูปกราฟข้อ 14 ให้เส้นหนาเท่ากันทุกช้อยส์ (หน้า 15)
-const PAGES_WM_DIRS: Record<string, string> = { "phys-1": "pages-wm-2026-11-17" };
+// phys-1 ชุด 2026-11-19 = เจ้าของสลับลำดับช้อยส์ 18 ข้อ (ชุด 11-17 = แก้กราฟข้อ 14, ยังอยู่บน Storage)
+const PAGES_WM_DIRS: Record<string, string> = { "phys-1": "pages-wm-2026-11-19" };
 export const storagePagePath = (exam: ExamDef, pageNo: number) =>
   `exam/${exam.id}/${PAGES_WM_DIRS[exam.id] ?? "pages-wm-2026-09-27"}/page-${String(pageNo).padStart(2, "0")}.png`;
 

@@ -201,7 +201,7 @@ export default function Home() {
               cover={<SingleCover src="/covers/drill-tpat3.png" alt="ปกหนังสือตะลุยโจทย์ TPAT3" />}
               courseHref={courseHref(PRODUCTS["drill-tpat3"])}
               title="หนังสือตะลุยโจทย์ TPAT3"
-              desc="ข้อสอบเสมือนจริง 4 ชุด ชุดละ 70 ข้อ พร้อมเฉลยละเอียดทุกข้อ (PDF 491 หน้า)"
+              desc="ข้อสอบเสมือนจริง 4 ชุด ชุดละ 70 ข้อ พร้อมเฉลยละเอียดทุกข้อ (PDF 506 หน้า)"
               product={PRODUCTS["drill-tpat3"]}
               unit="/ เล่ม"
               onBuy={buy}

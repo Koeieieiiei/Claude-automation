@@ -41,8 +41,8 @@ if not re.fullmatch(r"[a-z0-9-]+", EXAM_ID):
     sys.exit(f"examId ไม่ถูกต้อง: {EXAM_ID}")
 
 # โฟลเดอร์ต่อสนาม (ต้นฉบับสะอาด, มีลายน้ำ) — ต้องตรงกับ PAGES_WM_DIRS ใน lib/exam-store.ts
-# phys-1 ชุด 2026-11-17 = เจ้าของแก้รูปกราฟข้อ 14 (ชุดเดิมยังอยู่ที่ *-2026-09-27)
-PAGES_DIRS = {"phys-1": ("pages-2026-11-17", "pages-wm-2026-11-17")}
+# phys-1 ชุด 2026-11-19 = เจ้าของสลับลำดับช้อยส์ 18 ข้อ (ชุดก่อน ๆ ยังอยู่ที่ *-2026-11-17 และ *-2026-09-27)
+PAGES_DIRS = {"phys-1": ("pages-2026-11-19", "pages-wm-2026-11-19")}
 PAGES_DIR, PAGES_WM_DIR = PAGES_DIRS.get(EXAM_ID, ("pages-2026-09-27", "pages-wm-2026-09-27"))
 
 # ---- ค่าลายน้ำ: ตรงกับ BRAND_* ใน lib/watermark.ts (หน่วย pt บนหน้า A4 595x842) ----

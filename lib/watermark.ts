@@ -28,9 +28,9 @@ const MASTER_SOURCES: Record<FileId, { local: string; storage: string }> = {
   physQuestions: { local: join(ASSETS, "master-phys-questions.pdf"), storage: "master/phys-questions-2026-11-19.pdf" },
   // เฉลยฉบับ 2026-11-19 (53 หน้า — ตรงกับโจทย์ที่สลับช้อยส์) ฉบับ 11-18 / 11-16 ยังอยู่บน Storage
   physAnswers: { local: join(ASSETS, "master-phys-answers.pdf"), storage: "master/phys-answers-2026-11-19.pdf" },
-  // หนังสือตะลุยโจทย์ (ข้อสอบเสมือนจริง 4 ชุด + เฉลย) ฉบับ 2026-11-19 — TPAT3 506 หน้า / ฟิสิกส์ 331 หน้า
+  // หนังสือตะลุยโจทย์ (ข้อสอบเสมือนจริง 4 ชุด + เฉลย) ฉบับ 2026-11-19 (TPAT3 ฉบับ 2026-11-20) — TPAT3 507 หน้า / ฟิสิกส์ 331 หน้า
   // (เจ้าของส่งไฟล์แก้ใหม่ · ฉบับ 11-16 ที่ 445/284 หน้ายังอยู่บน Storage)
-  tpat3Drill: { local: join(ASSETS, "master-tpat3-drill.pdf"), storage: "master/tpat3-drill-2026-11-19.pdf" },
+  tpat3Drill: { local: join(ASSETS, "master-tpat3-drill.pdf"), storage: "master/tpat3-drill-2026-11-20.pdf" },
   physDrill: { local: join(ASSETS, "master-phys-drill.pdf"), storage: "master/phys-drill-2026-11-19.pdf" },
   // สรุป TPAT3 รุ่นเก่า (เลิกขายแล้ว) — ไฟล์ยังอยู่บน Storage ให้ลิงก์ในอีเมลเก่าโหลดได้
   sum4content: { local: join(ASSETS, "master-sum4-content.pdf"), storage: "master/sum4-content.pdf" },

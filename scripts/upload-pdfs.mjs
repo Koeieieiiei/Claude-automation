@@ -23,7 +23,7 @@ const FILES = {
   // ฉบับ 2026-11-17 = แก้รูปกราฟข้อ 14 (ฉบับ 11-16 ยังอยู่บน Storage)
   physQuestions: { local: "assets/master-phys-questions.pdf", storage: "master/phys-questions-2026-11-19.pdf" },
   physAnswers: { local: "assets/master-phys-answers.pdf", storage: "master/phys-answers-2026-11-19.pdf" },
-  tpat3Drill: { local: "assets/master-tpat3-drill.pdf", storage: "master/tpat3-drill-2026-11-20.pdf" },
+  tpat3Drill: { local: "assets/master-tpat3-drill.pdf", storage: "master/tpat3-drill-2026-11-21.pdf" },
   physDrill: { local: "assets/master-phys-drill.pdf", storage: "master/phys-drill-2026-11-19.pdf" },
 };
 
